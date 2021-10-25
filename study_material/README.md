@@ -2,7 +2,8 @@
 
 ## Physics informed neural networks (PiNNs)
 #### Reading material
-* [Paper by Raissi et al.: PiNNs](https://maziarraissi.github.io/PINNs/)
+* [Paper by Raissi et al.: PiNNs](https://www.sciencedirect.com/science/article/pii/S0021999118307125)
+* [Article by Raissi et al. with code snippets](https://maziarraissi.github.io/PINNs/)
 
 #### Code
 * [Raissi et al. code](https://github.com/maziarraissi/PINNs)
