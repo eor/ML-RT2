@@ -2,12 +2,18 @@
 
 ## Physics informed neural networks (PiNNs)
 #### Reading material
-* [Paper by Raissi et al.: PiNNs](https://www.overleaf.com/read/qhmbpgxzmwnj)
+* [Paper by Raissi et al.: PiNNs](https://maziarraissi.github.io/PINNs/)
 
 #### Code
 * [Raissi et al. code](https://github.com/maziarraissi/PINNs)
 
-## Q-Learning
+
+## Neural ODEs
+#### Reading material
+* [Article: Neural ODEs with PyTorch Lightning and TorchDyn](https://www.pytorchlightning.ai/blog/neural-odes-with-pytorch-lightning-and-torchdyn)
+
+
+## Reinforcement learning (Q-Learning)
 Possibly interesting approach as it does not rely on a model.
 
 #### Reading material - General
