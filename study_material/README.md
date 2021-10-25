@@ -1,5 +1,11 @@
 # Collection of hopefully helpful links and documents
 
+## Physics informed neural networks (PiNNs)
+#### Reading material
+* [Paper by Raissi et al.: PiNNs](https://www.overleaf.com/read/qhmbpgxzmwnj)
+
+#### Code
+* [Raissi et al. code](https://github.com/maziarraissi/PINNs)
 
 ## Q-Learning
 Possibly interesting approach as it does not rely on a model.
