@@ -8,6 +8,9 @@
 #### Code
 * [Raissi et al. code](https://github.com/maziarraissi/PINNs)
 
+#### Videos
+* [Solving PDE/ODE using neural networks](https://www.youtube.com/watch?v=LQ33-GeD-4Y)
+
 
 ## Neural ODEs
 #### Reading material
