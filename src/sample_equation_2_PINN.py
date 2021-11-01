@@ -46,19 +46,21 @@ else:
 #         loss = F.mse_loss(input=gen_x, target=real_x, reduction='mean')
 #     return loss
 
+
 def generate_data_boundary_conditions(config):
     train_set_size = config.train_set_size
-    ## Data from Boundary Conditions
+    # Data from Boundary Conditions
     # u(x,0) = 6e^(-3x)
-    ## BC just gives us datapoints for training
+    # BC just gives us data points for training
     # BC tells us that for any x in range[0,2] and time=0, the value of u is given by 6e^(-3x)
     # Take say train_set_size random numbers of x
-    x_bc = np.random.uniform(low=0.0, high=2.0, size=(train_set_size,1))
-    t_bc = np.zeros((train_set_size,1))
+    x_bc = np.random.uniform(low=0.0, high=2.0, size=(train_set_size, 1))
+    t_bc = np.zeros((train_set_size, 1))
     # compute u based on BC
     u_bc = 6*np.exp(-3*x_bc)
 
     return x_bc, t_bc, u_bc
+
 
 def generate_data_pde(config):
     train_set_size = config.train_set_size
@@ -68,25 +70,26 @@ def generate_data_pde(config):
 
     return x_actual, t_actual, u_actual
 
+
 def evaluate(model):
     fig = plt.figure()
     ax = fig.gca(projection='3d')
 
-    x=np.arange(0,2,0.02)
-    t=np.arange(0,1,0.02)
+    x = np.arange(0, 2, 0.02)
+    t = np.arange(0, 1, 0.02)
     ms_x, ms_t = np.meshgrid(x, t)
 
-    ## Just because meshgrid is used, we need to do the following adjustment
-    x = np.ravel(ms_x).reshape(-1,1)
-    t = np.ravel(ms_t).reshape(-1,1)
+    # Because meshgrid is used, we need to do the following adjustment
+    x = np.ravel(ms_x).reshape(-1, 1)
+    t = np.ravel(ms_t).reshape(-1, 1)
 
     pt_x = Variable(torch.from_numpy(x).float(), requires_grad=True).to(device)
     pt_t = Variable(torch.from_numpy(t).float(), requires_grad=True).to(device)
-    pt_u = model(pt_x,pt_t)
+    pt_u = model(pt_x, pt_t)
     u = pt_u.data.cpu().numpy()
     ms_u = u.reshape(ms_x.shape)
 
-    surf = ax.plot_surface(ms_x,ms_t,ms_u, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+    surf = ax.plot_surface(ms_x, ms_t, ms_u, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 
     ax.zaxis.set_major_locator(LinearLocator(10))
     ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
@@ -94,6 +97,7 @@ def evaluate(model):
     fig.colorbar(surf, shrink=0.5, aspect=5)
 
     plt.show()
+
 
 def main(config):
 
@@ -141,7 +145,7 @@ def main(config):
 
         if epoch % 1000 == 0:
             with torch.autograd.no_grad():
-            	print(epoch,"Traning Loss:",loss.data)
+                print(epoch, "Training Loss:", loss.data)
 
     torch.save(u_approximation.state_dict(), "model_uxt.pt")
     evaluate(u_approximation)
@@ -150,8 +154,7 @@ def main(config):
 if __name__ == "__main__":
 
     # parse arguments
-    parser = argparse.ArgumentParser(
-    description='ML-RT - Cosmological radiative transfer with PINNs (PINN)')
+    parser = argparse.ArgumentParser(description='ML-RT - Cosmological radiative transfer with PINNs (PINN)')
 
     parser.add_argument("--start_profile", type=int, default=0,
                         help="initial value for r")
@@ -167,7 +170,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=32,
                         help="size of the batches (default=32)")
     parser.add_argument("--train_set_size", type=int, default=2048,
-                    help="size of the radnomly generated training set (default=2048)")
+                        help="size of the randomly generated training set (default=2048)")
 
     parser.add_argument("--lr", type=float, default=0.0001,
                         help="adam: learning rate, default=0.0001")
@@ -181,7 +184,6 @@ if __name__ == "__main__":
                         help="automatically generate some plots (default)")
     parser.add_argument("--no-analysis", dest='analysis', action='store_false', help="do not run analysis")
     parser.set_defaults(analysis=True)
-
 
     # analysis
     parser.add_argument("--evaluation", dest='evaluate', action='store_true',

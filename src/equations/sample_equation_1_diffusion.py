@@ -5,7 +5,6 @@ import deepxde as dde
 
 class DIFFUSION_1D:
 
-
     def __init__(self):
         pass
 
