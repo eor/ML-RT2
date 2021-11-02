@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 
+
 class MLP_SAMPLE(nn.Module):
     def __init__(self, conf):
         super(MLP_SAMPLE, self).__init__()
@@ -32,5 +33,5 @@ class MLP_SAMPLE(nn.Module):
 
     def forward(self, x, t):
         # combined two arrays of 1 columns each to one array of 2 columns
-        inputs = torch.cat([x,t],axis=1)
+        inputs = torch.cat([x, t], axis=1)
         return self.model(inputs)
