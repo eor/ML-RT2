@@ -42,7 +42,6 @@ from scipy import integrate
 from . import sed_stellar_mass as sm
 from . import sed_user_settings as us
 
-
 # -----------------------------------------------------------------
 # Constants
 # -----------------------------------------------------------------
@@ -51,7 +50,6 @@ c_cgi = c*100
 h_eV = scipy.constants.value("Planck constant in eV s")
 k_BeV = scipy.constants.value("Boltzmann constant in eV/K")
 sigmaSB = scipy.constants.value("Stefan-Boltzmann constant")   # here: 5.670367e-08 W m^-2 K^-4
-
 # -----------------------------------------------------------------
 # Cosmological parameters
 # -----------------------------------------------------------------
@@ -129,14 +127,6 @@ def generate_SED_PL(haloMass, eHigh=1.e4, eLow=10.4, fileName=None, alpha=1.0, N
     bhMass = 1e-4*(cosmoOmegaB/cosmoOmegaM)*haloMass        # haloMass should be given in [M_sun]
     eddLum = 1.26*1e31*(bhMass)*6.241e18                    # conversion from [Joule/s] to [eV/s]
 
-    if not silent:
-        print("------------------------------------------------------------------------------------")
-        print("Generating SED for a halo featuring a PL-type source:")
-        print("\tHost halo mass \t\t= %e M_sol"%(haloMass))
-        print("\tPL index \t= %.3f "%(alpha))
-        print("\tblack hole mass    \t= %.3f M_sol"%(bhMass))
-        print("\tEddington luminosity\t= %e eV/s"%(eddLum))
-
     # integrate to obtain total energy (normalize)
     sed4Norm    = np.array([])
     energiesLog = np.array([])
@@ -147,7 +137,7 @@ def generate_SED_PL(haloMass, eHigh=1.e4, eLow=10.4, fileName=None, alpha=1.0, N
         sed4Norm    = np.append(sed4Norm, intensities[i]*eTmp)      # log integration trick
 
     integral = integrate.simps(sed4Norm, energiesLog, even='avg')   # this scipy function wants the arguments (y,x, even=...)
-
+    print(integral)
     #print "Normalizing SED: %e"%(integral/(eHigh-eLow))
     A = (qsoEfficiency*eddLum)/integral
 
@@ -304,16 +294,6 @@ def generate_SED_stars_IMF(haloMass, redshift, eLow=10.4, eHigh=1.e4, N=1000,  l
     totalStellarMass = sm.compute_stellar_mass( haloMass, redshift, verbose=False )
     #totalStellarMass = sm.compute_stellar_mass_simple( haloMass, fStar=fStar)
 
-    if(not silent):
-        print("------------------------------------------------------------------------------------")
-        print("Generating SED for a halo featuring black-body-like sources, which follow an IMF:")
-        print("\tRedshift \t\t= %.3f"%(redshift))
-        print("\tHost halo mass \t\t= %e M_sol"%(haloMass))
-        print("\tTotal stellar mass \t= %e M_sol"%(totalStellarMass))
-        print("\tMinimum star mass  \t= %.3f M_sol"%(starMassMin))
-        print("\tMaximum star mass  \t= %.3f M_sol"%(starMassMax))
-
-
 
     # 2. construct IMF from starMassMin to starMassMax with imfBins and imfIndex
 
@@ -371,7 +351,7 @@ def generate_SED_stars_IMF(haloMass, redshift, eLow=10.4, eHigh=1.e4, N=1000,  l
 
 
     return energies, intensities
- 
+
 
 # -----------------------------------------------------------------
 # SED for a power-law (QSO) source and stars (IMF)
@@ -443,7 +423,6 @@ def generate_SED_IMF_PL(haloMass, redshift, eLow=10.4, eHigh=1.e4, N=2000,  logG
     else:
         print('WARNING: cannot add intensities of PL and IMF, because energy arrays don\'t match!')
         exit(1)
-
 
 # -----------------------------------------------------------------
 # Simple SEDs in functional form

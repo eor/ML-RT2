@@ -7,14 +7,13 @@ class CRT:
     Cosmological radiative transfer equations based on Fukugita and Kawasaki 1994:
     "Reheating during Hierarchical Clustering in the Universe Dominated by
     the Cold Dark Matter"
-
     """
 
     def __init__(self):
         pass
 
     def pde(self, x, t, u_approximation):
-        u = u_approximation(x, t)
+        u = u_approximation(x, r)
 
         return pde
 

@@ -90,6 +90,7 @@ def evaluate(model):
     pt_x = Variable(torch.from_numpy(x).float(), requires_grad=True).to(device)
     pt_t = Variable(torch.from_numpy(t).float(), requires_grad=True).to(device)
     pt_u = model(pt_x, pt_t)
+
     u = pt_u.data.cpu().numpy()
     ms_u = u.reshape(ms_x.shape)
 

@@ -59,5 +59,3 @@ p8_names_latex.append('\\epsilon_{\mathrm{QSO}}')
 p8_names_latex.append('f_{\mathrm{esc,\\ast}}')
 p8_names_latex.append('\\alpha_{\mathrm{IMF,\\ast}}')
 p8_names_latex.append('\log_{10}{\mathrm{M}_{\mathrm{min}, \\ast}}')
-
-
