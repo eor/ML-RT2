@@ -15,6 +15,10 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
+from common.soft_dtw_cuda import SoftDTW as SoftDTW_CUDA
+from common.soft_dtw import SoftDTW as SoftDTW_CPU
+import common.settings_parameters as ps
+
 # check for CUDA
 if torch.cuda.is_available():
     cuda = True
@@ -25,26 +29,26 @@ else:
     device = torch.device("cpu")
     torch.set_default_tensor_type(torch.FloatTensor)
 
-# # -----------------------------------------------------------------
-# #  Test Metric
-# # -----------------------------------------------------------------
-# if cuda:
-#     soft_dtw_loss = SoftDTW_CUDA(use_cuda=True, gamma=0.1)
-# else:
-#     soft_dtw_loss = SoftDTW_CPU(use_cuda=False, gamma=0.1)
-#
-#
-# def pinn_test_metric(func, gen_x, real_x, config):
-#     if func == 'DTW':
-#         # profile tensors are of shape [batch size, profile length]
-#         # soft dtw wants input of shape [batch size, 1, profile length]
-#         if len(gen_x.size()) != 3:
-#             loss = soft_dtw_loss(gen_x.unsqueeze(1), real_x.unsqueeze(1)).mean()
-#         else:
-#             loss = soft_dtw_loss(gen_x, real_x).mean()
-#     else:
-#         loss = F.mse_loss(input=gen_x, target=real_x, reduction='mean')
-#     return loss
+# -----------------------------------------------------------------
+#  Test Metric
+# -----------------------------------------------------------------
+if cuda:
+    soft_dtw_loss = SoftDTW_CUDA(use_cuda=True, gamma=0.1)
+else:
+    soft_dtw_loss = SoftDTW_CPU(use_cuda=False, gamma=0.1)
+
+
+def pinn_test_metric(func, gen_x, real_x, config):
+    if func == 'DTW':
+        # profile tensors are of shape [batch size, profile length]
+        # soft dtw wants input of shape [batch size, 1, profile length]
+        if len(gen_x.size()) != 3:
+            loss = soft_dtw_loss(gen_x.unsqueeze(1), real_x.unsqueeze(1)).mean()
+        else:
+            loss = soft_dtw_loss(gen_x, real_x).mean()
+    else:
+        loss = F.mse_loss(input=gen_x, target=real_x, reduction='mean')
+    return loss
 
 
 def generate_data_boundary_conditions(config):
@@ -86,6 +90,7 @@ def evaluate(model):
     pt_x = Variable(torch.from_numpy(x).float(), requires_grad=True).to(device)
     pt_t = Variable(torch.from_numpy(t).float(), requires_grad=True).to(device)
     pt_u = model(pt_x, pt_t)
+
     u = pt_u.data.cpu().numpy()
     ms_u = u.reshape(ms_x.shape)
 
