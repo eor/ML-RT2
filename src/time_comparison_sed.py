@@ -63,6 +63,5 @@ for mass in haloMasses:
                     starMassMin=5, starMassMax=500, imfBins=100, imfIndex=2.35, fEsc=0.1,
                     alpha=1.0, qsoEfficiency=0.1,
                     targetSourceAge=10.0)
-        print(I1)
-        print(I2)
-        print('For haloMass=%f redShift=%f, RMSE energy array %f and RMSE intensity array %f'%(mass, rs, np.mean(E1!=E2), np.sum(energies_IMF-energies_PL)))
+
+        print('For haloMass=%f redShift=%f, test passed: %r'%(mass, rs, np.allclose(E1,E2,rtol=1.e-3) and np.allclose(I1,I2,rtol=1.e-3)))
