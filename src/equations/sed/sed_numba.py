@@ -9,7 +9,7 @@ from numba import jit, jit_module
 c = 299792458.0
 c_cgi = 29979245800.0
 h_eV = 4.135667662e-15
-k_BeV = 4.135667662e-15
+k_BeV = 8.617333262e-05
 sigmaSB = 5.670374419e-08   # here: 5.670367e-08 W m^-2 K^-4
 
 # -----------------------------------------------------------------
@@ -101,7 +101,10 @@ def compute_stellar_mass(haloMass, redshift, verbose=False ):
 
 def SED_black_body(E, T):
     expo = E / (k_BeV * T)
-    return (2.0 * m.pi / (c_cgi * c_cgi * h_eV * h_eV)) * (E * E * E) / (m.exp(expo) - 1.)
+    try:
+        return (2.0 * m.pi / (c_cgi * c_cgi * h_eV * h_eV)) * (E * E * E) / (m.exp(expo) - 1.)
+    except:
+        return 1e-300
 
 # -----------------------------------------------------------------
 # Simple SEDs in functional form
@@ -109,20 +112,36 @@ def SED_black_body(E, T):
 def SED_power_law(E, alpha):
     return m.pow(E, -alpha)
 
-def write_data(fileName, energies, intensities):
+def simpson(y,x):
+    n = len(y)-1
+    h = np.zeros(n)
+    for i in range(n):
+        h[i] = x[i+1]-x[i]
+        if h[i] == 0:
+            np.delete(h,i)
+            np.delete(y,i)
+    n = len(h)-1
+    s = 0
+    for i in range(1,n,2):
+        a = h[i]*h[i]
+        b = h[i]*h[i-1]
+        c = h[i-1]*h[i-1]
+        d = h[i] + h[i-1]
+        alpha = (2*a+b-c)/h[i]
+        beta  = d*d*d/b
+        gamma = (-a+b+2*c)/h[i-1]
+        s += alpha*y[i+1]+beta*y[i]+gamma*y[i-1]
 
-    with open(fileName, 'w') as f:
-        f.write('# Energy [eV]  TOTAL [eV/s/eV]\n')
-        N = len(energies)
-        for i in range(0, N):
-            f.write('%e\t%e\n'%(energies[i], intensities[i]) )
+    if ((n+1)%2 == 0):
+        alpha = h[n-1]*(3-h[n-1]/(h[n-1]+h[n-2]))
+        beta = h[n-1]*(3+h[n-1]/h[n-2])
+        gamma = -h[n-1]*h[n-1]*h[n-1]/(h[n-2]*(h[n-1]+h[n-2]))
+        return (s+alpha*y[n]+beta*y[n-1]+gamma*y[n-2])/6
+    else:
+        return s/6
 
-def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
-    return 10.0
 
-
-# @jit("types.Tuple(f8[:],f8[:])(i8,f8,f8,unicode_type,i8,b1,f8)")
-def generate_SED_single_pop3(starMass=100, eHigh=1.e4, eLow=10.4, fileName="", N=1000, logGrid=False, fEsc=0.1):
+def generate_SED_single_pop3(starMass=100, eHigh=1.e4, eLow=10.4, N=1000, logGrid=False, fEsc=0.1):
     starM = starMass
     starT = 10**(np.interp(starM, pop3M[::-1], pop3T[::-1]))
     starL = 10**(np.interp(starM, pop3M[::-1], pop3L[::-1]))
@@ -134,11 +153,11 @@ def generate_SED_single_pop3(starMass=100, eHigh=1.e4, eLow=10.4, fileName="", N
     # 1. SET UP GRIDS
     energies    = np.array([eHigh])
     intensities = np.array([SED_black_body(energies[0],starT)])
-
     # fill energies array
     if(logGrid):
         # create energies along a logarithmic grid, so that eHigh *C**(N-1) = eLow
         C = m.pow(eLow/eHigh,1./(N-1))
+
         for i in range(1,N):
             eTmp = energies[i-1]*C
             energies = np.append(energies, eTmp)
@@ -148,8 +167,12 @@ def generate_SED_single_pop3(starMass=100, eHigh=1.e4, eLow=10.4, fileName="", N
         for i in range(1,N):
             eTmp = energies[i-1]+C
             energies = np.append(energies, eTmp)
-            tmpI = SED_black_body(eTmp, starT)
-            intensities = np.append(intensities, tmpI)
+
+    # let's compute some intensities
+    for i in range(1,N):
+        tmpE = energies[i]
+        tmpI = SED_black_body(tmpE, starT)
+        intensities = np.append( intensities, tmpI )
 
     # 2. NORMALIZATION
     # integrate to obtain total energy (normalize)
@@ -161,8 +184,7 @@ def generate_SED_single_pop3(starMass=100, eHigh=1.e4, eLow=10.4, fileName="", N
         energiesLog = np.append(energiesLog, m.log(eTmp) )
         sed4Norm    = np.append(sed4Norm, intensities[i]*eTmp)    # log integration trick
 
-    integral = simpson(sed4Norm[::-1], energiesLog[::-1], even='avg') # energies should be increasing in value, or else the result can be negative
-
+    integral = simpson(sed4Norm[::-1], energiesLog[::-1]) # energies should be increasing in value, or else the result can be negative
     G = (starL*3.828e26/1.6022e-19)/integral
 
     intensities *= G
@@ -173,17 +195,11 @@ def generate_SED_single_pop3(starMass=100, eHigh=1.e4, eLow=10.4, fileName="", N
         energies = energies[::-1]
         intensities = intensities[::-1]
 
-    # 3. WRITE DATA
-    # if fileName != "":
-        # write_data(fileName, energies, intensities)
-        # pass
-
     return energies, intensities
 
 
 def generate_SED_stars_IMF(haloMass, redshift, eLow=10.4, eHigh=1.e4, N=1000,  logGrid=False,
-                           starMassMin=5, starMassMax=500, imfBins=100, imfIndex=2.35, targetSourceAge=10.,fEsc = 0.1,
-                           fileName="", redux=True):
+                           starMassMin=5, starMassMax=500, imfBins=100, imfIndex=2.35, targetSourceAge=10.,fEsc = 0.1, redux=True):
 
     # 0. set up computing grids just like in the other functions
     energies = np.array([0.0])
@@ -211,7 +227,7 @@ def generate_SED_stars_IMF(haloMass, redshift, eLow=10.4, eHigh=1.e4, N=1000,  l
 
     for i in range(0, imfBins):
 
-        energiesTmp, intensitiesTmp = generate_SED_single_pop3(starMass=cBin[i], eHigh=eHigh, eLow=eLow, fileName=None, N=N, logGrid=logGrid, fEsc=fEsc)
+        energiesTmp, intensitiesTmp = generate_SED_single_pop3(starMass=cBin[i], eHigh=eHigh, eLow=eLow, N=N, logGrid=logGrid, fEsc=fEsc)
         if(i==0):
             energies = energiesTmp
             if (redux and tMSList[i]<targetSourceAge):
@@ -233,17 +249,12 @@ def generate_SED_stars_IMF(haloMass, redshift, eLow=10.4, eHigh=1.e4, N=1000,  l
         energies    = energies[::-1]
         intensities = intensities[::-1]
 
-    # 3. WRITE DATA
-    # if fileName != "":
-    #     write_data(fileName, energies, intensities)
-    #     pass
-
     return energies, intensities
 
 # -----------------------------------------------------------------
 # SED for a pure power-law (QSO) source
 # -----------------------------------------------------------------
-def generate_SED_PL(haloMass, eHigh=1.e4, eLow=10.4, fileName="", alpha=1.0, N=1.e4, logGrid=False, qsoEfficiency=1.0):
+def generate_SED_PL(haloMass, eHigh=1.e4, eLow=10.4, alpha=1.0, N=1.e4, logGrid=False, qsoEfficiency=1.0):
 
     # energies should be in increasing order
     if(eHigh<eLow):
@@ -260,6 +271,8 @@ def generate_SED_PL(haloMass, eHigh=1.e4, eLow=10.4, fileName="", alpha=1.0, N=1
         for i in range(1,N):
             eTmp = energies[i-1]*C
             energies = np.append(energies, eTmp)
+            tmpI = SED_power_law(eTmp, alpha)
+            intensities = np.append(intensities, tmpI)
     else:
         # create a grid of energies, so that eHigh + C*(N-1) = eLow
         C = (eHigh-eLow)/(N-1.)
@@ -282,8 +295,7 @@ def generate_SED_PL(haloMass, eHigh=1.e4, eLow=10.4, fileName="", alpha=1.0, N=1
         energiesLog = np.append(energiesLog, m.log(eTmp) )
         sed4Norm    = np.append(sed4Norm, intensities[i]*eTmp)    # log integration trick
 
-    integral = simpson(sed4Norm, energiesLog, even='avg') # energies should be increasing in value, or else the result can be negative
-
+    integral = simpson(sed4Norm, energiesLog) # energies should be increasing in value, or else the result can be negative
     A = (qsoEfficiency*eddLum)/integral
 
     intensities *= A
@@ -293,19 +305,13 @@ def generate_SED_PL(haloMass, eHigh=1.e4, eLow=10.4, fileName="", alpha=1.0, N=1
         energies = energies[::-1]
         intensities = intensities[::-1]
 
-    # # 3. WRITE DATA
-    # if fileName != "":
-    #     write_data(fileName, energies, intensities)
-    #     pass
-
     return energies, intensities
 
 def generate_SED_IMF_PL(haloMass, redshift,
                         eLow=10.4, eHigh=1.e4, N=2000,  logGrid=True,
                         starMassMin=5, starMassMax=500, imfBins=100, imfIndex=2.35, fEsc=0.1,
                         alpha=1.0, qsoEfficiency=0.1,
-                        targetSourceAge=10.0,
-                        fileName=""):
+                        targetSourceAge=10.0):
 
     energies_IMF, intensities_IMF = generate_SED_stars_IMF(haloMass,
                                         redshift,
@@ -318,17 +324,15 @@ def generate_SED_IMF_PL(haloMass, redshift,
                                         targetSourceAge=targetSourceAge,
                                         fEsc=fEsc,
                                         imfBins=imfBins,
-                                        imfIndex=imfIndex,
-                                        fileName="")
+                                        imfIndex=imfIndex)
+
     energies_PL, intensities_PL = generate_SED_PL(haloMass,
                                                   eHigh=eHigh,
                                                   eLow=eLow,
-                                                  fileName="",
                                                   alpha=alpha,
                                                   N=N,
                                                   logGrid=logGrid,
-                                                  qsoEfficiency=qsoEfficiency,
-                                                  )
+                                                  qsoEfficiency=qsoEfficiency)
 
     # sort energies if they are descending
     if energies_IMF[0]>energies_IMF[-1]:
@@ -344,14 +348,8 @@ def generate_SED_IMF_PL(haloMass, redshift,
         intensities = intensities_IMF + intensities_PL
         energies    = energies_IMF
 
-        # # write data
-        # if(fileName):
-        #     write_data(fileName, energies, intensities)
-
         return energies, intensities
-
     else:
         raise ValueError
 
-    return energies_IMF, intensities_IMF
-jit_module(nopython=True, error_model="numpy")
+jit_module(nopython=True, cache=True, error_model="numpy")

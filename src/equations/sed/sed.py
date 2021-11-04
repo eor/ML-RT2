@@ -137,6 +137,7 @@ def generate_SED_PL(haloMass, eHigh=1.e4, eLow=10.4, fileName=None, alpha=1.0, N
         sed4Norm    = np.append(sed4Norm, intensities[i]*eTmp)      # log integration trick
 
     integral = integrate.simps(sed4Norm, energiesLog, even='avg')   # this scipy function wants the arguments (y,x, even=...)
+
     #print "Normalizing SED: %e"%(integral/(eHigh-eLow))
     A = (qsoEfficiency*eddLum)/integral
 
@@ -163,7 +164,6 @@ def generate_SED_single_pop3(starMass=100, eHigh=1.e4, eLow=10.4, fileName=None,
     starM = starMass
     starT = 10**(np.interp(starM, pop3M[::-1], pop3T[::-1]))
     starL = 10**(np.interp(starM, pop3M[::-1], pop3L[::-1]))
-
     #print "Generating SED for one black-body-like source: M=%e\tL=%e\tT=%e"%(starM, starL, starT)
 
     # 0. SANITY CHECKS
@@ -211,9 +211,10 @@ def generate_SED_single_pop3(starMass=100, eHigh=1.e4, eLow=10.4, fileName=None,
         sed4Norm    = np.append(sed4Norm, intensities[i]*eTmp)    # log integration trick
 
     integral = integrate.simps(sed4Norm[::-1], energiesLog[::-1], even='avg') # energies should be increasing in value, or else the result can be negative
+    # print(integral)
 
     G = (starL*3.828e26/1.6022e-19)/(integral)
-
+    # print(G)
     intensities *= G
     intensities *= fEsc
 
@@ -434,9 +435,10 @@ def SED_power_law(E, alpha):
 def SED_black_body(E, T):
 
     expo = E / (k_BeV * T)
+
     try:
         return (2.0 * m.pi / (c_cgi * c_cgi * h_eV * h_eV        )) * (E * E * E) / (m.exp(expo) - 1.)
-    except OverflowError:
+    except:
         return 1e-300
         # for expo > 709, result of m.exp() is too large for python float (= C double)
 
