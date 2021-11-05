@@ -12,8 +12,11 @@ class CRT:
     def __init__(self):
         pass
 
-    def pde(self, x, t, u_approximation):
-        u = u_approximation(x, r)
+    def ode(self, t, u_approximation):
+        u = u_approximation(x, t)
+
+        # TODO: fix this
+        # TODO: code up equations, add necessary heating and ionisation rates to the physics module
 
         return pde
 
@@ -23,11 +26,11 @@ class CRT:
         alpha_H_II = 0.0  # recombination H_II
         ionisation_rate_H_I = 0.0  # calculate that big integral (A.6)
 
-        dxHII_dt = torch.autograd.grad(x_H_II.sum(), t, create_graph=True)[0]
+        d_xHII_dt = torch.autograd.grad(x_H_II.sum(), t, create_graph=True)[0]
         term1 = torch.multiply(ionisation_rate_H_I, x_H_I)
         term2 = torch.multiply(alpha_H_II, torch.divide(torch.square(n_e), n_H))
 
-        return dxHII_dt - term1 + term2
+        return d_xHII_dt - term1 + term2
 
     def get_x_He_II_loss(self, x_He_I, x_He_II, x_He_III, t):
         n_e = 0.0  # electron number density
@@ -39,7 +42,7 @@ class CRT:
 
         ionisation_rate_He_I = 0.0  # calculate that big integral (A.7)
 
-        dxHeII_dt = torch.autograd.grad(x_He_II.sum(), t, create_graph=True)[0]
+        d_xHeII_dt = torch.autograd.grad(x_He_II.sum(), t, create_graph=True)[0]
         term1 = torch.multiply(ionisation_rate_He_I, x_He_I)
         term2 = torch.multiply(beta_He_I, torch.multiply(n_e, x_He_I))
         term3 = torch.multiply(beta_He_II, torch.multiply(n_e, x_He_II))
@@ -47,7 +50,7 @@ class CRT:
         term5 = torch.multiply(alpha_He_III, torch.multiply(n_e, x_He_III))
         term6 = torch.multiply(Xi_He_II, torch.multiply(n_e, x_He_II))
 
-        return dxHeII_dt - term1 - term2 + term3 + term4 - term5 + term6
+        return d_xHeII_dt - term1 - term2 + term3 + term4 - term5 + term6
 
     def get_x_He_III_loss(self, x_He_I, x_He_II, x_He_III, t):
         n_e = 0.0  # electron number density
@@ -56,11 +59,15 @@ class CRT:
 
         ionisation_rate_He_II = 0.0  # calculate that big integral (A.8)
 
-        dxHeIII_dt = torch.autograd.grad(x_He_III.sum(), t, create_graph=True)[0]
+        d_xHeIII_dt = torch.autograd.grad(x_He_III.sum(), t, create_graph=True)[0]
         term1 = torch.multiply(ionisation_rate_He_II, x_He_II)
         term2 = torch.multiply(beta_He_II, torch.multiply(n_e, x_He_II))
         term3 = torch.multiply(alpha_He_III, torch.multiply(n_e, x_He_III))
 
-        return dxHeIII_dt - term1 - term2 + term3
+        return d_xHeIII_dt - term1 - term2 + term3
 
-    def get_temprature_loss(self):
+    def get_temperature_loss(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III, t):
+
+        return 4
+
+
