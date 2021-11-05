@@ -17,7 +17,7 @@ class CRT:
 
         return pde
 
-    def get_H_II_loss(self, x_H_I, x_H_II, t):
+    def get_x_H_II_loss(self, x_H_I, x_H_II, t):
         n_H = 0.0  # hydrogen density
         n_e = 0.0  # electron number density
         alpha_H_II = 0.0  # recombination H_II
@@ -29,7 +29,7 @@ class CRT:
 
         return dxHII_dt - term1 + term2
 
-    def get_He_II_loss(self, x_He_I, x_He_II, x_He_III, t):
+    def get_x_He_II_loss(self, x_He_I, x_He_II, x_He_III, t):
         n_e = 0.0  # electron number density
         beta_He_I = 0.0  # collision ionisation
         beta_He_II = 0.0  # collision ionisation
@@ -49,7 +49,7 @@ class CRT:
 
         return dxHeII_dt - term1 - term2 + term3 + term4 - term5 + term6
 
-    def get_He_III_loss(self, x_He_I, x_He_II, x_He_III, t):
+    def get_x_He_III_loss(self, x_He_I, x_He_II, x_He_III, t):
         n_e = 0.0  # electron number density
         alpha_He_III = 0.0  # recombination He_III
         beta_He_II = 0.0  # collision ionisation
@@ -63,4 +63,4 @@ class CRT:
 
         return dxHeIII_dt - term1 - term2 + term3
 
-    def get_temprature(self):
+    def get_temprature_loss(self):
