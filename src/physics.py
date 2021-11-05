@@ -9,7 +9,7 @@ IONIZATION_ENERGY_HELIUM2 = 54.4228       # unit is eV
 def physics_ionisation_cross_section_hydrogen(photon_energy):
     """
     Takes in photon energy in eV, returns hydrogen ionisation cross-section
-    for the transition n=1 --> free.
+    for the transition n=1 --> free. Return unit is cm^2.
     Based on Fukugita, M. & Kawasaki, M. 1994, MNRAS 269, 563, equation B13
     """
 
@@ -30,7 +30,7 @@ def physics_ionisation_cross_section_hydrogen(photon_energy):
 # def physics_ionisation_cross_section_hydrogen2(photon_energy):
 #     """
 #     Takes in photon energy in EV, returns hydrogen ionisation cross-section
-#     for the transition n=2 --> free.
+#     for the transition n=2 --> free. Return unit is cm^2.
 #     Based on Fukugita, M. & Kawasaki, M. 1994, MNRAS 269, 563, equation B14
 #     """
 #
@@ -55,7 +55,7 @@ def physics_ionisation_cross_section_hydrogen(photon_energy):
 def physics_ionisation_cross_section_helium1(photon_energy):
     """
     Takes in photon energy in eV, returns helium ionisation cross-section
-    for the first ionisation of the first electron
+    for the first ionisation of the first electron. Return unit is cm^2.
     Based on Fukugita, M. & Kawasaki, M. 1994, MNRAS 269, 563, equation B15
     """
 
@@ -72,11 +72,10 @@ def physics_ionisation_cross_section_helium1(photon_energy):
     return sigma
 
 
-
 def physics_ionisation_cross_section_helium2(photon_energy):
     """
     Takes in photon energy in eV, returns helium ionisation cross-section
-    for the first ionisation of the first electron
+    for the first ionisation of the first electron. Return unit is cm^2.
     Based on Fukugita, M. & Kawasaki, M. 1994, MNRAS 269, 563, equation B16
     """
 
