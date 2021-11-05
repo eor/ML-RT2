@@ -85,7 +85,7 @@ pop3M[12], pop3L[12], pop3T[12]  =      5.,   2.870,   4.440
 # -----------------------------------------------------------------
 # SED for a pure power-law (QSO) source
 # -----------------------------------------------------------------
-def generate_SED_PL(haloMass, eHigh=1.e4, eLow=10.4, fileName=None, alpha=1.0, N=10000, logGrid=False, qsoEfficiency=1.0, silent=False):
+def generate_SED_PL(haloMass, eHigh=1.e4, eLow=10.4, fileName=None, alpha=1.0, N=10000, logGrid=False, qsoEfficiency=1.0, silent=True):
 
     # 0. SANITY CHECKS
     # we assume that energies will be given in eV
@@ -137,7 +137,7 @@ def generate_SED_PL(haloMass, eHigh=1.e4, eLow=10.4, fileName=None, alpha=1.0, N
         sed4Norm    = np.append(sed4Norm, intensities[i]*eTmp)      # log integration trick
 
     integral = integrate.simps(sed4Norm, energiesLog, even='avg')   # this scipy function wants the arguments (y,x, even=...)
-    print(integral)
+
     #print "Normalizing SED: %e"%(integral/(eHigh-eLow))
     A = (qsoEfficiency*eddLum)/integral
 
@@ -164,7 +164,6 @@ def generate_SED_single_pop3(starMass=100, eHigh=1.e4, eLow=10.4, fileName=None,
     starM = starMass
     starT = 10**(np.interp(starM, pop3M[::-1], pop3T[::-1]))
     starL = 10**(np.interp(starM, pop3M[::-1], pop3L[::-1]))
-
     #print "Generating SED for one black-body-like source: M=%e\tL=%e\tT=%e"%(starM, starL, starT)
 
     # 0. SANITY CHECKS
@@ -212,9 +211,10 @@ def generate_SED_single_pop3(starMass=100, eHigh=1.e4, eLow=10.4, fileName=None,
         sed4Norm    = np.append(sed4Norm, intensities[i]*eTmp)    # log integration trick
 
     integral = integrate.simps(sed4Norm[::-1], energiesLog[::-1], even='avg') # energies should be increasing in value, or else the result can be negative
+    # print(integral)
 
     G = (starL*3.828e26/1.6022e-19)/(integral)
-
+    # print(G)
     intensities *= G
     intensities *= fEsc
 
@@ -246,12 +246,12 @@ def generate_SED_stars_BB(haloMass, redshift, starMass=100, eHigh=1.e4, eLow=10.
 
     numStars = totalStellarMass/float(starMass)
 
-    print("------------------------------------------------------------------------------------")
-    print("Generating SED for a halo containing black-body-like sources:")
-    print("\tRedshift \t\t= %.3f"%(redshift))
-    print("\tHost halo mass \t\t= %e M_sol"%(haloMass))
-    print("\tTotal stellar mass \t= %e M_sol"%(totalStellarMass))
-    print("\tNumber of stars\t\t= %e"%(numStars))
+    # print("------------------------------------------------------------------------------------")
+    # print("Generating SED for a halo containing black-body-like sources:")
+    # print("\tRedshift \t\t= %.3f"%(redshift))
+    # print("\tHost halo mass \t\t= %e M_sol"%(haloMass))
+    # print("\tTotal stellar mass \t= %e M_sol"%(totalStellarMass))
+    # print("\tNumber of stars\t\t= %e"%(numStars))
 
     energies, intensitiesTmp = generate_SED_single_pop3(starMass=starMass, eHigh=eHigh, eLow=eLow, fileName=None, N=N, logGrid=logGrid, fEsc=fEsc)
     intensities = numStars * intensitiesTmp
@@ -362,14 +362,14 @@ def generate_SED_IMF_PL(haloMass, redshift, eLow=10.4, eHigh=1.e4, N=2000,  logG
                         targetSourceAge=10.0,
                         fileName=None):
 
-
-    print("------------------------------------------------------------------------------------")
-    print("Generating SED for a halo featuring IMF and PL-type sources:")
-    print("\tRedshift \t\t= %.3f"%(redshift))
-    print("\tHost halo mass \t\t= %e M_sol"%(haloMass))
-    print("\tPL index \t= %.3f "%(alpha))
-    print("\tMinimum star mass  \t= %.3f M_sol"%(starMassMin))
-    print("\tMaximum star mass  \t= %.3f M_sol"%(starMassMax))
+    #
+    # print("------------------------------------------------------------------------------------")
+    # print("Generating SED for a halo featuring IMF and PL-type sources:")
+    # print("\tRedshift \t\t= %.3f"%(redshift))
+    # print("\tHost halo mass \t\t= %e M_sol"%(haloMass))
+    # print("\tPL index \t= %.3f "%(alpha))
+    # print("\tMinimum star mass  \t= %.3f M_sol"%(starMassMin))
+    # print("\tMaximum star mass  \t= %.3f M_sol"%(starMassMax))
 
     energies_IMF, intensities_IMF = generate_SED_stars_IMF(haloMass,
                                                            redshift,
@@ -435,9 +435,10 @@ def SED_power_law(E, alpha):
 def SED_black_body(E, T):
 
     expo = E / (k_BeV * T)
+
     try:
         return (2.0 * m.pi / (c_cgi * c_cgi * h_eV * h_eV        )) * (E * E * E) / (m.exp(expo) - 1.)
-    except OverflowError:
+    except:
         return 1e-300
         # for expo > 709, result of m.exp() is too large for python float (= C double)
 
