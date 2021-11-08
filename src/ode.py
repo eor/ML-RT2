@@ -11,13 +11,13 @@ class ODE:
     def __init__(self):
         pass
 
-    def ode(self, t, u_approximation):
-        u = u_approximation(x, t)
+    def compute_ode_residual(self, sed_vector, state_vector, u_approximation):
+        u = u_approximation(sed_vector, state_vector)
 
         # TODO: fix this
         # TODO: code up equations, add necessary heating and ionisation rates to the physics module
-
-        return pde
+        # TODO: compute residual and pass it to the network
+        return u
 
     def get_x_H_II_loss(self, x_H_I, x_H_II, t):
         n_H = 0.0  # hydrogen density
@@ -68,5 +68,3 @@ class ODE:
     def get_temperature_loss(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III, t):
 
         return 4
-
-

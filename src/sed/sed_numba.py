@@ -112,7 +112,11 @@ def SED_black_body(E, T):
 def SED_power_law(E, alpha):
     return m.pow(E, -alpha)
 
+# -----------------------------------------------------------------
+# Simplified version of simpsons intergation
+# -----------------------------------------------------------------
 def simpson(y,x):
+    # source: https://masonstoecker.com/2021/04/03/Simpson-and-Numba.html
     n = len(y)-1
     h = np.zeros(n)
     for i in range(n):
