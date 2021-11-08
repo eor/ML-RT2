@@ -22,11 +22,92 @@ else:
     device = torch.device("cpu")
     torch.set_default_tensor_type(torch.FloatTensor)
 
+def generate_training_data(config):
+    train_set_size = config.train_set_size
+
+    # TODO: sample state vector
+    state_vector = None
+    # TODO: sample SED vector
+    sed_vector = None
+    # TODO: generate target labels
+    u_actual = None
+    return state_vector, sed_vector, u_actual
+
+
+
 # -----------------------------------------------------------------
 #  Main
 # -----------------------------------------------------------------
 def main(config):
-    print('Hi!')
+    # -----------------------------------------------------------------
+    # create unique output path and run directories, save config
+    # -----------------------------------------------------------------
+    run_id = 'run_' + utils_get_current_timestamp()
+    config.out_dir = os.path.join(config.out_dir, run_id)
+
+    # utils_create_run_directories(config.out_dir, DATA_PRODUCTS_DIR, PLOT_DIR)
+    utils_save_config_to_log(config)
+    utils_save_config_to_file(config)
+
+    # data_products_path = os.path.join(config.out_dir, DATA_PRODUCTS_DIR)
+    # plot_path = os.path.join(config.out_dir, PLOT_DIR)
+
+    u_approximation = MLP1(config)
+
+    if cuda:
+        model.cuda()
+
+    # -----------------------------------------------------------------
+    # Optimizers
+    # -----------------------------------------------------------------
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=config.lr,
+        betas=(config.b1, config.b2)
+    )
+
+    # -----------------------------------------------------------------
+    # book keeping arrays
+    # -----------------------------------------------------------------
+    train_loss_array = np.empty(0)
+    val_loss_mse_array = np.empty(0)
+    val_loss_dtw_array = np.empty(0)
+
+    print("\033[96m\033[1m\nTraining starts now\033[0m")
+    for epoch in range(1, config.n_epochs + 1):
+        # TODO: look for boundary conditions???
+
+        x_SED, x_state_vector, u_actual = generate_training_data(config)
+
+        # TODO: figure out: for what inputs do we need to set requires_grad=True
+        x_SED = Variable(torch.from_numpy(x_SED).float(), requires_grad=False).to(device)
+        x_state_vector = Variable(torch.from_numpy(x_state_vector).float(), requires_grad=False).to(device)
+        u_actual = Variable(torch.from_numpy(u_actual).float(), requires_grad=False).to(device)
+
+        # Loss based on CRT ODEs
+        u_prediction = u_approximation(x_SED, x_state_vector)
+        loss_ode = F.mse_loss(input=u_actual, target=u_prediction, reduction='mean')
+
+        # compute the gradients
+        loss_ode.backward()
+        # update the parameters
+        optimizer.step()
+        # make the gradients zero
+        optimizer.zero_grad()
+        train_loss_array = np.append(train_loss_array, loss_ode.item())
+
+        print("[Epoch %d/%d] [Train loss MSE: %e]"
+                    % (epoch, config.n_epochs, train_loss))
+
+        # TODO: find a criteria to select the best model --- validation ---????
+        # TODO: copy the best model based on validation....
+
+    print("\033[96m\033[1m\nTraining complete\033[0m\n")
+
+    # TODO: Save best model and loss functions
+    # TODO: add final results to config and rewrite the actual file
+    # TODO: plot loss functions
+    # TODO: analysis
 
 
 if __name__ == "__main__":
