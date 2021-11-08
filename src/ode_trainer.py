@@ -13,7 +13,7 @@ from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
 from common.utils import *
 from sed import sed_numba
 from models import *
-
+from crt_equations import *
 
 # check for CUDA
 if torch.cuda.is_available():
@@ -85,10 +85,14 @@ def main(config):
     # data_products_path = os.path.join(config.out_dir, DATA_PRODUCTS_DIR)
     # plot_path = os.path.join(config.out_dir, PLOT_DIR)
 
+    # initialise the model
     u_approximation = MLP1(config)
 
     if cuda:
         model.cuda()
+
+    # initialise the CRT equation
+    ode_equation = CRT()
 
     # -----------------------------------------------------------------
     # Optimizers
@@ -110,16 +114,16 @@ def main(config):
     for epoch in range(1, config.n_epochs + 1):
         # TODO: look for boundary conditions???
 
-        x_SED, x_state_vector, u_actual = generate_training_data(config)
+        x_SED, x_state_vector, target_residual = generate_training_data(config)
 
         # TODO: figure out: for what inputs do we need to set requires_grad=True
         x_SED = Variable(torch.from_numpy(x_SED).float(), requires_grad=False).to(device)
         x_state_vector = Variable(torch.from_numpy(x_state_vector).float(), requires_grad=False).to(device)
-        u_actual = Variable(torch.from_numpy(u_actual).float(), requires_grad=False).to(device)
+        target_residual = Variable(torch.from_numpy(target_residual).float(), requires_grad=False).to(device)
 
         # Loss based on CRT ODEs
-        u_prediction = u_approximation(x_SED, x_state_vector)
-        loss_ode = F.mse_loss(input=u_actual, target=u_prediction, reduction='mean')
+        residual = ode_equation.compute_ode_residual(u_approximation)
+        loss_ode = F.mse_loss(input=residual, target=target_residual, reduction='mean')
 
         # compute the gradients
         loss_ode.backward()

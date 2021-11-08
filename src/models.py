@@ -40,9 +40,9 @@ class MLP1(nn.Module):
     # Input:
     # x_SED: shape (batch_size, len_SED_input): vector representing spectral energy distribution of our source
     # x_state_vector: shape (batch_size, len_state_vector): vector representing state (Xi, T, tau, t)
-    def forward(self, x_SED, x_state_vector):
+    def forward(self, x_sed_vector, x_state_vector):
 
-        latent_vector = self.NN_IE(x_SED)
+        latent_vector = self.NN_IE(x_sed_vector)
         # combine x_SED with latent_vector
         input_NN = torch.cat((x_state_vector, latent_vector), axis=1)
         out = self.NN(input_NN)

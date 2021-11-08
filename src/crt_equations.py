@@ -12,8 +12,8 @@ class CRT:
     def __init__(self):
         pass
 
-    def ode(self, t, u_approximation):
-        u = u_approximation(x, t)
+    def compute_ode_residual(self, sed_vector, state_vector, u_approximation):
+        u = u_approximation(sed_vector, state_vector)
 
         # TODO: fix this
         # TODO: code up equations, add necessary heating and ionisation rates to the physics module
@@ -69,5 +69,3 @@ class CRT:
     def get_temperature_loss(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III, t):
 
         return 4
-
-
