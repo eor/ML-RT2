@@ -13,7 +13,7 @@ from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
 from common.utils import *
 from sed import sed_numba
 from models import *
-from crt_equations import *
+from ode import *
 
 # check for CUDA
 if torch.cuda.is_available():
@@ -89,8 +89,8 @@ def main(config):
     if cuda:
         model.cuda()
 
-    # initialise the CRT equation
-    ode_equation = CRT()
+    # initialise the ODE equation
+    ode_equation = ODE()
 
     # -----------------------------------------------------------------
     # Optimizers
@@ -110,8 +110,8 @@ def main(config):
 
     print("\033[96m\033[1m\nTraining starts now\033[0m")
     for epoch in range(1, config.n_epochs + 1):
-        # TODO: look for boundary conditions???
 
+        # TODO: look for boundary conditions???
         x_SED, x_state_vector, target_residual = generate_training_data(config)
 
         # TODO: figure out: for what inputs do we need to set requires_grad=True
