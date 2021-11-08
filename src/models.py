@@ -19,6 +19,7 @@ class MLP1(nn.Module):
 
         self.NN_IE = nn.Sequential(
             *block(conf.len_SED_input, 512, normalise=False, dropout=False),
+            *block(512, 256),
             *block(256, 128),
             *block(128, 64),
             *block(64, 16),
@@ -41,10 +42,9 @@ class MLP1(nn.Module):
     # x_SED: shape (batch_size, len_SED_input): vector representing spectral energy distribution of our source
     # x_state_vector: shape (batch_size, len_state_vector): vector representing state (Xi, T, tau, t)
     def forward(self, x_sed_vector, x_state_vector):
-
         latent_vector = self.NN_IE(x_sed_vector)
         # combine x_SED with latent_vector
         input_NN = torch.cat((x_state_vector, latent_vector), axis=1)
+        # pass the concatenated input to next neural network
         out = self.NN(input_NN)
-
         return out

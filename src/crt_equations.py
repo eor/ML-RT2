@@ -17,8 +17,8 @@ class CRT:
 
         # TODO: fix this
         # TODO: code up equations, add necessary heating and ionisation rates to the physics module
-
-        return pde
+        # TODO: compute residual and pass it to the network
+        return u
 
     def get_x_H_II_loss(self, x_H_I, x_H_II, t):
         n_H = 0.0  # hydrogen density

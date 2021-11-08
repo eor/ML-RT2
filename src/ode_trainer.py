@@ -28,7 +28,6 @@ else:
 def generate_training_data(config):
     train_set_size = config.train_set_size
 
-    # TODO: sample SED vector
     sed_vector = []
     haloMassLog = np.random.uniform(ps_sed[0][0], ps_sed[0][1], size=(train_set_size, 1))
     redshift = np.random.uniform(ps_sed[1][0], ps_sed[1][1], size=(train_set_size, 1))
@@ -62,7 +61,7 @@ def generate_training_data(config):
     # sample target labels
     u_actual = np.zeros((train_set_size, 1))
 
-    return state_vector, sed_vector, u_actual
+    return sed_vector, state_vector, u_actual
 
 
 
@@ -121,7 +120,7 @@ def main(config):
         target_residual = Variable(torch.from_numpy(target_residual).float(), requires_grad=False).to(device)
 
         # Loss based on CRT ODEs
-        residual = ode_equation.compute_ode_residual(u_approximation)
+        residual = ode_equation.compute_ode_residual(x_SED, x_state_vector, u_approximation)
         loss_ode = F.mse_loss(input=residual, target=target_residual, reduction='mean')
 
         # compute the gradients
@@ -130,10 +129,12 @@ def main(config):
         optimizer.step()
         # make the gradients zero
         optimizer.zero_grad()
-        train_loss_array = np.append(train_loss_array, loss_ode.item())
 
         print("[Epoch %d/%d] [Train loss MSE: %e]"
-                    % (epoch, config.n_epochs, train_loss))
+            % (epoch, config.n_epochs, loss_ode.item()))
+
+        train_loss_array = np.append(train_loss_array, loss_ode.item())
+
 
         # TODO: find a criteria to select the best model --- validation ---????
         # TODO: copy the best model based on validation....
@@ -153,14 +154,14 @@ if __name__ == "__main__":
     parser.add_argument('--out_dir', type=str, default='output', metavar='(string)',
                     help='Path to output directory, used for all plots and data products, default: ./output/')
 
-    parser.add_argument("--len_SED_input", type=int, default=128,
+    parser.add_argument("--len_SED_input", type=int, default=2000,
                         help="length of SED input for the model")
     parser.add_argument("--len_latent_vector", type=int, default=8,
                         help="length of reduced SED vector")
     parser.add_argument("--len_state_vector", type=int, default=6,
                         help="length of state vector (Xi, T, tau, t) to be concatenated with latent_vector")
-    parser.add_argument("--train_set_size", type=int, default=16,
-                        help="size of the randomly generated training set (default=2048)")
+    parser.add_argument("--train_set_size", type=int, default=128,
+                        help="size of the randomly generated training set (default=128)")
 
     # network optimisation
     parser.add_argument("--n_epochs", type=int, default=10000,
