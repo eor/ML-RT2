@@ -2,11 +2,10 @@ import torch
 import numpy as np
 
 
-class CRT:
+class ODE:
     """
-    Cosmological radiative transfer equations based on Fukugita and Kawasaki 1994:
-    "Reheating during Hierarchical Clustering in the Universe Dominated by
-    the Cold Dark Matter"
+    System of ordinary differential equations to solve the cosmological radiative
+    transfer equations derived in Fukugita, M. & Kawasaki, M. 1994, MNRAS 269, 563
     """
 
     def __init__(self):
