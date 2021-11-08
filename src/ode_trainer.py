@@ -38,13 +38,15 @@ def generate_training_data(config):
     starsEscFrac = np.random.uniform(ps_sed[5][0], ps_sed[5][1], size=(train_set_size, 1))
     starsIMFSlope = np.random.uniform(ps_sed[6][0], ps_sed[6][1], size=(train_set_size, 1))
     starsIMFMassMinLog = np.random.uniform(ps_sed[7][0], ps_sed[7][1], size=(train_set_size, 1))
-    # TODO: to verify correct variables used in the function -- Fabian??
-    # state_vector = sed_numba.generate_SED_IMF_PL(haloMass=haloMassLog,
-    #                         redshift=redshift,
-    #                         eLow=SED_ENERGY_MIN, eHigh=SED_ENERGY_MAX, N=2000,  logGrid=True,
-    #                         starMassMin=5, starMassMax=500, imfBins=100, imfIndex=2.35, fEsc=starsEscFrac,
-    #                         alpha=qsoAlpha, qsoEfficiency=qsoEfficiency,
-    #                         targetSourceAge=sourceAge)
+    for i in range(train_set_size):
+        # TODO: to verify correct variables used in the function -- Fabian??
+        energies, inensities = sed_numba.generate_SED_IMF_PL(haloMass=haloMassLog[i][0],
+                                redshift=redshift[i][0],
+                                eLow=SED_ENERGY_MIN, eHigh=SED_ENERGY_MAX, N=2000,  logGrid=True,
+                                starMassMin=5, starMassMax=500, imfBins=100, imfIndex=2.35, fEsc=starsEscFrac[i][0],
+                                alpha=qsoAlpha[i][0], qsoEfficiency=qsoEfficiency[i][0],
+                                targetSourceAge=sourceAge[i][0])
+        sed_vector.append(energies)
     sed_vector = np.asarray(sed_vector)
 
     # sample SED vector
@@ -60,9 +62,6 @@ def generate_training_data(config):
     # sample target labels
     u_actual = np.zeros((train_set_size, 1))
 
-    print(state_vector.shape)
-    print(sed_vector.shape)
-    print(u_actual.shape)
     return state_vector, sed_vector, u_actual
 
 
@@ -154,13 +153,13 @@ if __name__ == "__main__":
     parser.add_argument('--out_dir', type=str, default='output', metavar='(string)',
                     help='Path to output directory, used for all plots and data products, default: ./output/')
 
-    parser.add_argument("--len_SED_input", type=int, default=1024,
+    parser.add_argument("--len_SED_input", type=int, default=128,
                         help="length of SED input for the model")
     parser.add_argument("--len_latent_vector", type=int, default=8,
                         help="length of reduced SED vector")
     parser.add_argument("--len_state_vector", type=int, default=6,
                         help="length of state vector (Xi, T, tau, t) to be concatenated with latent_vector")
-    parser.add_argument("--train_set_size", type=int, default=2048,
+    parser.add_argument("--train_set_size", type=int, default=16,
                         help="size of the randomly generated training set (default=2048)")
 
     # network optimisation
