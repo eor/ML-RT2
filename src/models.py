@@ -4,7 +4,7 @@ from torch import nn
 
 class MLP1(nn.Module):
     def __init__(self, conf):
-        super(MLP_SAMPLE, self).__init__()
+        super(MLP1, self).__init__()
 
         def block(features_in, features_out, normalise=conf.batch_norm, dropout=conf.dropout):
             layers = [nn.Linear(features_in, features_out)]
@@ -39,7 +39,7 @@ class MLP1(nn.Module):
 
     # Input:
     # x_SED: shape (batch_size, len_SED_input): vector representing spectral energy distribution of our source
-    # x_state_vector: shape (batch_size, len_state_vector): vector representing state (Xi, tau, T, t)
+    # x_state_vector: shape (batch_size, len_state_vector): vector representing state (Xi, T, tau, t)
     def forward(self, x_SED, x_state_vector):
 
         latent_vector = self.NN_IE(x_SED)

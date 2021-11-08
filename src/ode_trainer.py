@@ -7,9 +7,12 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 
-import common.settings_ode as ps_ode
-import common.settings_sed as ps_sed
-
+from common.settings_ode import ode_parameter_limits as ps_ode
+from common.settings_sed import p8_limits as ps_sed
+from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
+from common.utils import *
+from sed import sed_numba
+from models import *
 
 
 # check for CUDA
@@ -25,12 +28,41 @@ else:
 def generate_training_data(config):
     train_set_size = config.train_set_size
 
-    # TODO: sample state vector
-    state_vector = None
     # TODO: sample SED vector
-    sed_vector = None
-    # TODO: generate target labels
-    u_actual = None
+    sed_vector = []
+    haloMassLog = np.random.uniform(ps_sed[0][0], ps_sed[0][1], size=(train_set_size, 1))
+    redshift = np.random.uniform(ps_sed[1][0], ps_sed[1][1], size=(train_set_size, 1))
+    sourceAge = np.random.uniform(ps_sed[2][0], ps_sed[2][1], size=(train_set_size, 1))
+    qsoAlpha = np.random.uniform(ps_sed[3][0], ps_sed[3][1], size=(train_set_size, 1))
+    qsoEfficiency = np.random.uniform(ps_sed[4][0], ps_sed[4][1], size=(train_set_size, 1))
+    starsEscFrac = np.random.uniform(ps_sed[5][0], ps_sed[5][1], size=(train_set_size, 1))
+    starsIMFSlope = np.random.uniform(ps_sed[6][0], ps_sed[6][1], size=(train_set_size, 1))
+    starsIMFMassMinLog = np.random.uniform(ps_sed[7][0], ps_sed[7][1], size=(train_set_size, 1))
+    # TODO: to verify correct variables used in the function -- Fabian??
+    # state_vector = sed_numba.generate_SED_IMF_PL(haloMass=haloMassLog,
+    #                         redshift=redshift,
+    #                         eLow=SED_ENERGY_MIN, eHigh=SED_ENERGY_MAX, N=2000,  logGrid=True,
+    #                         starMassMin=5, starMassMax=500, imfBins=100, imfIndex=2.35, fEsc=starsEscFrac,
+    #                         alpha=qsoAlpha, qsoEfficiency=qsoEfficiency,
+    #                         targetSourceAge=sourceAge)
+    sed_vector = np.asarray(sed_vector)
+
+    # sample SED vector
+    x_H_II = np.random.uniform(ps_ode[0][0], ps_ode[0][1], size=(train_set_size, 1))
+    x_He_II = np.random.uniform(ps_ode[1][0], ps_ode[1][1], size=(train_set_size, 1))
+    x_He_III = np.random.uniform(ps_ode[2][0], ps_ode[2][1], size=(train_set_size, 1))
+    T = np.random.uniform(ps_ode[3][0], ps_ode[3][1], size=(train_set_size, 1))
+    tau = np.random.uniform(ps_ode[4][0], ps_ode[4][1], size=(train_set_size, 1))
+    time = np.random.uniform(ps_ode[5][0], ps_ode[5][1], size=(train_set_size, 1))
+
+    state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T, tau, time), axis=1)
+
+    # sample target labels
+    u_actual = np.zeros((train_set_size, 1))
+
+    print(state_vector.shape)
+    print(sed_vector.shape)
+    print(u_actual.shape)
     return state_vector, sed_vector, u_actual
 
 
@@ -45,6 +77,7 @@ def main(config):
     run_id = 'run_' + utils_get_current_timestamp()
     config.out_dir = os.path.join(config.out_dir, run_id)
 
+    utils_create_output_dirs([config.out_dir])
     # utils_create_run_directories(config.out_dir, DATA_PRODUCTS_DIR, PLOT_DIR)
     utils_save_config_to_log(config)
     utils_save_config_to_file(config)
@@ -61,7 +94,7 @@ def main(config):
     # Optimizers
     # -----------------------------------------------------------------
     optimizer = torch.optim.Adam(
-        model.parameters(),
+        u_approximation.parameters(),
         lr=config.lr,
         betas=(config.b1, config.b2)
     )
@@ -122,7 +155,7 @@ if __name__ == "__main__":
     parser.add_argument("--len_latent_vector", type=int, default=8,
                         help="length of reduced SED vector")
     parser.add_argument("--len_state_vector", type=int, default=6,
-                        help="length of state vector (Xi, tau, T, t) to be concatenated with latent_vector")
+                        help="length of state vector (Xi, T, tau, t) to be concatenated with latent_vector")
     parser.add_argument("--train_set_size", type=int, default=2048,
                         help="size of the randomly generated training set (default=2048)")
 
