@@ -1,9 +1,16 @@
 import numpy as np
 
 
-IONIZATION_ENERGY_HYDROGEN = 13.6057      # unit is eV
-IONIZATION_ENERGY_HELIUM1 = 24.5874       # unit is eV
-IONIZATION_ENERGY_HELIUM2 = 54.4228       # unit is eV
+CONSTANT_T_CMB_0 = 2.731                    # CMB temperature at redshift z=0 in Kelvin
+CONSTANT_z_T_kin_EQ_T_CMB = 250             # redshift at which gas and CMB temperature were in equilibrium
+
+
+CONSTANT_n_H_0 = 1.9e-7                     # H_I + H_II number density at z=0 in cm^-3
+CONSTANT_n_He_0 = 1.5e-8                    # He_I + He_II + He_III number density at z=0 in cm^-3
+
+IONIZATION_ENERGY_HYDROGEN = 13.6057        # unit is eV
+IONIZATION_ENERGY_HELIUM1 = 24.5874         # unit is eV
+IONIZATION_ENERGY_HELIUM2 = 54.4228         # unit is eV
 
 
 def physics_ionisation_cross_section_hydrogen(photon_energy):
