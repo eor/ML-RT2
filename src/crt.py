@@ -48,43 +48,30 @@ class SimulationData:
         # can be changed later to use custom density profiles
         self.over_densities = np.ones(self.grid_length)
 
-        # number densities (free electrons,  hydrogen, helium)
+        # number density arrays for total hydrogen and helium in units of cm^-3
+        init_n_hydrogen = CONSTANT_n_H_0 * np.power(1.0 + self.redshift, 3) * self.over_densities
+        self.n_hydrogen = np.ones(self.grid_length) * init_n_hydrogen
+
+        init_n_helium = CONSTANT_n_He_0 * np.power(1.0 + self.redshift, 3) * self.over_densities
+        self.n_helium = np.ones(self.grid_length) * init_n_helium
+
+        # number densities of free electrons in units of cm^-3
         self.n_e = np.zeros(self.grid_length)
 
-        init_n_H = CONSTANT_n_H_0 * np.power(1.0 + self.redshift, 3) * self.over_densities
-        self.n_H_I = np.ones(self.grid_length) * init_n_H
-
-        init_n_He = CONSTANT_n_He_0 * np.power(1.0 + self.redshift, 3) * self.over_densities
-        self.n_He_I = np.ones(self.grid_length) * init_n_He
-
-        # the following might not be needed
+        # number density arrays in units of cm^-3
+        # they will be updated using the total number densities and the ionisation fraction arrays
+        self.n_H_I = np.ones(self.grid_length) * init_n_hydrogen
         self.n_H_II = np.zeros(self.grid_length)
+        self.n_He_I = np.ones(self.grid_length) * init_n_helium
         self.n_He_II = np.zeros(self.grid_length)
         self.n_He_III = np.zeros(self.grid_length)
 
-        # set boundary conditions, i.e. full ionisation at r=0 at the start of the simulation
-        # if conf.radius_min == 0.0:
-        #     self.x_H_I[0] = 0.0
-        #     self.x_H_II[0] = 1.0
-        #     self.x_He_I[0] = 0.0
-        #     self.x_He_II[0] = 0.0
-        #     self.x_He_III[0] = 1.0
-
-    def get_tau(self, E, index):
+    def update_number_densities(self):
         """
-        For a given Photon energy E and index for the computing arrays, compute the optical depth tau
+        function updates the different number density arrays, i.e.
+        n_e, n_H_I, n_H_II, n_He_I, n_He_II, n_He_II using the ionisation fractions and the
+        overall density arrays n_hydrogen, n_helium
         """
-
-        sigma_HI = physics_ionisation_cross_section_hydrogen(E)
-        sigma_HeI = physics_ionisation_cross_section_helium1(E)
-        sigma_HeII = physics_ionisation_cross_section_helium2(E)
-
-        tau_HI = sigma_HI * self.delta_radius * np.sum(self.n_H_I[0:index+1])
-        tau_HeI = sigma_HeI * self.delta_radius * np.sum(self.n_He_I[0:index+1])
-
-        # TODO tau_HeII, figure out the other densities
-
-        return tau_HI + tau_HeI
 
 
 # -----------------------------------------------------------------
@@ -99,12 +86,24 @@ def main(config):
     # 2. set up run directory
 
     # 3. init data class
-
     sim = SimulationData(config)
 
-    tau = sim.get_tau(13.61, 15000-1)
+    # 4. get SED
 
-    print(tau)
+    print(physics_tau(sim, 13.61, 500))
+
+    # 5. run simulation
+    # loop over time
+        # loop over grid
+            # load state vector from sim, compute tau
+            # solve ode
+            # update sim arrays,
+
+        # end of grid
+        # update time
+
+    # 6. write data
+    # 7. analysis or plots
 
 
 # -----------------------------------------------------------------

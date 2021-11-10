@@ -8,9 +8,30 @@ CONSTANT_z_T_kin_EQ_T_CMB = 250             # redshift at which gas and CMB temp
 CONSTANT_n_H_0 = 1.9e-7                     # H_I + H_II number density at z=0 in cm^-3
 CONSTANT_n_He_0 = 1.5e-8                    # He_I + He_II + He_III number density at z=0 in cm^-3
 
+CONSTANT_kpc_to_cm = 3.086e21               # kpc in cm
+
+
 IONIZATION_ENERGY_HYDROGEN = 13.6057        # unit is eV
 IONIZATION_ENERGY_HELIUM1 = 24.5874         # unit is eV
 IONIZATION_ENERGY_HELIUM2 = 54.4228         # unit is eV
+
+
+def physics_tau(sim_data, E, index):
+    """
+    Provided the simulation grid data, a given photon energy E, and the index for the computing arrays,
+    compute the optical depth tau
+    """
+
+    sigma_HI = physics_ionisation_cross_section_hydrogen(E)
+    sigma_HeI = physics_ionisation_cross_section_helium1(E)
+    sigma_HeII = physics_ionisation_cross_section_helium2(E)
+
+    # [delta r] = kpc, [number density] = cm^-3, [sigma] = cm^2
+    tau_HI = sigma_HI * sim_data.delta_radius * np.sum(sim_data.n_H_I[0:index]) * CONSTANT_kpc_to_cm
+    tau_HeI = sigma_HeI * sim_data.delta_radius * np.sum(sim_data.n_He_I[0:index]) * CONSTANT_kpc_to_cm
+    tau_HeII = sigma_HeII * sim_data.delta_radius * np.sum(sim_data.n_He_II[0:index]) * CONSTANT_kpc_to_cm
+
+    return tau_HI + tau_HeI + tau_HeII
 
 
 def physics_ionisation_cross_section_hydrogen(photon_energy):
