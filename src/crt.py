@@ -30,6 +30,8 @@ class SimulationData:
         self.radius_min = conf.radius_min
         self.delta_radius = conf.delta_radius
 
+        self.delta_time = conf.delta_time
+
         self.grid_length = int((self.radius_max - self.radius_min) / self.delta_radius)
 
         # ionisation fractions
@@ -73,13 +75,18 @@ class SimulationData:
         overall density arrays n_hydrogen, n_helium
         """
 
+    def update_current_time(self):
+        """
+        The function updates, i.e. increments, the simulation's current time state by delta time"""
+
+        self.current_time += self.delta_radius
+
+
 
 # -----------------------------------------------------------------
 #  Main
 # -----------------------------------------------------------------
 def main(config):
-
-
 
     # 1. load neural ode model
 
@@ -90,17 +97,26 @@ def main(config):
 
     # 4. get SED
 
-    print(physics_tau(sim, 13.61, 500))
-
     # 5. run simulation
-    # loop over time
-        # loop over grid
-            # load state vector from sim, compute tau
+    while sim.current_time < sim.lifetime:
+
+        print("Current time: %3f Myr" % sim.current_time)
+        for radial_index in range(0, sim.grid_length):
+
+            print("Current radius r=%.3f kpc" % (radial_index * sim.delta_radius))
+
+            # testing
+            # for energies in np.arange(16.61, 1000, 0.1):
+            #     tau = physics_tau(sim, energies, radial_index)
+
+            # load NN inputs: N(E) and state vector (tau, x_i, T, time)
+            # tau
+
             # solve ode
             # update sim arrays,
 
-        # end of grid
-        # update time
+        # all done with the grid for this time step
+        sim.update_current_time()
 
     # 6. write data
     # 7. analysis or plots
