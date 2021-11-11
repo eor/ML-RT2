@@ -73,7 +73,7 @@ class SimulationData:
         """
         Following the ODE step this function updates the number density and ionisation fraction arrays, i.e.
         n_e, n_H_I, n_H_II, n_He_I, n_He_II, n_He_II, x_H_I, x_He_I using the quantities the ODE solver returns, i.e.
-        the ionisation fractions (x_H_II, x_He_II, x_He_III), and the overall density arrays n_hydrogen, n_helium
+        the ionisation fractions (x_H_II, x_He_II, x_He_III), and the overall density arrays n_hydrogen, n_helium.
         """
 
         # update ionisation fractions
@@ -93,8 +93,8 @@ class SimulationData:
 
     def update_current_time(self):
         """
-        The function updates, i.e. increments, the simulation's current time state by delta time"""
-
+        The function updates, i.e. increments, the simulation's current time state by delta time.
+        """
         self.current_time += self.delta_radius
 
 
@@ -120,14 +120,14 @@ def main(config):
 
             print("Current radius r=%.3f kpc" % (radial_index * sim.delta_radius))
 
-            # testing
-            # for energies in np.arange(16.61, 1000, 0.1):
-            #     tau = physics_tau(sim, energies, radial_index)
+            for energy in np.arange(13.01, 100, 0.1):
+
+                physics_tau(sim, energy, radial_index)
 
             # load NN inputs: N(E) and state vector (tau, x_i, T, time)
             # tau
-
             # solve ode
+            # sanity checks / regularisation to catch possible mistakes, e.g. ionisation fractions >1 or <0.
             # update sim arrays
             sim.update_arrays(radial_index)
 
@@ -192,7 +192,6 @@ if __name__ == "__main__":
     my_config = parser.parse_args()
 
     my_config.out_dir = os.path.abspath(my_config.out_dir)
-
 
     print("\n CRT test run")
 
