@@ -9,5 +9,5 @@
 # settings
 # -----------------------------------------------------------------
 
-cosmoOmegaM = 0.315
-cosmoOmegaB = 0.0491
+cosmo_omega_M = 0.315
+cosmo_omega_B = 0.0491
