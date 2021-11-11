@@ -51,13 +51,14 @@ class SimulationData:
         self.over_densities = np.ones(self.grid_length)
 
         # number density arrays for total hydrogen and helium in units of cm^-3
+        # these should be static but static class variables are a headache in Python
         init_n_hydrogen = CONSTANT_n_H_0 * np.power(1.0 + self.redshift, 3) * self.over_densities
         self.n_hydrogen = np.ones(self.grid_length) * init_n_hydrogen
 
         init_n_helium = CONSTANT_n_He_0 * np.power(1.0 + self.redshift, 3) * self.over_densities
         self.n_helium = np.ones(self.grid_length) * init_n_helium
 
-        # number densities of free electrons in units of cm^-3
+        # number densities of free electrons in units of cm^-3, initially zero
         self.n_e = np.zeros(self.grid_length)
 
         # number density arrays in units of cm^-3
@@ -68,19 +69,33 @@ class SimulationData:
         self.n_He_II = np.zeros(self.grid_length)
         self.n_He_III = np.zeros(self.grid_length)
 
-    def update_number_densities(self):
+    def update_arrays(self, radial_index):
         """
-        function updates the different number density arrays, i.e.
-        n_e, n_H_I, n_H_II, n_He_I, n_He_II, n_He_II using the ionisation fractions and the
-        overall density arrays n_hydrogen, n_helium
+        Following the ODE step this function updates the number density and ionisation fraction arrays, i.e.
+        n_e, n_H_I, n_H_II, n_He_I, n_He_II, n_He_II, x_H_I, x_He_I using the quantities the ODE solver returns, i.e.
+        the ionisation fractions (x_H_II, x_He_II, x_He_III), and the overall density arrays n_hydrogen, n_helium
         """
+
+        # update ionisation fractions
+        self.x_H_I[radial_index] = 1.0 - self.x_H_II[radial_index]
+        self.x_He_I[radial_index] = 1.0 - self.x_He_II[radial_index] - self.x_He_III[radial_index]
+
+        # update number densities
+        self.n_H_I[radial_index] = self.n_hydrogen[radial_index] * self.x_H_I[radial_index]
+        self.n_H_II[radial_index] = self.n_hydrogen[radial_index] * self.x_H_II[radial_index]
+
+        self.n_He_I[radial_index] = self.n_helium[radial_index] * self.x_He_I[radial_index]
+        self.n_He_II[radial_index] = self.n_helium[radial_index] * self.x_He_II[radial_index]
+        self.n_He_III[radial_index] = self.n_helium[radial_index] * self.x_He_III[radial_index]
+
+        # electron number density = sum of number densities of ionised H, He and doubly ionised He
+        self.n_e[radial_index] = self.n_H_II[radial_index] + self.n_He_II[radial_index] + 2*self.n_He_III[radial_index]
 
     def update_current_time(self):
         """
         The function updates, i.e. increments, the simulation's current time state by delta time"""
 
         self.current_time += self.delta_radius
-
 
 
 # -----------------------------------------------------------------
@@ -113,7 +128,8 @@ def main(config):
             # tau
 
             # solve ode
-            # update sim arrays,
+            # update sim arrays
+            sim.update_arrays(radial_index)
 
         # all done with the grid for this time step
         sim.update_current_time()
