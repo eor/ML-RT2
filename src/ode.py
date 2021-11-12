@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+from common.physics import *
+from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA, N_ENERGY_BINS
 
 
 class ODE:
@@ -68,3 +70,42 @@ class ODE:
     def get_temperature_loss(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III, t):
 
         return 4
+
+    def compute_ionisation_rates(self, E, tau, intensity_vector, collision_ionisation_H_I, electron_number_density):
+        """
+        Takes in intensity vector I(E), tau(E) and
+        computes ionization rate of H_II, He_II, He_III
+
+        """
+        assert len(tau) == len(intensity_vector), 'length of intensity vector should be equal to the length of tau vector'
+
+        print(tau.shape)
+        e_tau = np.exp(-1 * tau)
+        print(e_tau.shape)
+        source_flux = np.multiply(intensity_vector, e_tau)
+        sigma_HI, sigma_HeI, sigma_HeII = [], [], []
+        for i in range(N_ENERGY_BINS):
+            current_energy = SED_ENERGY_MIN + i*SED_ENERGY_DELTA
+            sigma_HI.append(physics_ionisation_cross_section_hydrogen(current_energy))
+            sigma_HeI.append(physics_ionisation_cross_section_helium1(current_energy))
+            sigma_HeII.append(physics_ionisation_cross_section_helium2(current_energy))
+
+        assert len(sigma_HI) == len(intensity_vector), 'Incorrect distribution of energy into bins'
+
+        # convert lists to numpy arrays
+        sigma_HI = np.as_array(sigma_HI)
+        sigma_HeI = np.as_array(sigma_HeI)
+        sigma_HeII = np.as_array(sigma_HeII)
+
+        x = np.arange(SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA)
+        print(len(x))
+        print(N_ENERGY_BINS)
+
+        integral_H_I = utils_simpson_integration
+        # TODO; to be completed
+
+
+if __name__ == "__main__":
+    ode = ODE()
+
+    ion = ode.compute_ionisation_rates(13.61, 15000-1, )

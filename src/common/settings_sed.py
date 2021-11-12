@@ -5,6 +5,7 @@
 SED_ENERGY_MIN = 1.0    # eV
 SED_ENERGY_MAX = 1e4    # eV
 SED_ENERGY_DELTA = 0.1  # eV (resolution)
+N_ENERGY_BINS = 1 + (SED_ENERGY_MAX-SED_ENERGY_MIN)/SED_ENERGY_DELTA
 
 # -----------------------------------------------------------------
 #  Settings for the SED sampling of the p-space?

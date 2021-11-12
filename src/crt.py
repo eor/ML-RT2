@@ -6,7 +6,7 @@ from common.settings_crt import *
 from common.settings_ode import *
 from common.settings_sed import *
 from common.physics import *
-
+from sed import sed_numba as sed_generator
 
 class SimulationData:
     """
@@ -19,10 +19,15 @@ class SimulationData:
     """
 
     def __init__(self, conf):
-
+        # source parameters for sed_generation
+        self.halo_mass_log = conf.halo_mass_log
         self.redshift = conf.redshift
-
         self.lifetime = conf.source_lifetime
+        self.source_qso_alpha = conf.source_qso_alpha
+        self.source_qso_efficiency = conf.source_qso_efficiency
+        self.source_stars_fesc = conf.source_stars_fesc
+        self.source_stars_imf_slope = conf.source_stars_imf_slope
+        self.source_stars_min_mass = conf.source_stars_min_mass
 
         self.current_time = 0.0
 
@@ -106,7 +111,6 @@ def main(config):
 
     print(tau)
 
-
 # -----------------------------------------------------------------
 #  Parse user input
 # -----------------------------------------------------------------
@@ -118,8 +122,8 @@ if __name__ == "__main__":
     parser.add_argument('--out_dir', type=str, default='output', metavar='(string)',
                         help='Path to output directory, used for all plots and data products, default: ./output/')
 
-    parser.add_argument('--model_path', type=str, required=True, metavar='(string)',
-                        help='Path to pre-trained neural ODE model')
+    # parser.add_argument('--model_path', type=str, required=True, metavar='(string)',
+    #                     help='Path to pre-trained neural ODE model')
 
     # computing grid settings
     parser.add_argument("--radius_max", type=float, default=DEFAULT_RADIUS_MAX,
