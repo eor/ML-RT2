@@ -17,7 +17,7 @@ class MLP1(nn.Module):
 
             return layers
 
-        self.NN_IE = nn.Sequential(
+        self.NN_flux = nn.Sequential(
             *block(conf.len_SED_input, 512, normalise=False, dropout=False),
             *block(512, 256),
             *block(256, 128),
@@ -32,19 +32,30 @@ class MLP1(nn.Module):
             *block(128, 256),
             *block(256, 512),
             *block(512, 1024),
-            *block(1024, 512),
+            *block(1024, 512),    # TODO: Let's see if NN actually needs this many layers & units
             *block(512, 128),
             *block(128, 64),
             nn.Linear(64, 4)
         )
 
-    # Input:
-    # x_SED: shape (batch_size, len_SED_input): vector representing spectral energy distribution of our source
-    # x_state_vector: shape (batch_size, len_state_vector): vector representing state (Xi, T, tau, t)
-    def forward(self, x_sed_vector, x_state_vector):
-        latent_vector = self.NN_IE(x_sed_vector)
-        # combine x_SED with latent_vector
-        input_NN = torch.cat((x_state_vector, latent_vector), axis=1)
-        # pass the concatenated input to next neural network
-        out = self.NN(input_NN)
-        return out
+    def forward(self, x_flux_vector, x_state_vector):
+        """
+        Inputs are:
+        1) a vector containing the source flux, which is the SED multiplied with the optical depth, i.e.
+           N(E) = exp(-tau(E))  * I(E)
+
+        2) a state vector, which contains ionisation fractions, temperature and time
+
+        For a given flux vector (1) the NN_flux network outputs a latent representation of (1) which is combined
+        with the state vector (2) to form the input to the second network, i.e. NN.
+
+        Shape of the inputs:
+        1)  (batch_size, len_flux_input)
+
+        2) (batch_size, len_state_vector):
+        """
+
+        latent_vector = self.NN_flux(x_flux_vector)
+        concat_input = torch.cat((x_state_vector, latent_vector), axis=1)
+        output = self.NN(concat_input)
+        return output

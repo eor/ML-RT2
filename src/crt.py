@@ -35,6 +35,8 @@ class SimulationData:
         self.radius_min = conf.radius_min
         self.delta_radius = conf.delta_radius
 
+        self.delta_time = conf.delta_time
+
         self.grid_length = int((self.radius_max - self.radius_min) / self.delta_radius)
 
         # ionisation fractions
@@ -53,43 +55,52 @@ class SimulationData:
         # can be changed later to use custom density profiles
         self.over_densities = np.ones(self.grid_length)
 
-        # number densities (free electrons,  hydrogen, helium)
+        # number density arrays for total hydrogen and helium in units of cm^-3
+        # these should be static but static class variables are a headache in Python
+        init_n_hydrogen = CONSTANT_n_H_0 * np.power(1.0 + self.redshift, 3) * self.over_densities
+        self.n_hydrogen = np.ones(self.grid_length) * init_n_hydrogen
+
+        init_n_helium = CONSTANT_n_He_0 * np.power(1.0 + self.redshift, 3) * self.over_densities
+        self.n_helium = np.ones(self.grid_length) * init_n_helium
+
+        # number densities of free electrons in units of cm^-3, initially zero
         self.n_e = np.zeros(self.grid_length)
 
-        init_n_H = CONSTANT_n_H_0 * np.power(1.0 + self.redshift, 3) * self.over_densities
-        self.n_H_I = np.ones(self.grid_length) * init_n_H
-
-        init_n_He = CONSTANT_n_He_0 * np.power(1.0 + self.redshift, 3) * self.over_densities
-        self.n_He_I = np.ones(self.grid_length) * init_n_He
-
-        # the following might not be needed
+        # number density arrays in units of cm^-3
+        # they will be updated using the total number densities and the ionisation fraction arrays
+        self.n_H_I = np.ones(self.grid_length) * init_n_hydrogen
         self.n_H_II = np.zeros(self.grid_length)
+        self.n_He_I = np.ones(self.grid_length) * init_n_helium
         self.n_He_II = np.zeros(self.grid_length)
         self.n_He_III = np.zeros(self.grid_length)
 
-        # set boundary conditions, i.e. full ionisation at r=0 at the start of the simulation
-        # if conf.radius_min == 0.0:
-        #     self.x_H_I[0] = 0.0
-        #     self.x_H_II[0] = 1.0
-        #     self.x_He_I[0] = 0.0
-        #     self.x_He_II[0] = 0.0
-        #     self.x_He_III[0] = 1.0
-
-    def get_tau(self, E, index):
+    def update_arrays(self, radial_index):
         """
-        For a given Photon energy E and index for the computing arrays, compute the optical depth tau
+        Following the ODE step this function updates the number density and ionisation fraction arrays, i.e.
+        n_e, n_H_I, n_H_II, n_He_I, n_He_II, n_He_II, x_H_I, x_He_I using the quantities the ODE solver returns, i.e.
+        the ionisation fractions (x_H_II, x_He_II, x_He_III), and the overall density arrays n_hydrogen, n_helium.
         """
 
-        sigma_HI = physics_ionisation_cross_section_hydrogen(E)
-        sigma_HeI = physics_ionisation_cross_section_helium1(E)
-        sigma_HeII = physics_ionisation_cross_section_helium2(E)
+        # update ionisation fractions
+        self.x_H_I[radial_index] = 1.0 - self.x_H_II[radial_index]
+        self.x_He_I[radial_index] = 1.0 - self.x_He_II[radial_index] - self.x_He_III[radial_index]
 
-        tau_HI = sigma_HI * self.delta_radius * np.sum(self.n_H_I[0:index+1])
-        tau_HeI = sigma_HeI * self.delta_radius * np.sum(self.n_He_I[0:index+1])
+        # update number densities
+        self.n_H_I[radial_index] = self.n_hydrogen[radial_index] * self.x_H_I[radial_index]
+        self.n_H_II[radial_index] = self.n_hydrogen[radial_index] * self.x_H_II[radial_index]
 
-        # TODO tau_HeII, figure out the other densities
+        self.n_He_I[radial_index] = self.n_helium[radial_index] * self.x_He_I[radial_index]
+        self.n_He_II[radial_index] = self.n_helium[radial_index] * self.x_He_II[radial_index]
+        self.n_He_III[radial_index] = self.n_helium[radial_index] * self.x_He_III[radial_index]
 
-        return tau_HI + tau_HeI
+        # electron number density = sum of number densities of ionised H, He and doubly ionised He
+        self.n_e[radial_index] = self.n_H_II[radial_index] + self.n_He_II[radial_index] + 2*self.n_He_III[radial_index]
+
+    def update_current_time(self):
+        """
+        The function updates, i.e. increments, the simulation's current time state by delta time.
+        """
+        self.current_time += self.delta_radius
 
 
 # -----------------------------------------------------------------
@@ -97,19 +108,39 @@ class SimulationData:
 # -----------------------------------------------------------------
 def main(config):
 
-
-
     # 1. load neural ode model
 
     # 2. set up run directory
 
     # 3. init data class
-
     sim = SimulationData(config)
 
-    tau = sim.get_tau(13.61, 15000-1)
+    # 4. get SED
 
-    print(tau)
+    # 5. run simulation
+    while sim.current_time < sim.lifetime:
+
+        print("Current time: %3f Myr" % sim.current_time)
+        for radial_index in range(0, sim.grid_length):
+
+            print("Current radius r=%.3f kpc" % (radial_index * sim.delta_radius))
+
+            for energy in np.arange(13.01, 100, 0.1):
+
+                physics_tau(sim, energy, radial_index)
+
+            # load NN inputs: N(E) and state vector (tau, x_i, T, time)
+            # tau
+            # solve ode
+            # sanity checks / regularisation to catch possible mistakes, e.g. ionisation fractions >1 or <0.
+            # update sim arrays
+            sim.update_arrays(radial_index)
+
+        # all done with the grid for this time step
+        sim.update_current_time()
+
+    # 6. write data
+    # 7. analysis or plots
 
 # -----------------------------------------------------------------
 #  Parse user input
@@ -165,7 +196,6 @@ if __name__ == "__main__":
     my_config = parser.parse_args()
 
     my_config.out_dir = os.path.abspath(my_config.out_dir)
-
 
     print("\n CRT test run")
 
