@@ -23,7 +23,8 @@ N_ENERGY_BINS = 1 + (SED_ENERGY_MAX-SED_ENERGY_MIN)/SED_ENERGY_DELTA
 #        5. qsoEfficiency       interval=[0.0, 1.0]
 #        6. starsEscFrac        interval=[0.0, 1.0]
 #        7. starsIMFSlope       interval=[0.0, 2.5]
-#        8. starsIMFMassMinLog  interval=[0.6989700043360189, 2.6989700043360187]
+#        8. starsIMFMassMin  interval=[5.0, 500.0]
+# (old)  8. starsIMFMassMinLog  interval=[0.6989700043360189, 2.6989700043360187]
 
 p8_limits = list()
 p8_limits.append([8.0, 15.0])
@@ -33,7 +34,8 @@ p8_limits.append([0.0, 2.0])
 p8_limits.append([0.0, 1.0])
 p8_limits.append([0.0, 1.0])
 p8_limits.append([0.0, 2.5])
-p8_limits.append([0.6989700043360189, 2.6989700043360187])  # 5 -> 500
+#p8_limits.append([0.6989700043360189, 2.6989700043360187])  # 5 -> 500
+p8_limits.append([5.0, 5.00])
 
 p8_names_latex = list()
 p8_names_latex.append('\log_{10}{\mathrm{M}_\mathrm{halo}}')
@@ -43,7 +45,8 @@ p8_names_latex.append('-\\alpha_{\mathrm{QSO}}')
 p8_names_latex.append('\\epsilon_{\mathrm{QSO}}')
 p8_names_latex.append('f_{\mathrm{esc,\\ast}}')
 p8_names_latex.append('\\alpha_{\mathrm{IMF,\\ast}}')
-p8_names_latex.append('\log_{10}{\mathrm{M}_{\mathrm{min}, \\ast}}')
+#p8_names_latex.append('\log_{10}{\mathrm{M}_{\mathrm{min}, \\ast}}')
+p8_names_latex.append('{\mathrm{M}_{\mathrm{min}, \\ast}}')
 
 
 # -----------------------------------------------------------------
