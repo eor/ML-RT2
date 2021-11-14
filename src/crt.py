@@ -6,7 +6,6 @@ from common.settings_crt import *
 from common.settings_ode import *
 from common.settings_sed import *
 from common.physics import *
-from sed import sed_numba as sed_generator
 
 class SimulationData:
     """

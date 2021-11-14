@@ -1,4 +1,5 @@
 import numpy as np
+from sed import sed_numba as sed_generator
 
 
 CONSTANT_T_CMB_0 = 2.731                    # CMB temperature at redshift z=0 in Kelvin
@@ -14,6 +15,43 @@ CONSTANT_kpc_to_cm = 3.086e21               # kpc in cm
 IONIZATION_ENERGY_HYDROGEN = 13.6057        # unit is eV
 IONIZATION_ENERGY_HELIUM1 = 24.5874         # unit is eV
 IONIZATION_ENERGY_HELIUM2 = 54.4228         # unit is eV
+
+
+def physics_compute_ionisation_rates(self, energy_vector, source_flux, beta_H_I, n_e):
+    """
+    Takes in the energy_vector, source_flux vector N(E,r,t) computed for
+    every energy E in vector energy_vector, electron number density n_e,
+    collision ionisation beta_H_I and returns ionization rate of H_I, He_I, He_II
+    """
+    # basic checks
+    assert len(tau) == len(intensity_vector), 'length of intensity vector should be equal to the length of tau vector'
+    assert len(E) == len(intensity_vector), 'length of energy vector should be equal to the length of tau vector'
+
+    # e_tau = np.exp(-1 * tau)
+    # source_flux = np.multiply(intensity_vector, e_tau)
+
+    sigma_HI, sigma_HeI, sigma_HeII = [], [], []
+    for E in energy_vector:
+        sigma_HI.append(physics_ionisation_cross_section_hydrogen(E))
+        sigma_HeI.append(physics_ionisation_cross_section_helium1(E))
+        sigma_HeII.append(physics_ionisation_cross_section_helium2(E))
+
+    # convert lists to numpy arrays
+    sigma_HI = np.as_array(sigma_HI)
+    sigma_HeI = np.as_array(sigma_HeI)
+    sigma_HeII = np.as_array(sigma_HeII)
+
+    # function values for every E
+    integrand_H_I = np.divide(np.multiply(sigma_HI, source_flux), energy_vector)
+    integrand_He_I = np.divide(np.multiply(sigma_HeI, source_flux), energy_vector)
+    integrand_He_II = np.divide(np.multiply(sigma_HeII, source_flux), energy_vector)
+
+    # compute integrals
+    ionisation_H_I = np.multiply(n_e, beta_H_I) + utils_simpson_integration(integrand_H_I, energy_vector)
+    ionisation_He_I = utils_simpson_integration(integrand_He_I, energy_vector)
+    ionisation_He_II = utils_simpson_integration(integrand_He_II, energy_vector)
+
+    return ionisation_H_I, ionisation_He_I, ionisation_He_II
 
 
 def physics_tau(sim_data, E, index):
