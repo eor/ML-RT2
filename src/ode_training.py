@@ -28,7 +28,7 @@ else:
     torch.set_default_tensor_type(torch.FloatTensor)
 
 
-def generate_tau_training(energies):
+def generate_tau_training(energies_vector):
     """
     The generated training data produces two inputs to the neural network: a state vector and the source flux, which
     represents the SED that is attenuated by the IGM in between the source and a given point of interest.
@@ -45,33 +45,43 @@ def generate_tau_training(energies):
     We pick suitable column densities, compute tau and return a vector tau(energies)
     """
 
-    l = energies.shape[0]
+    train_set_size = energies_vector.shape[0]
+    len_energy_vector = energies_vector.shape[1]
 
-    sigmas_H_I = np.zeros(l)
-    sigmas_He_I = np.zeros(l)
-    sigmas_He_II = np.zeros(l)
+    sigmas_H_I = np.zeros(len_energy_vector)
+    sigmas_He_I = np.zeros(len_energy_vector)
+    sigmas_He_II = np.zeros(len_energy_vector)
+    tau_training_vector = np.zeros((train_set_size, len_energy_vector))
 
-    for i in range(0, l):
-        e = energies[i]
+    # obtain sigmas for the energy_vector
+    # we have same energy vector for every sample in train_set
+    # Hence, can be computed just once
+    for i in range(0, len_energy_vector):
+        e = energies_vector[0, i]
         sigmas_H_I[i] = physics_ionisation_cross_section_hydrogen(e)
         sigmas_He_I[i] = physics_ionisation_cross_section_helium1(e)
         sigmas_He_II[i] = physics_ionisation_cross_section_helium2(e)
 
-    # column densities
+    # define column densities
     limit_lower = -20.0
     limit_upper = 0.0
 
-    N_H_I = random() * (limit_upper - limit_lower) + limit_lower
-    N_He_I = random() * (limit_upper - limit_lower) + limit_lower
-    N_He_II = random() * (limit_upper - limit_lower) + limit_lower
+    # generate tau for our training
+    for t in range(train_set_size):
+        N_H_I = random() * (limit_upper - limit_lower) + limit_lower
+        N_He_I = random() * (limit_upper - limit_lower) + limit_lower
+        N_He_II = random() * (limit_upper - limit_lower) + limit_lower
 
-    return sigmas_H_I * N_H_I + sigmas_He_I * N_He_I + sigmas_He_II * N_He_II
+        tau_training_vector[t] = sigmas_H_I * N_H_I + sigmas_He_I * N_He_I + sigmas_He_II * N_He_II
+
+    return tau_training_vector
 
 
 def generate_training_data(config):
     train_set_size = config.train_set_size
     # sample SED vector
-    sed_vector = []
+    intensities_vector = []
+    energies_vector = []
     haloMassLog = np.random.uniform(ps_sed[0][0], ps_sed[0][1], size=(train_set_size, 1))
     redshift = np.random.uniform(ps_sed[1][0], ps_sed[1][1], size=(train_set_size, 1))
     sourceAge = np.random.uniform(ps_sed[2][0], ps_sed[2][1], size=(train_set_size, 1))
@@ -80,6 +90,10 @@ def generate_training_data(config):
     starsEscFrac = np.random.uniform(ps_sed[5][0], ps_sed[5][1], size=(train_set_size, 1))
     starsIMFSlope = np.random.uniform(ps_sed[6][0], ps_sed[6][1], size=(train_set_size, 1))
     starsIMFMassMinLog = np.random.uniform(ps_sed[7][0], ps_sed[7][1], size=(train_set_size, 1))
+
+    parameter_vector = np.concatenate((haloMassLog, redshift, sourceAge, qsoAlpha,
+     qsoEfficiency, starsEscFrac, starsIMFSlope, starsIMFMassMinLog), axis=1)
+
     for i in range(train_set_size):
         energies, intensities = sed_numba.generate_SED_IMF_PL(halo_mass=haloMassLog[i][0],
                                 redshift=redshift[i][0],
@@ -87,23 +101,33 @@ def generate_training_data(config):
                                 starMassMin=starsIMFMassMinLog[i][0], starMassMax=500, imfBins=50, imfIndex=starsIMFSlope[i][0], fEsc=starsEscFrac[i][0],
                                 alpha=qsoAlpha[i][0], qsoEfficiency=qsoEfficiency[i][0],
                                 targetSourceAge=sourceAge[i][0])
-        sed_vector.append(intensities)
-    sed_vector = np.asarray(sed_vector)
+        intensities_vector.append(intensities)
+        energies_vector.append(energies)
+
+    # convert lists to numpy arrays
+    intensities_vector = np.asarray(intensities_vector)
+    energies_vector = np.asarray(energies_vector)
+    # obtain tau from energies_vector
+    tau = generate_tau_training(energies_vector)
+    # obtain sed_vector from intensities_vector by multiplying with tau
+    assert intensities_vector.shape == tau.shape, 'tau and intensity vectors should be of same shape. Found: %s and %s'%(tau.shape, intensities_vector.shape)
+    sed_vector = np.multiply(intensities_vector, tau)
 
     # sample state vector
     x_H_II = np.random.uniform(ps_ode[0][0], ps_ode[0][1], size=(train_set_size, 1))
     x_He_II = np.random.uniform(ps_ode[1][0], ps_ode[1][1], size=(train_set_size, 1))
     x_He_III = np.random.uniform(ps_ode[2][0], ps_ode[2][1], size=(train_set_size, 1))
     T = np.random.uniform(ps_ode[3][0], ps_ode[3][1], size=(train_set_size, 1))
-    tau = np.random.uniform(ps_ode[4][0], ps_ode[4][1], size=(train_set_size, 1))
     time = sourceAge.copy()
-
-    state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T, tau, time), axis=1)
+    state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T, time), axis=1)
+    # temporarily removing tau from the state_vector because of it's shape (train_set_size, 2000)
+    # --- can be added back later
+    # state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T, tau, time), axis=1)
 
     # sample target labels
     u_actual = np.zeros((train_set_size, 1))
-    # TODO: return parameter vector
-    return sed_vector, state_vector, u_actual
+
+    return sed_vector, state_vector, u_actual, parameter_vector, energies_vector
 
 
 
@@ -154,7 +178,7 @@ def main(config):
     for epoch in range(1, config.n_epochs + 1):
 
         # TODO: look for boundary conditions???
-        x_SED, x_state_vector, target_residual = generate_training_data(config)
+        x_SED, x_state_vector, target_residual, parameter_vector, energies_vector = generate_training_data(config)
 
         # TODO: figure out: for what inputs do we need to set requires_grad=True
         x_SED = Variable(torch.from_numpy(x_SED).float(), requires_grad=False).to(device)
@@ -200,8 +224,8 @@ if __name__ == "__main__":
                         help="length of SED input for the model")
     parser.add_argument("--len_latent_vector", type=int, default=8,
                         help="length of reduced SED vector")
-    parser.add_argument("--len_state_vector", type=int, default=6,
-                        help="length of state vector (Xi, T, tau, t) to be concatenated with latent_vector")
+    parser.add_argument("--len_state_vector", type=int, default=5,
+                        help="length of state vector (Xi, T, t) to be concatenated with latent_vector")
     parser.add_argument("--train_set_size", type=int, default=128,
                         help="size of the randomly generated training set (default=128)")
 
