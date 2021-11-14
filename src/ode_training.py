@@ -69,9 +69,14 @@ def generate_tau_training(energies):
 
 
 def generate_training_data(config):
+    """
+    Explanation here please.
+    """
+
     train_set_size = config.train_set_size
 
-    sed_vector = []
+    flux_vector = []
+
     haloMassLog = np.random.uniform(ps_sed[0][0], ps_sed[0][1], size=(train_set_size, 1))
     redshift = np.random.uniform(ps_sed[1][0], ps_sed[1][1], size=(train_set_size, 1))
     sourceAge = np.random.uniform(ps_sed[2][0], ps_sed[2][1], size=(train_set_size, 1))
@@ -79,33 +84,46 @@ def generate_training_data(config):
     qsoEfficiency = np.random.uniform(ps_sed[4][0], ps_sed[4][1], size=(train_set_size, 1))
     starsEscFrac = np.random.uniform(ps_sed[5][0], ps_sed[5][1], size=(train_set_size, 1))
     starsIMFSlope = np.random.uniform(ps_sed[6][0], ps_sed[6][1], size=(train_set_size, 1))
-    starsIMFMassMinLog = np.random.uniform(ps_sed[7][0], ps_sed[7][1], size=(train_set_size, 1))
-    for i in range(train_set_size):
-        # TODO: to verify correct variables used in the function -- Fabian??
-        energies, inensities = sed_numba.generate_SED_IMF_PL(haloMass=haloMassLog[i][0],
-                                redshift=redshift[i][0],
-                                eLow=SED_ENERGY_MIN, eHigh=SED_ENERGY_MAX, N=2000,  logGrid=True,
-                                starMassMin=5, starMassMax=500, imfBins=100, imfIndex=2.35, fEsc=starsEscFrac[i][0],
-                                alpha=qsoAlpha[i][0], qsoEfficiency=qsoEfficiency[i][0],
-                                targetSourceAge=sourceAge[i][0])
-        sed_vector.append(energies)
-    sed_vector = np.asarray(sed_vector)
+    starsIMFMassMin = np.random.uniform(ps_sed[7][0], ps_sed[7][1], size=(train_set_size, 1))
 
-    # sample SED vector
+    for i in range(train_set_size):
+
+        energies, intensities = sed_numba.generate_SED_IMF_PL(haloMass=haloMassLog[i][0],
+                                                              redshift=redshift[i][0],
+                                                              eLow=SED_ENERGY_MIN,
+                                                              eHigh=SED_ENERGY_MAX,
+                                                              N=2000,  logGrid=True,
+                                                              starMassMin=starsIMFMassMin,
+                                                              starMassMax=500,
+                                                              imfBins=50,
+                                                              imfIndex=starsIMFSlope,
+                                                              fEsc=starsEscFrac[i][0],
+                                                              alpha=qsoAlpha[i][0],
+                                                              qsoEfficiency=qsoEfficiency[i][0],
+                                                              targetSourceAge=sourceAge[i][0])
+        tau = generate_tau_training(energies)
+
+        flux = tau * intensities
+
+        flux_vector.append(flux)
+    flux_vector = np.asarray(flux_vector)
+
+
+
+    # sample the state vector vector
+
     x_H_II = np.random.uniform(ps_ode[0][0], ps_ode[0][1], size=(train_set_size, 1))
     x_He_II = np.random.uniform(ps_ode[1][0], ps_ode[1][1], size=(train_set_size, 1))
     x_He_III = np.random.uniform(ps_ode[2][0], ps_ode[2][1], size=(train_set_size, 1))
     T = np.random.uniform(ps_ode[3][0], ps_ode[3][1], size=(train_set_size, 1))
-    tau = np.random.uniform(ps_ode[4][0], ps_ode[4][1], size=(train_set_size, 1))
     time = np.random.uniform(ps_ode[5][0], ps_ode[5][1], size=(train_set_size, 1))
 
     state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T, tau, time), axis=1)
 
     # sample target labels
-    u_actual = np.zeros((train_set_size, 1))
+    u_actual = np.zeros((train_set_size, 1))  # TODO: this should be removed
 
-    return sed_vector, state_vector, u_actual
-
+    return flux_vector, state_vector, u_actual
 
 
 # -----------------------------------------------------------------
