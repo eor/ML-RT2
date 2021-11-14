@@ -11,9 +11,11 @@ from common.settings_ode import ode_parameter_limits as ps_ode
 from common.settings_sed import p8_limits as ps_sed
 from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
 from common.utils import *
+from common.physics import *
 from sed import sed_numba
 from models import *
 from ode import *
+from random import random
 
 # check for CUDA
 if torch.cuda.is_available():
@@ -24,6 +26,47 @@ else:
     cuda = False
     device = torch.device("cpu")
     torch.set_default_tensor_type(torch.FloatTensor)
+
+
+def generate_tau_training(energies):
+    """
+    The generated training data produces two inputs to the neural network: a state vector and the source flux, which
+    represents the SED that is attenuated by the IGM in between the source and a given point of interest.
+    The attenuation can be expressed a factor exp(-tau(E,r,t)), where tau is the optical depth.
+
+    This function is meant to serve as a realistic approximation to tau(E). Time dependence can be discounted and
+    the radial dependence can be interpreted as a column density, since for a discreet computing grid tau(E)
+    can be written as
+
+    sum_i [ sigma_i(E) sum_r {n_i(r) delta_r } ] = sum_i [sigma_i(E)] N_i,
+
+    where i = (H I, He I, He II) and N_i = sum_r {n_i(r) delta_r} is called the column density
+
+    We pick suitable column densities, compute tau and return a vector tau(energies)
+    """
+
+    l = energies.shape[0]
+
+    sigmas_H_I = np.zeros(l)
+    sigmas_He_I = np.zeros(l)
+    sigmas_He_II = np.zeros(l)
+
+    for i in range(0, l):
+        e = energies[i]
+        sigmas_H_I[i] = physics_ionisation_cross_section_hydrogen(e)
+        sigmas_He_I[i] = physics_ionisation_cross_section_helium1(e)
+        sigmas_He_II[i] = physics_ionisation_cross_section_helium2(e)
+
+    # column densities
+    limit_lower = -20.0
+    limit_upper = 0.0
+
+    N_H_I = random() * (limit_upper - limit_lower) + limit_lower
+    N_He_I = random() * (limit_upper - limit_lower) + limit_lower
+    N_He_II = random() * (limit_upper - limit_lower) + limit_lower
+
+    return sigmas_H_I * N_H_I + sigmas_He_I * N_He_I + sigmas_He_II * N_He_II
+
 
 def generate_training_data(config):
     train_set_size = config.train_set_size
