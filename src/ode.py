@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 from common.physics import *
-from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA, N_ENERGY_BINS
 
 
 class ODE:
