@@ -43,8 +43,13 @@ class ODE:
 
         # unpack the parameter vector and obtain redshift
         redshift = parameter_vector[:, 1]
+<<<<<<< HEAD
 
         # initialise the number density arrays and electron number density arrays
+=======
+        
+        # initialise the number densities for the H & He ions and the free electrons
+>>>>>>> fa03e512a24d492a594e9dd0af037ccd2b610afe
         self.init_number_density_vectors(redshift,
                                          x_H_I_prediction,
                                          x_H_II_prediction,
@@ -115,7 +120,6 @@ class ODE:
         alpha_He_III = self.recombination_He_III(T)         # recombination He_III
         xi_He_II = self.dielectric_recombination_He_II(T)   # dielectronic recombination He_II
 
-
         # calculate that big integral (A.7) in [2]
         # [TODO: fix this]
         ionisation_rate_He_I = torch.ones((self.train_set_size))
@@ -132,7 +136,7 @@ class ODE:
 
     def get_x_He_III_loss(self, x_He_I, x_He_II, x_He_III, T, t):
         """ Takes in the output of neural network and returns the residual computed
-        by substituing the output in the third differential equation for He_III evolution.
+        by substituting the output in the third differential equation for He_III evolution.
         Ref: equation (A.5) in [2], a simplified form of equation (30) in [1]
         """
 
@@ -157,13 +161,35 @@ class ODE:
         by substituting the output in the fourth differential equation for electron temperature evolution.
         Ref: equation (A.9) in [2], a simplified form of equation (36) in [1]
         """
-        # [TODO: complete this]
-        return x_H_I/x_H_I
+
+        # TODO: move constants to physics.py
+        CONSTANT_c = 2.9979e10          # speed of light in cm/s
+        CONSTANT_k_B_erg = 1.3807e-16   # Boltzmann constant in erg/K
+        CONSTANT_k_B_eV = 8.6173e-5     # Boltzmann constant in eV/K
+
+        n_e = self.n_e  # electron number density
+        n_H_I = self.n_H_I
+        n_H_II = self.n_H_II
+        n_He_I = self.n_He_I
+        n_He_II = self.n_He_II
+        n_He_III = self.n_He_III
+
+        d_T_dt = torch.autograd.grad(T.sum(), t, create_graph=True, allow_unused=True)[0]
+
+        heating_rate_H_I = torch.ones((self.train_set_size))
+        heating_rate_He_I = torch.ones((self.train_set_size))
+        heating_rate_He_II = torch.ones((self.train_set_size))
+
+        term_1 = torch.multiply(n_H_I, heating_rate_H_I) \
+                 + torch.multiply(n_He_I, heating_rate_He_I) \
+                 + torch.multiply(n_He_II, heating_rate_He_II)
+
+        return 4
 
     def init_number_density_vectors(self, redshift, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III):
         """
         Takes in the redshift and ionisation fractions for H and He and initialises the
-        number density arrays for all the H and He ionisation fractions. Also,
+        number density variables for all the H and He ionisation fractions. Also,
         initialises the electron number density arrays.
 
         Units of values in computed arrays: cm^-3
