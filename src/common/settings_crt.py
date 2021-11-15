@@ -6,7 +6,7 @@
 # radial parameters
 DEFAULT_RADIUS_MAX = 1500.0         # kpc
 DEFAULT_RADIUS_MIN = 0.0            # kpc
-DEFAULT_SPATIAL_RESOLUTION = 0.1    # kpc
+DEFAULT_SPATIAL_RESOLUTION = 1      # kpc
 
 # time
 DEFAULT_TEMPORAL_RESOLUTION = 0.01  # Myr
