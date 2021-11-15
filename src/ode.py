@@ -11,8 +11,8 @@ class ODE:
     """
 
     def __init__(self, conf):
-        self.CONSTANT_n_H_0 = 1 #TODO: fix this
-        self.CONSTANT_n_He_0 = 1 #TODO: fix this
+        self.CONSTANT_n_H_0 = 1   #TODO: fix this
+        self.CONSTANT_n_He_0 = 1  #TODO: fix this
 
         # obtain train_set_size from config
         self.train_set_size = conf.train_set_size
@@ -20,15 +20,16 @@ class ODE:
         # generate over_densities array
         self.over_densities = torch.ones((conf.train_set_size))
 
-
     def compute_ode_residual(self, sed_vector, state_vector, parameter_vector, u_approximation):
         u = u_approximation(sed_vector, state_vector)
 
         # unpack the state_vector
-        t = state_vector[:,4]
+        t = state_vector[:, 4]
+
         # unpack the prediction vector
-        x_H_II_approx, x_He_II_approx, x_He_III_approx, T_approx = u[:,0], u[:,1], u[:,2], u[:,3]
-        # unpack the parameter vector for halomass and redshift
+        x_H_II_approx, x_He_II_approx, x_He_III_approx, T_approx = u[:, 0], u[:, 1], u[:, 2], u[:, 3]
+
+        # unpack the parameter vector for halo mass and redshift
         self.halo_mass, self.redshift = parameter_vector[:, 0], parameter_vector[:, 1]
 
         # number density arrays for total hydrogen and helium in units of cm^-3
@@ -51,10 +52,15 @@ class ODE:
         # electron number density = sum of number densities of ionised H, He and doubly ionised He
         self.n_e = self.n_H_II + self.n_He_II + 2 * self.n_He_III
 
+        # compute loss
         loss_x_H_II = self.get_x_H_II_loss(x_H_I_approx, x_H_II_approx, t)
         loss_x_He_II = self.get_x_He_II_loss(x_He_I_approx, x_He_II_approx, x_He_III_approx, t)
         loss_x_He_III = self.get_x_He_III_loss(x_He_I_approx, x_He_II_approx, x_He_III_approx, t)
-        loss_T = self.get_temperature_loss(x_H_I_approx, x_H_II_approx, x_He_I_approx, x_He_II_approx, x_He_III_approx, t)
+
+        loss_T = self.get_temperature_loss(x_H_I_approx, x_H_II_approx,
+                                           x_He_I_approx, x_He_II_approx, x_He_III_approx,
+                                           T_approx,
+                                           t)
 
         return loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
 
@@ -67,7 +73,7 @@ class ODE:
         # [TODO: fix this]
         ionisation_rate_H_I = torch.ones((self.train_set_size))
 
-        d_xHII_dt = torch.autograd.grad(x_H_II.sum(), t, create_graph=True,allow_unused=True)[0]
+        d_xHII_dt = torch.autograd.grad(x_H_II.sum(), t, create_graph=True, allow_unused=True)[0]
         term1 = torch.multiply(ionisation_rate_H_I, x_H_I)
         term2 = torch.multiply(alpha_H_II, torch.divide(torch.square(n_e), n_H))
 
@@ -79,7 +85,7 @@ class ODE:
         beta_He_II = 0.0  # collision ionisation
         alpha_He_II = 0.0  # recombination He_II
         alpha_He_III = 0.0  # recombination He_III
-        Xi_He_II = 0.0  # dielectronic recombination He_II
+        xi_He_II = 0.0  # dielectronic recombination He_II
 
         # calculate that big integral (A.7)
         # [TODO: fix this]
@@ -91,7 +97,7 @@ class ODE:
         term3 = torch.multiply(beta_He_II, torch.multiply(n_e, x_He_II))
         term4 = torch.multiply(alpha_He_II, torch.multiply(n_e, x_He_II))
         term5 = torch.multiply(alpha_He_III, torch.multiply(n_e, x_He_III))
-        term6 = torch.multiply(Xi_He_II, torch.multiply(n_e, x_He_II))
+        term6 = torch.multiply(xi_He_II, torch.multiply(n_e, x_He_II))
 
         return d_xHeII_dt - term1 - term2 + term3 + term4 - term5 + term6
 
@@ -111,6 +117,21 @@ class ODE:
 
         return d_xHeIII_dt - term1 - term2 + term3
 
-    def get_temperature_loss(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III, t):
-        # [TODO: complete this]
-        return x_H_I/x_H_I
+    def get_temperature_loss(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III, T, t):
+
+        # get required densities
+        n_H_I = self.n_H_I
+        n_H_II = self.n_H_II
+        n_He_I = self.n_He_I
+        n_He_II = self.n_He_II
+        n_He_III = self.n_He_III
+        n_e = self.n_e
+
+        # cooling coefficients
+
+        # TODO solve heating rate integrals
+
+        term_2 = torch.multiply(n_e, n_H_I)
+
+
+        return 4
