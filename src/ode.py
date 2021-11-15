@@ -18,7 +18,6 @@ class ODE:
         # generate over_densities array
         self.over_densities = torch.ones((conf.train_set_size))
 
-
     def compute_ode_residual(self, flux_vector, state_vector, parameter_vector, u_approximation):
         """ Takes in the input paramters for neural network and returns the residual computed
         by substituing the output of neural network in our system of four differential equations.
@@ -27,14 +26,17 @@ class ODE:
 
         # unpack the state_vector
         t = state_vector[:, 4]
+        
         # unpack the prediction vector
-        x_H_II_prediction, x_He_II_prediction, x_He_III_prediction, T_prediction = u_prediction[:,0], u_prediction[:,1], u_prediction[:,2], u_prediction[:,3]
+        x_H_II_prediction, x_He_II_prediction, x_He_III_prediction, T_prediction = u_prediction[:, 0], u_prediction[:, 1], u_prediction[:, 2], u_prediction[:, 3]
+        
         # compute ionisation fractions from the prediction vectors
         x_H_I_prediction = 1.0 - x_H_II_prediction
         x_He_I_prediction = 1.0 - x_He_II_prediction - x_He_III_prediction
 
         # unpack the parameter vector and obtain redshift
         redshift = parameter_vector[:, 1]
+        
         # initialse the number density arrays and electron number density arrays
         self.init_number_density_vectors(redshift, x_H_I_prediction, x_H_II_prediction, x_He_I_prediction, x_He_II_prediction, x_He_III_prediction)
 
@@ -74,11 +76,13 @@ class ODE:
         (A simplified form of equation (29) in Fukugita1994)
         """
         n_e = self.n_e  # electron number density
+
         beta_He_I = self.collision_ionisation_He_I(T)  # collision ionisation
         beta_He_II = self.collision_ionisation_He_II(T)  # collision ionisation
         alpha_He_II = self.recombination_He_II(T)  # recombination He_II
         alpha_He_III = self.recombination_He_III(T)  # recombination He_III
         Xi_He_II = self.dielectric_recombination_He_II(T)  # dielectronic recombination He_II
+
 
         # calculate that big integral (A.7)
         # [TODO: fix this]
@@ -90,7 +94,7 @@ class ODE:
         term3 = torch.multiply(beta_He_II, torch.multiply(n_e, x_He_II))
         term4 = torch.multiply(alpha_He_II, torch.multiply(n_e, x_He_II))ionisation fractions
         term5 = torch.multiply(alpha_He_III, torch.multiply(n_e, x_He_III))
-        term6 = torch.multiply(Xi_He_II, torch.multiply(n_e, x_He_II))
+        term6 = torch.multiply(xi_He_II, torch.multiply(n_e, x_He_II))
 
         return d_xHeII_dt - term1 - term2 + term3 + term4 - term5 + term6
 
@@ -117,6 +121,7 @@ class ODE:
         return d_xHeIII_dt - term1 - term2 + term3
 
     def get_temperature_loss(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III, T, t):
+
         """ Takes in the output of neural network and returns the residual computed
         by substituing the output in the fourth differential equation for electron temperature evolution.
         Ref: equation (A.9) in Krause F., Thomas R. M., Zaroubi S., Abdalla F. B., 2018, NewAst, 64, 9
@@ -176,6 +181,7 @@ class ODE:
         term1 = torch.pow(temperature_vector, -0.5)
         term2 = torch.pow((temperature_vector/1.e3), -0.2)
         term3 = torch.pow(1 + torch.pow((temperature_vector/4.e6), 0.7), -1.0)
+        
         return 3.36e-10 * term1 * term2 * term3
 
     def dielectric_recombination_He_II(self, temperature_vector):
@@ -188,6 +194,7 @@ class ODE:
         term1 = torch.pow(temperature_vector, -1.5)
         term2 = torch.exp(-4.7e5/temperature_vector)
         term3 = 1 + 0.3*torch.exp(-9.4e4/temperature_vector)
+        
         return 1.90e-3 * term1 * term2 * term3
 
     def collision_ionisation_He_I(self, temperature_vector):
@@ -200,6 +207,7 @@ class ODE:
         term1 = torch.pow(temperature_vector, 0.5)
         term2 = torch.pow(1 + torch.pow((temperature_vector/1.e5), 0.5), -1.0)
         term3 = torch.exp(-2.853e5/temperature_vector)
+        
         return 2.38e-11 * term1 * term2 * term3
 
     def collision_ionisation_He_II(self, temperature_vector):
@@ -212,4 +220,6 @@ class ODE:
         term1 = torch.pow(temperature_vector, 0.5)
         term2 = torch.pow(1 + torch.pow((temperature_vector/1.e5), 0.5), -1.0)
         term3 = torch.exp(-6.315e5/temperature_vector)
+        
         return 5.68e-12 * term1 * term2 * term3
+
