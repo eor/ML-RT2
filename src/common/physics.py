@@ -23,6 +23,7 @@ def physics_compute_ionisation_rates(self, energy_vector, source_flux, beta_H_I,
     every energy E in vector energy_vector, electron number density n_e,
     collision ionisation beta_H_I and returns ionization rate of H_I, He_I, He_II
     """
+
     # basic checks
     assert len(tau) == len(intensity_vector), 'length of intensity vector should be equal to the length of tau vector'
     assert len(E) == len(intensity_vector), 'length of energy vector should be equal to the length of tau vector'
