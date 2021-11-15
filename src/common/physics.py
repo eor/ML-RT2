@@ -1,5 +1,12 @@
 import numpy as np
-from sed import sed_numba as sed_generator
+try:
+    from common.utils import *
+except ImportError:
+    from utils import *
+try:
+    from ..sed import sed_numba as sed_generator
+except ImportError:
+    from sed import sed_numba as sed_generator
 
 
 CONSTANT_T_CMB_0 = 2.731                    # CMB temperature at redshift z=0 in Kelvin
@@ -24,8 +31,10 @@ def physics_compute_ionisation_rates(self, energy_vector, source_flux, beta_H_I,
     collision ionisation beta_H_I and returns ionization rate of H_I, He_I, He_II
     """
     # basic checks
-    assert len(tau) == len(intensity_vector), 'length of intensity vector should be equal to the length of tau vector'
-    assert len(E) == len(intensity_vector), 'length of energy vector should be equal to the length of tau vector'
+    assert len(tau) == len(source_flux), 'length of intensity vector should be equal to the length of tau vector'
+    assert len(E) == len(energy_vector), 'length of energy vector should be equal to the length of tau vector'
+
+    # TODO: this needs fixing. Aayush, what are tau and E here?
 
     # e_tau = np.exp(-1 * tau)
     # source_flux = np.multiply(intensity_vector, e_tau)
