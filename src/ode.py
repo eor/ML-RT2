@@ -20,6 +20,9 @@ class ODE:
 
 
     def compute_ode_residual(self, flux_vector, state_vector, parameter_vector, u_approximation):
+        """ Takes in the input paramters for neural network and returns the residual computed
+        by substituing the output of neural network in our system of four differential equations.
+        """
         u_prediction = u_approximation(flux_vector, state_vector)
 
         # unpack the state_vector
@@ -44,10 +47,16 @@ class ODE:
         return loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
 
     def get_x_H_II_loss(self, x_H_I, x_H_II, T, t):
+        """ Takes in the output of neural network and returns the residual computed
+        by substituing the output in the first differential equation for H_II evolution.
+        Ref: equation (A.3) in Krause F., Thomas R. M., Zaroubi S., Abdalla F. B., 2018, NewAst, 64, 9
+        (A simplified form of equation (26) in Fukugita1994)
+        """
+
         n_H = self.n_hydrogen  # hydrogen density
         n_e = self.n_e  # electron number density
         alpha_H_II = self.recombination_H_II(T)  # recombination H_II
-        
+
         # calculate that big integral (A.6)
         # [TODO: fix this]
         ionisation_rate_H_I = torch.ones((self.train_set_size))
@@ -59,6 +68,11 @@ class ODE:
         return d_xHII_dt - term1 + term2
 
     def get_x_He_II_loss(self, x_He_I, x_He_II, x_He_III, T, t):
+        """ Takes in the output of neural network and returns the residual computed
+        by substituing the output in the second differential equation for He_II evolution.
+        Ref: equation (A.4) in Krause F., Thomas R. M., Zaroubi S., Abdalla F. B., 2018, NewAst, 64, 9
+        (A simplified form of equation (29) in Fukugita1994)
+        """
         n_e = self.n_e  # electron number density
         beta_He_I = self.collision_ionisation_He_I(T)  # collision ionisation
         beta_He_II = self.collision_ionisation_He_II(T)  # collision ionisation
@@ -74,13 +88,19 @@ class ODE:
         term1 = torch.multiply(ionisation_rate_He_I, x_He_I)
         term2 = torch.multiply(beta_He_I, torch.multiply(n_e, x_He_I))
         term3 = torch.multiply(beta_He_II, torch.multiply(n_e, x_He_II))
-        term4 = torch.multiply(alpha_He_II, torch.multiply(n_e, x_He_II))
+        term4 = torch.multiply(alpha_He_II, torch.multiply(n_e, x_He_II))ionisation fractions
         term5 = torch.multiply(alpha_He_III, torch.multiply(n_e, x_He_III))
         term6 = torch.multiply(Xi_He_II, torch.multiply(n_e, x_He_II))
 
         return d_xHeII_dt - term1 - term2 + term3 + term4 - term5 + term6
 
     def get_x_He_III_loss(self, x_He_I, x_He_II, x_He_III, T, t):
+        """ Takes in the output of neural network and returns the residual computed
+        by substituing the output in the third differential equation for He_III evolution.
+        Ref: equation (A.5) in Krause F., Thomas R. M., Zaroubi S., Abdalla F. B., 2018, NewAst, 64, 9
+        (A simplified form of equation (30) in Fukugita1994)
+        """
+
         n_e = self.n_e  # electron number density
         alpha_He_III = self.recombination_He_III(T)  # recombination He_III
         beta_He_II = self.collision_ionisation_He_II(T)  # collision ionisation
@@ -97,6 +117,11 @@ class ODE:
         return d_xHeIII_dt - term1 - term2 + term3
 
     def get_temperature_loss(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III, T, t):
+        """ Takes in the output of neural network and returns the residual computed
+        by substituing the output in the fourth differential equation for electron temperature evolution.
+        Ref: equation (A.9) in Krause F., Thomas R. M., Zaroubi S., Abdalla F. B., 2018, NewAst, 64, 9
+        (A simplified form of equation (36) in Fukugita1994)
+        """
         # [TODO: complete this]
         return x_H_I/x_H_I
 
@@ -104,6 +129,7 @@ class ODE:
         """ Takes in the redshift and ionisation fractions for H and He and initialises the
         number density arrays for all the H and He ionisation fractions. Also,
         initialises the electron number density arrays.
+
         Units of values in computed arrays: cm^-3
         """
 
