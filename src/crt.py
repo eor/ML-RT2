@@ -7,6 +7,7 @@ from common.settings_ode import *
 from common.settings_sed import *
 from common.physics import *
 
+
 class SimulationData:
     """
     Set up the data structure which contains simulation specific data, most importantly the
@@ -127,9 +128,9 @@ def main(config):
 
             print("Current radius r=%.3f kpc" % (radial_index * sim.delta_radius))
 
-            for energy in np.arange(13.01, 100, 0.1):
-
-                tau = physics.get_tau(sim, energy, radial_index)
+            # for energy in np.arange(13.01, 100, 0.1):
+            #
+            #     tau = physics.get_tau(sim, energy, radial_index)
 
             # load NN inputs: N(E) and state vector (tau, x_i, T, time)
             # tau
@@ -143,6 +144,7 @@ def main(config):
 
     # 6. write data
     # 7. analysis or plots
+
 
 # -----------------------------------------------------------------
 #  Parse user input

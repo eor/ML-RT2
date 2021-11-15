@@ -1,5 +1,12 @@
 import numpy as np
-from sed import sed_numba as sed_generator
+try:
+    from common.utils import *
+except ImportError:
+    from utils import *
+try:
+    from ..sed import sed_numba as sed_generator
+except ImportError:
+    from sed import sed_numba as sed_generator
 
 
 CONSTANT_T_CMB_0 = 2.731                    # CMB temperature at redshift z=0 in Kelvin
