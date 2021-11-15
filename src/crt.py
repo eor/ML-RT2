@@ -117,6 +117,9 @@ def main(config):
     # 4. get SED
 
     # 5. run simulation
+
+    physics = Physics.getInstance()
+
     while sim.current_time < sim.lifetime:
 
         print("Current time: %3f Myr" % sim.current_time)
@@ -126,7 +129,7 @@ def main(config):
 
             for energy in np.arange(13.01, 100, 0.1):
 
-                physics_tau(sim, energy, radial_index)
+                tau = physics.get_tau(sim, energy, radial_index)
 
             # load NN inputs: N(E) and state vector (tau, x_i, T, time)
             # tau

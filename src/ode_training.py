@@ -172,6 +172,9 @@ def main(config):
     # initialise the ODE equation
     ode_equation = ODE(config)
 
+    # initialise the Physics class
+    physics = Physics.getInstance()
+
     # -----------------------------------------------------------------
     # Optimizers
     # -----------------------------------------------------------------
@@ -192,7 +195,11 @@ def main(config):
     for epoch in range(1, config.n_epochs + 1):
 
         # TODO: look for boundary conditions???
-        x_SED, x_state_vector, target_residual, parameter_vector, energies_vector = generate_training_data(config)
+        x_flux_vector, x_state_vector, target_residual, parameter_vector, energies_vector = generate_training_data(config)
+
+        # update the data in this physics module
+        physics.set_energy_vector(energies_vector[0])
+        physics.set_flux_vector(x_flux_vector)
 
         # TODO: figure out: for what inputs do we need to set requires_grad=True
         x_SED = Variable(torch.from_numpy(x_SED).float(), requires_grad=True).to(device)

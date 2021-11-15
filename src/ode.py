@@ -147,6 +147,9 @@ class ODE:
         # electron number density = sum of number densities of ionised H, He and doubly ionised He
         self.n_e = self.n_H_II + self.n_He_II + 2 * self.n_He_III
 
+    def init_ionisation_rates(self, flux_vector, energy_vector):
+        flux_vector_cpu = flux_vector.cpu().numpy()
+        energy_vector_cpu = energy_vector.cpu().numpy()
 
     def recombination_H_II(self, temperature_vector):
         """ Takes in the temperature_vector of shape (train_set_size)
