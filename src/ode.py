@@ -47,7 +47,7 @@ class ODE:
         n_H = self.n_hydrogen  # hydrogen density
         n_e = self.n_e  # electron number density
         alpha_H_II = self.recombination_H_II(T)  # recombination H_II
-
+        
         # calculate that big integral (A.6)
         # [TODO: fix this]
         ionisation_rate_H_I = torch.ones((self.train_set_size))
@@ -60,8 +60,8 @@ class ODE:
 
     def get_x_He_II_loss(self, x_He_I, x_He_II, x_He_III, T, t):
         n_e = self.n_e  # electron number density
-        beta_He_I = 0.0  # collision ionisation
-        beta_He_II = 0.0  # collision ionisation
+        beta_He_I = self.collision_ionisation_He_I(T)  # collision ionisation
+        beta_He_II = self.collision_ionisation_He_II(T)  # collision ionisation
         alpha_He_II = self.recombination_He_II(T)  # recombination He_II
         alpha_He_III = self.recombination_He_III(T)  # recombination He_III
         Xi_He_II = self.dielectric_recombination_He_II(T)  # dielectronic recombination He_II
@@ -83,7 +83,7 @@ class ODE:
     def get_x_He_III_loss(self, x_He_I, x_He_II, x_He_III, T, t):
         n_e = self.n_e  # electron number density
         alpha_He_III = self.recombination_He_III(T)  # recombination He_III
-        beta_He_II = 0.0  # collision ionisation
+        beta_He_II = self.collision_ionisation_He_II(T)  # collision ionisation
 
         # calculate that big integral (A.8)
         # [TODO: fix this]
@@ -125,7 +125,7 @@ class ODE:
     def recombination_H_II(self, temperature_vector):
         """ Takes in the temperature_vector of shape (train_set_size)
         and returns the recombination coefficient for H_II (free → n ≥ 2) for each
-        temperature in the vector.
+        temperature in the vector. (α2_HII)
         Ref: equation (57) in section B.2 in Fukugita1994
         Units of recombination coefficient: cm^3/s
         """
@@ -134,7 +134,7 @@ class ODE:
     def recombination_He_II(self, temperature_vector):
         """ Takes in the temperature_vector of shape (train_set_size)
         and returns the recombination coefficient for He_II (free → n ≥ 1)
-        for each temperature in the vector.
+        for each temperature in the vector. (α_He_II)
         Ref: equation (58) in section B.2 in Fukugita1994
         Units of recombination coefficient: cm^3/s
         """
@@ -143,7 +143,7 @@ class ODE:
     def recombination_He_III(self, temperature_vector):
         """ Takes in the temperature_vector of shape (train_set_size)
         and returns the recombination coefficient for He_III (free → n ≥ 1)
-        for each temperature in the vector.
+        for each temperature in the vector. (α_He_III)
         Ref: equation (62) in section B.2 in Fukugita1994
         Units of recombination coefficient: cm^3/s
         """
@@ -163,3 +163,27 @@ class ODE:
         term2 = torch.exp(-4.7e5/temperature_vector)
         term3 = 1 + 0.3*torch.exp(-9.4e4/temperature_vector)
         return 1.90e-3 * term1 * term2 * term3
+
+    def collision_ionisation_He_I(self, temperature_vector):
+        """ Takes in the temperature_vector of shape (train_set_size)
+        and returns the collision ionisation for He_I (β_HeI) for each
+        temperature in the vector.
+        Ref: equation (54) in section B.1 in Fukugita1994
+        Units of recombination coefficient: cm^3/s
+        """
+        term1 = torch.pow(temperature_vector, 0.5)
+        term2 = torch.pow(1 + torch.pow((temperature_vector/1.e5), 0.5), -1.0)
+        term3 = torch.exp(-2.853e5/temperature_vector)
+        return 2.38e-11 * term1 * term2 * term3
+
+    def collision_ionisation_He_II(self, temperature_vector):
+        """ Takes in the temperature_vector of shape (train_set_size)
+        and returns the collision ionisation for He_II (β_HeII) for each
+        temperature in the vector.
+        Ref: equation (55) in section B.1 in Fukugita1994
+        Units of recombination coefficient: cm^3/s
+        """
+        term1 = torch.pow(temperature_vector, 0.5)
+        term2 = torch.pow(1 + torch.pow((temperature_vector/1.e5), 0.5), -1.0)
+        term3 = torch.exp(-6.315e5/temperature_vector)
+        return 5.68e-12 * term1 * term2 * term3
