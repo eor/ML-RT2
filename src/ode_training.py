@@ -12,6 +12,7 @@ from common.settings_sed import p8_limits as ps_sed
 from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
 from common.utils import *
 from common.physics import *
+from common.settings_crt import *
 from sed import sed_numba
 from models import *
 from ode import *
@@ -169,7 +170,7 @@ def main(config):
         model.cuda()
 
     # initialise the ODE equation
-    ode_equation = ODE()
+    ode_equation = ODE(config)
 
     # -----------------------------------------------------------------
     # Optimizers
@@ -194,12 +195,12 @@ def main(config):
         x_SED, x_state_vector, target_residual, parameter_vector, energies_vector = generate_training_data(config)
 
         # TODO: figure out: for what inputs do we need to set requires_grad=True
-        x_SED = Variable(torch.from_numpy(x_SED).float(), requires_grad=False).to(device)
-        x_state_vector = Variable(torch.from_numpy(x_state_vector).float(), requires_grad=False).to(device)
-        target_residual = Variable(torch.from_numpy(target_residual).float(), requires_grad=False).to(device)
-
+        x_SED = Variable(torch.from_numpy(x_SED).float(), requires_grad=True).to(device)
+        x_state_vector = Variable(torch.from_numpy(x_state_vector).float(), requires_grad=True).to(device)
+        target_residual = Variable(torch.from_numpy(target_residual).float(), requires_grad=True).to(device)
+        parameter_vector = Variable(torch.from_numpy(parameter_vector).float(), requires_grad=True).to(device)
         # Loss based on CRT ODEs
-        residual = ode_equation.compute_ode_residual(x_SED, x_state_vector, u_approximation)
+        residual = ode_equation.compute_ode_residual(x_SED, x_state_vector, parameter_vector, u_approximation)
         loss_ode = F.mse_loss(input=residual, target=target_residual, reduction='mean')
 
         # compute the gradients
@@ -241,6 +242,20 @@ if __name__ == "__main__":
                         help="length of state vector (Xi, T, t) to be concatenated with latent_vector")
     parser.add_argument("--train_set_size", type=int, default=128,
                         help="size of the randomly generated training set (default=128)")
+
+    # grid settings
+    parser.add_argument("--radius_max", type=float, default=DEFAULT_RADIUS_MAX,
+                        help="Maximum radius in kpc. Default = 1500.0")
+
+    parser.add_argument("--radius_min", type=float, default=DEFAULT_RADIUS_MIN,
+                        help="Minimum radius in kpc. Default = 0.1")
+
+    parser.add_argument("--delta_radius", type=float, default=DEFAULT_SPATIAL_RESOLUTION,
+                        help="Spatial resolution in kpc. Default = 1")
+
+    parser.add_argument("--delta_time", type=float, default=DEFAULT_TEMPORAL_RESOLUTION,
+                        help="Temporal resolution in Myr. Default = 0.01")
+
 
     # network optimisation
     parser.add_argument("--n_epochs", type=int, default=10000,

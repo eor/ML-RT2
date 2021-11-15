@@ -163,7 +163,7 @@ if __name__ == "__main__":
                         help="Minimum radius in kpc. Default = 0.1")
 
     parser.add_argument("--delta_radius", type=float, default=DEFAULT_SPATIAL_RESOLUTION,
-                        help="Spatial resolution in kpc. Default = 0.1")
+                        help="Spatial resolution in kpc. Default = 1")
 
     parser.add_argument("--delta_time", type=float, default=DEFAULT_TEMPORAL_RESOLUTION,
                         help="Temporal resolution in Myr. Default = 0.01")
