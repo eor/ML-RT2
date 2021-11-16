@@ -159,7 +159,6 @@ class ODE:
 
         # TODO: move constants to physics.py
         CONSTANT_c = 2.9979e10          # speed of light in cm/s
-        CONSTANT_k_B_erg = 1.3807e-16   # Boltzmann constant in erg/K
         CONSTANT_k_B_eV = 8.6173e-5     # Boltzmann constant in eV/K
 
         n_e = self.n_e  # electron number density
