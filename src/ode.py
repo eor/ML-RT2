@@ -30,20 +30,20 @@ class ODE:
 
         # unpack the state_vector
         t = state_vector[:, 4]
-        
+
         # unpack the prediction vector
         x_H_II_prediction, x_He_II_prediction, x_He_III_prediction, T_prediction = u_prediction[:, 0], \
                                                                                    u_prediction[:, 1], \
                                                                                    u_prediction[:, 2], \
                                                                                    u_prediction[:, 3]
-        
+
         # compute ionisation fractions from the prediction vectors
         x_H_I_prediction = 1.0 - x_H_II_prediction
         x_He_I_prediction = 1.0 - x_He_II_prediction - x_He_III_prediction
 
         # unpack the parameter vector and obtain redshift
         redshift = parameter_vector[:, 1]
-        
+
         # initialise the number densities for the H & He ions and the free electrons
         self.init_number_density_vectors(redshift,
                                          x_H_I_prediction,
@@ -86,14 +86,19 @@ class ODE:
         by substituting the output in the first differential equation for H_II evolution.
         Ref: equation (A.3) in [2], which is a simplified form of equation (26) in [1].
         """
+        # hydrogen number density
+        n_H = self.n_hydrogen
+        # electron number density
+        n_e = self.n_e
+        # recombination coefficient H_II
+        alpha_H_II = self.recombination_H_II(T)
+        # collision_ionisation for hydirgen
+        beta1 = self.collision_ionisation_H_I(T)
 
-        n_H = self.n_hydrogen  # hydrogen density
-        n_e = self.n_e  # electron number density
-        alpha_H_II = self.recombination_H_II(T)  # recombination H_II
-
-        # calculate that big integral (A.6)
-        # [TODO: fix this]
-        ionisation_rate_H_I = torch.ones((self.train_set_size))
+        # ionsiation rate for H_I, equation (A.6) in [2]
+        ionisation_term1 = beta1 * n_e
+        ionisation_term2 = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_hydrogen())
+        ionisation_rate_H_I = ionisation_term1 + ionisation_term2
 
         d_xHII_dt = torch.autograd.grad(x_H_II.sum(), t, create_graph=True, allow_unused=True)[0]
         term1 = torch.multiply(ionisation_rate_H_I, x_H_I)
@@ -107,17 +112,18 @@ class ODE:
         by substituting the output in the second differential equation for He_II evolution.
         Ref: equation (A.4) in [2], a simplified form of equation (29) in [1]
         """
-        n_e = self.n_e  # electron number density
-
-        beta_He_I = self.collision_ionisation_He_I(T)       # collision ionisation
-        beta_He_II = self.collision_ionisation_He_II(T)     # collision ionisation
-        alpha_He_II = self.recombination_He_II(T)           # recombination He_II
-        alpha_He_III = self.recombination_He_III(T)         # recombination He_III
-        xi_He_II = self.dielectric_recombination_He_II(T)   # dielectronic recombination He_II
-
-        # calculate that big integral (A.7) in [2]
-        # [TODO: fix this]
-        ionisation_rate_He_I = torch.ones((self.train_set_size))
+        # electron number density
+        n_e = self.n_e
+        # collision ionisations for He_I and He_II
+        beta_He_I = self.collision_ionisation_He_I(T)
+        beta_He_II = self.collision_ionisation_He_II(T)
+        # recombination coefficient for He_II and He_III
+        alpha_He_II = self.recombination_He_II(T)
+        alpha_He_III = self.recombination_He_III(T)
+        # dielectric recombination coefficient for He_II
+        xi_He_II = self.dielectric_recombination_He_II(T)
+        # ionsiation rate for He_I, equation (A.7) in [2]
+        ionisation_rate_He_I = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_helium1())
 
         d_xHeII_dt = torch.autograd.grad(x_He_II.sum(), t, create_graph=True, allow_unused=True)[0]
         term1 = torch.multiply(ionisation_rate_He_I, x_He_I)
@@ -134,14 +140,14 @@ class ODE:
         by substituting the output in the third differential equation for He_III evolution.
         Ref: equation (A.5) in [2], a simplified form of equation (30) in [1]
         """
-
-        n_e = self.n_e  # electron number density
-        alpha_He_III = self.recombination_He_III(T)      # recombination He_III
-        beta_He_II = self.collision_ionisation_He_II(T)  # collision ionisation
-
-        # calculate that big integral (A.8)
-        # [TODO: fix this]
-        ionisation_rate_He_II = torch.ones((self.train_set_size))
+        # electron number density
+        n_e = self.n_e
+        # recombination coefficient He_III
+        alpha_He_III = self.recombination_He_III(T)
+        # collision ionisation
+        beta_He_II = self.collision_ionisation_He_II(T)
+        # ionsiation rate for He_II, equation (A.8) in [2]
+        ionisation_rate_He_II = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_helium2())
 
         d_xHeIII_dt = torch.autograd.grad(x_He_III.sum(), t, create_graph=True, allow_unused=True)[0]
         term1 = torch.multiply(ionisation_rate_He_II, x_He_II)
@@ -231,7 +237,7 @@ class ODE:
         term1 = torch.pow(temperature_vector, -0.5)
         term2 = torch.pow((temperature_vector/1.e3), -0.2)
         term3 = torch.pow(1 + torch.pow((temperature_vector/4.e6), 0.7), -1.0)
-        
+
         return 3.36e-10 * term1 * term2 * term3
 
     def dielectric_recombination_He_II(self, temperature_vector):
@@ -244,8 +250,21 @@ class ODE:
         term1 = torch.pow(temperature_vector, -1.5)
         term2 = torch.exp(-4.7e5/temperature_vector)
         term3 = 1 + 0.3*torch.exp(-9.4e4/temperature_vector)
-        
+
         return 1.90e-3 * term1 * term2 * term3
+
+    def collision_ionisation_H_I(self, temperature_vector):
+        """ Takes in the temperature_vector of shape (train_set_size)
+        and returns the collision ionisation for H_I (β1_HI) for each
+        temperature in the vector.
+        Ref: equation (52) in section B.1 in [1]
+        Units of recombination coefficient: cm^3/s
+        """
+        term1 = torch.pow(temperature_vector, 0.5)
+        term2 = torch.pow(1 + torch.pow((temperature_vector/1.e5), 0.5), -1.0)
+        term3 = torch.exp(-1.578e5/temperature_vector)
+
+        return 5.85e-11 * term1 * term2 * term3
 
     def collision_ionisation_He_I(self, temperature_vector):
         """ Takes in the temperature_vector of shape (train_set_size)
@@ -257,7 +276,7 @@ class ODE:
         term1 = torch.pow(temperature_vector, 0.5)
         term2 = torch.pow(1 + torch.pow((temperature_vector/1.e5), 0.5), -1.0)
         term3 = torch.exp(-2.853e5/temperature_vector)
-        
+
         return 2.38e-11 * term1 * term2 * term3
 
     def collision_ionisation_He_II(self, temperature_vector):
@@ -270,6 +289,5 @@ class ODE:
         term1 = torch.pow(temperature_vector, 0.5)
         term2 = torch.pow(1 + torch.pow((temperature_vector/1.e5), 0.5), -1.0)
         term3 = torch.exp(-6.315e5/temperature_vector)
-        
-        return 5.68e-12 * term1 * term2 * term3
 
+        return 5.68e-12 * term1 * term2 * term3
