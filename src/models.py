@@ -38,7 +38,7 @@ class MLP1(nn.Module):
             nn.Linear(64, 4)
         )
 
-    def forward(self, x_flux_vector, x_state_vector):
+    def forward(self, x_flux_vector, x_state_vector, time_vector):
         """
         Inputs are:
         1) a vector containing the source flux, which is the SED multiplied with the optical depth, i.e.
@@ -56,6 +56,6 @@ class MLP1(nn.Module):
         """
 
         latent_vector = self.NN_flux(x_flux_vector)
-        concat_input = torch.cat((x_state_vector, latent_vector), axis=1)
+        concat_input = torch.cat((x_state_vector, time_vector, latent_vector), axis=1)
         output = self.NN(concat_input)
         return output
