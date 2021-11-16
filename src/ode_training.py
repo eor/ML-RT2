@@ -57,11 +57,11 @@ def generate_tau_training(energies_vector):
     # obtain sigmas for the energy_vector
     # we have same energy vector for every sample in train_set
     # Hence, can be computed just once
-    for i in range(0, len_energy_vector):
-        e = energies_vector[0, i]
-        sigmas_H_I[i] = physics_ionisation_cross_section_hydrogen(e)
-        sigmas_He_I[i] = physics_ionisation_cross_section_helium1(e)
-        sigmas_He_II[i] = physics_ionisation_cross_section_helium2(e)
+    physics = Physics.getInstance()
+    physics.set_energy_vector(energies_vector[0])
+    sigmas_H_I = physics.get_photo_ionisation_cross_section_hydrogen()
+    sigmas_He_I = physics.get_photo_ionisation_cross_section_helium1()
+    sigmas_He_II = physics.get_photo_ionisation_cross_section_helium2()
 
     # define column densities
     limit_lower = -20.0
@@ -202,12 +202,12 @@ def main(config):
         physics.set_flux_vector(x_flux_vector)
 
         # TODO: figure out: for what inputs do we need to set requires_grad=True
-        x_SED = Variable(torch.from_numpy(x_SED).float(), requires_grad=True).to(device)
+        x_flux_vector = Variable(torch.from_numpy(x_flux_vector).float(), requires_grad=True).to(device)
         x_state_vector = Variable(torch.from_numpy(x_state_vector).float(), requires_grad=True).to(device)
         target_residual = Variable(torch.from_numpy(target_residual).float(), requires_grad=True).to(device)
         parameter_vector = Variable(torch.from_numpy(parameter_vector).float(), requires_grad=True).to(device)
         # Loss based on CRT ODEs
-        residual = ode_equation.compute_ode_residual(x_SED, x_state_vector, parameter_vector, u_approximation)
+        residual = ode_equation.compute_ode_residual(x_flux_vector, x_state_vector, parameter_vector, u_approximation)
         loss_ode = F.mse_loss(input=residual, target=target_residual, reduction='mean')
 
         # compute the gradients

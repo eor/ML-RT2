@@ -107,7 +107,7 @@ def utils_load_config(path, file_name='config.dict'):
 
     return config
 
-@jit(no_python=True)
+@jit(nopython=True)
 def utils_simpson_integration(y,x):
     # source: https://masonstoecker.com/2021/04/03/Simpson-and-Numba.html
     n = len(y)-1
