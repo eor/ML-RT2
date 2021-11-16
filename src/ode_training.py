@@ -131,18 +131,18 @@ def generate_training_data(config):
     x_He_II = np.random.uniform(ps_ode[1][0], ps_ode[1][1], size=(train_set_size, 1))
     x_He_III = np.random.uniform(ps_ode[2][0], ps_ode[2][1], size=(train_set_size, 1))
     T = np.random.uniform(ps_ode[3][0], ps_ode[3][1], size=(train_set_size, 1))
-    time = sourceAge.copy()
+    source_age_vector = sourceAge.copy()
 
-    state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T, time), axis=1)
+    state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T), axis=1)
     # temporarily removing tau from the state_vector because of it's shape (train_set_size, 2000)
     # --- can be added back later
     # state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T, tau, time), axis=1)
 
     # sample target labels
-    u_actual = np.zeros((train_set_size, 1))  # TODO: this should be removed
+    u_actual = np.zeros((train_set_size))  # TODO: this should be removed
 
 
-    return flux_vector, state_vector, u_actual, parameter_vector, energies_vector
+    return flux_vector, state_vector, source_age_vector, u_actual, parameter_vector, energies_vector
 
 
 # -----------------------------------------------------------------
@@ -195,7 +195,7 @@ def main(config):
     for epoch in range(1, config.n_epochs + 1):
 
         # TODO: look for boundary conditions???
-        x_flux_vector, x_state_vector, target_residual, parameter_vector, energies_vector = generate_training_data(config)
+        x_flux_vector, x_state_vector, x_source_age_vector, target_residual, parameter_vector, energies_vector = generate_training_data(config)
 
         # update the data in this physics module
         physics.set_energy_vector(energies_vector[0])
@@ -204,14 +204,16 @@ def main(config):
         # TODO: figure out: for what inputs do we need to set requires_grad=True
         x_flux_vector = Variable(torch.from_numpy(x_flux_vector).float(), requires_grad=True).to(device)
         x_state_vector = Variable(torch.from_numpy(x_state_vector).float(), requires_grad=True).to(device)
+        x_source_age_vector = Variable(torch.from_numpy(x_source_age_vector).float(), requires_grad=True).to(device)
         target_residual = Variable(torch.from_numpy(target_residual).float(), requires_grad=True).to(device)
         parameter_vector = Variable(torch.from_numpy(parameter_vector).float(), requires_grad=True).to(device)
         # Loss based on CRT ODEs
-        residual = ode_equation.compute_ode_residual(x_flux_vector, x_state_vector, parameter_vector, u_approximation)
+        residual = ode_equation.compute_ode_residual(x_flux_vector, x_state_vector, x_source_age_vector, parameter_vector, u_approximation)
         loss_ode = F.mse_loss(input=residual, target=target_residual, reduction='mean')
 
         # compute the gradients
         loss_ode.backward()
+
         # update the parameters
         optimizer.step()
         # make the gradients zero
@@ -221,7 +223,6 @@ def main(config):
             % (epoch, config.n_epochs, loss_ode.item()))
 
         train_loss_array = np.append(train_loss_array, loss_ode.item())
-
 
         # TODO: find a criteria to select the best model --- validation ---????
         # TODO: copy the best model based on validation....

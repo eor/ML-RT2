@@ -21,15 +21,13 @@ class ODE:
         # generate over_densities array
         self.over_densities = torch.ones((conf.train_set_size))
 
-    def compute_ode_residual(self, flux_vector, state_vector, parameter_vector, u_approximation):
+    def compute_ode_residual(self, flux_vector, state_vector, time_vector, parameter_vector, u_approximation):
         """
         Takes in the input parameters for neural network and returns the residual computed
         by substituting the output of neural network in our system of four differential equations.
         """
-        u_prediction = u_approximation(flux_vector, state_vector)
 
-        # unpack the state_vector
-        t = state_vector[:, 4]
+        u_prediction = u_approximation(flux_vector, state_vector, time_vector)
 
         # unpack the prediction vector
         x_H_II_prediction, x_He_II_prediction, x_He_III_prediction, T_prediction = u_prediction[:, 0], \
@@ -56,19 +54,19 @@ class ODE:
         loss_x_H_II = self.get_x_H_II_loss(x_H_I_prediction,
                                            x_H_II_prediction,
                                            T_prediction,
-                                           t)
+                                           time_vector)
 
         loss_x_He_II = self.get_x_He_II_loss(x_He_I_prediction,
                                              x_He_II_prediction,
                                              x_He_III_prediction,
                                              T_prediction,
-                                             t)
+                                             time_vector)
 
         loss_x_He_III = self.get_x_He_III_loss(x_He_I_prediction,
                                                x_He_II_prediction,
                                                x_He_III_prediction,
                                                T_prediction,
-                                               t)
+                                               time_vector)
 
         loss_T = self.get_temperature_loss(x_H_I_prediction,
                                            x_H_II_prediction,
@@ -76,9 +74,9 @@ class ODE:
                                            x_He_II_prediction,
                                            x_He_III_prediction,
                                            T_prediction,
-                                           t)
+                                           time_vector)
 
-        return loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
+        return loss_x_H_II + loss_x_He_II + loss_x_He_III
 
     def get_x_H_II_loss(self, x_H_I, x_H_II, T, t):
         """
@@ -100,7 +98,8 @@ class ODE:
         ionisation_term2 = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_hydrogen())
         ionisation_rate_H_I = ionisation_term1 + ionisation_term2
 
-        d_xHII_dt = torch.autograd.grad(x_H_II.sum(), t, create_graph=True, allow_unused=True)[0]
+        d_xHII_dt = torch.autograd.grad(x_H_II.sum(), t, create_graph=True)[0]
+        d_xHII_dt = torch.squeeze(d_xHII_dt)
         term1 = torch.multiply(ionisation_rate_H_I, x_H_I)
         term2 = torch.multiply(alpha_H_II, torch.divide(torch.square(n_e), n_H))
 
@@ -125,7 +124,8 @@ class ODE:
         # ionsiation rate for He_I, equation (A.7) in [2]
         ionisation_rate_He_I = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_helium1())
 
-        d_xHeII_dt = torch.autograd.grad(x_He_II.sum(), t, create_graph=True, allow_unused=True)[0]
+        d_xHeII_dt = torch.autograd.grad(x_He_II.sum(), t, create_graph=True)[0]
+        d_xHeII_dt = torch.squeeze(d_xHeII_dt)
         term1 = torch.multiply(ionisation_rate_He_I, x_He_I)
         term2 = torch.multiply(beta_He_I, torch.multiply(n_e, x_He_I))
         term3 = torch.multiply(beta_He_II, torch.multiply(n_e, x_He_II))
@@ -149,7 +149,8 @@ class ODE:
         # ionsiation rate for He_II, equation (A.8) in [2]
         ionisation_rate_He_II = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_helium2())
 
-        d_xHeIII_dt = torch.autograd.grad(x_He_III.sum(), t, create_graph=True, allow_unused=True)[0]
+        d_xHeIII_dt = torch.autograd.grad(x_He_III.sum(), t, create_graph=True)[0]
+        d_xHeIII_dt = torch.squeeze(d_xHeIII_dt)
         term1 = torch.multiply(ionisation_rate_He_II, x_He_II)
         term2 = torch.multiply(beta_He_II, torch.multiply(n_e, x_He_II))
         term3 = torch.multiply(alpha_He_III, torch.multiply(n_e, x_He_III))
@@ -174,8 +175,8 @@ class ODE:
         n_He_II = self.n_He_II
         n_He_III = self.n_He_III
 
-        d_T_dt = torch.autograd.grad(T.sum(), t, create_graph=True, allow_unused=True)[0]
-
+        d_T_dt = torch.autograd.grad(T.sum(), t, create_graph=True)[0]
+        d_T_dt = torch.squeeze(d_T_dt)
         heating_rate_H_I = torch.ones((self.train_set_size))
         heating_rate_He_I = torch.ones((self.train_set_size))
         heating_rate_He_II = torch.ones((self.train_set_size))
