@@ -92,8 +92,8 @@ class ODE:
         n_e = self.n_e
         # recombination coefficient H_II
         alpha_H_II = self.recombination_H_II(T)
-        # [TODO: add beta 1]
-        beta1 = 1.0
+        # collision_ionisation for hydirgen
+        beta1 = self.collision_ionisation_H_I(T)
 
         # ionsiation rate for H_I, equation (A.6) in [2]
         ionisation_term1 = beta1 * n_e
@@ -253,6 +253,19 @@ class ODE:
         term3 = 1 + 0.3*torch.exp(-9.4e4/temperature_vector)
 
         return 1.90e-3 * term1 * term2 * term3
+
+    def collision_ionisation_H_I(self, temperature_vector):
+        """ Takes in the temperature_vector of shape (train_set_size)
+        and returns the collision ionisation for H_I (β1_HI) for each
+        temperature in the vector.
+        Ref: equation (52) in section B.1 in [1]
+        Units of recombination coefficient: cm^3/s
+        """
+        term1 = torch.pow(temperature_vector, 0.5)
+        term2 = torch.pow(1 + torch.pow((temperature_vector/1.e5), 0.5), -1.0)
+        term3 = torch.exp(-1.578e5/temperature_vector)
+
+        return 5.85e-11 * term1 * term2 * term3
 
     def collision_ionisation_He_I(self, temperature_vector):
         """ Takes in the temperature_vector of shape (train_set_size)

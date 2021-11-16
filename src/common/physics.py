@@ -160,7 +160,7 @@ class Physics:
             self.integral_hydrogen_ionisation_rate = np.zeros(train_set_size)
             # compute the integrals using simpsons integration
             for i in range(train_set_size):
-                self.integral_hydrogen_ionintegral_helium1_ionisation_rateisation_rate[i] = utils_simpson_integration(integrand[i], self.energy_vector)
+                self.integral_hydrogen_ionisation_rate[i] = utils_simpson_integration(integrand[i], self.energy_vector)
 
             return self.integral_hydrogen_ionisation_rate
 
@@ -240,7 +240,7 @@ class Physics:
 
 
     def set_energy_vector(self, energy_vector):
-        """ Updates the energy_vector of shape (n_energy_bins) for the instance of
+        """ Updates the energy_vector of shape (n_energy_bins) for
         this class and resets all the pre-computed variables.
         Units: Takes in energy vector in eV
         """
@@ -249,8 +249,8 @@ class Physics:
 
 
     def set_flux_vector(self, flux_vector):
-        """ Updates the flux_vector of shape (train_set_size, n_energy_bins) for the
-        instance of this class and resets all the pre-computed variables.
+        """ Updates the flux_vector of shape (train_set_size, n_energy_bins) for
+        this class and resets all the pre-computed variables.
         Units:
         """
         self.flux_vector = flux_vector
