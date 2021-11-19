@@ -207,12 +207,22 @@ class ODE:
         term2 = 0.0
         term3 = 0.0
         term4 = 0.0
-        term5 = 0.0
+
+        # [TODO] units are quite weird here. enrgy units here are in ergs while the other terms have it in eV.
+        # Apart from this, as per fukugita, the units of each coefficient are listed to be diff. too.
+        # coefficient units -> erg.cm3/s, erg/s, erg.cm3/s
+        term5 = self.n_e * (\
+        (x_H_I * self.collisional_excitation_cooling_H_I(T)) + \
+        (x_He_I * self.collisional_excitation_cooling_He_I(T)) + \
+        (x_He_II * self.collisional_excitation_cooling_He_II(T)))
+
         # [TODO] missing nb here after dividing.......?????
         # out unit: [ev/cm^3.s]
         term6 = self.compton_cooling_coefficient(T)
+
         # out unit: ??? * 1 * (1/cm^3)
         term7 = self.free_free_cooling_coefficient(T) * (x_H_II*n_H_n_B_ratio + x_He_II*n_He_n_B_ratio + (4*x_He_III*n_He_n_B_ratio)) * self.n_e
+
         # out unit: 1/s * ev/K * K * (1/?????) --- missing
         term8 = 7.5 * self.hubble_parameter() * (CONSTANT_BOLTZMANN_EV * T / mu)
 
@@ -324,6 +334,41 @@ class ODE:
 
         return 5.68e-12 * term1 * term2 * term3
 
+    def collisional_excitation_cooling_H_I(self, temperature_vector):
+        """
+        Takes in temperature of electron vector and returns the free-free
+        cooling coefficient corresponding to each temperature in vector.
+        Ref: equation (76) in section B.4.3 in [1]
+        Units of free-free cooling coefficient: erg.cm^3/s
+        """
+        term1 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
+        term2 = torch.exp(-1.18e5/temperature_vector)
+        return 7.5e-19 * term1 * term2
+
+    def collisional_excitation_cooling_He_I(self, temperature_vector):
+        """
+        Takes in temperature of electron vector and returns the free-free
+        cooling coefficient corresponding to each temperature in vector.
+        Ref: equation (77) in section B.4.3 in [1]
+        Units of free-free cooling coefficient: erg/s
+        """
+        term1 = torch.pow(temperature_vector, -0.1687)
+        term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
+        term3 = torch.exp(-1.31e4/temperature_vector)
+        return 9.10e-27 * term1 * term2 * term3 * self.n_e * self.n_He_II
+
+    def collisional_excitation_cooling_He_II(self, temperature_vector):
+        """
+        Takes in temperature of electron vector and returns the free-free
+        cooling coefficient corresponding to each temperature in vector.
+        Ref: equation (78) in section B.4.3 in [1]
+        Units of free-free cooling coefficient: erg.cm3/s
+        """
+        term1 = torch.pow(temperature_vector, -0.397)
+        term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
+        term3 = torch.exp(-4.73e5/temperature_vector)
+        return 5.54e-17 * term1 * term2 * term3
+
     def free_free_cooling_coefficient(self, temperature_vector):
         """
         Takes in temperature of electron vector and returns the free-free
@@ -331,7 +376,6 @@ class ODE:
         Ref: equation (79) in section B.4.4 in [1]
         Units of free-free cooling coefficient:-----?
         """
-
         return 1.42e-27 * 1.1 * torch.pow(temperature_vector, 0.5)
 
     def compton_cooling_coefficient(self, temperature_vector):
