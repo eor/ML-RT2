@@ -323,7 +323,6 @@ class ODE:
         Ref: equation (80) in section B.4.5 in [1]
         Units of compton cooling coefficient: eV/cm^3.s
         """
-        #[TODO]: check this. units computed assuming n_e in (1/cm^3)
 
         T_gamma = CONSTANT_T_CMB_0 * (1 + self.redshift)
         # out unit -> K
@@ -331,7 +330,7 @@ class ODE:
         # out unit -> None
         term2 = pi**2/15
         # out unit -> cm^(-3)
-        term3 = torch.pow(((CONSTANT_BOLTZMANN_EV * T_gamma)/(CONSTANT_PLANCK_EV * CONSTANT_LIGHT_VEL)), 3)
+        term3 = torch.pow(((CONSTANT_BOLTZMANN_EV * T_gamma * 2 * pi)/(CONSTANT_PLANCK_EV * CONSTANT_LIGHT_VEL)), 3)
         # out unit -> None
         term4 = CONSTANT_BOLTZMANN * T_gamma / (CONSTANT_MASS_ELECTRON * CONSTANT_LIGHT_VEL * CONSTANT_LIGHT_VEL)
 
