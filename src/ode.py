@@ -37,6 +37,7 @@ class ODE:
 
         # unpack the parameter vector and obtain redshift
         self.redshift = parameter_vector[:, 1]
+        self.redshift_pow_3 = torch.pow(1.0 + self.redshift, 3)
 
         # initialise the number densities for the H & He ions and the free electrons
         self.init_number_density_vectors(x_H_I_prediction,
@@ -186,6 +187,8 @@ class ODE:
         n_He_II = self.n_He_II
         n_He_III = self.n_He_III
 
+        ratio_mu_nb = 1.24
+
         d_T_dt = torch.autograd.grad(T.sum(), t, create_graph=True)[0]
         d_T_dt = torch.squeeze(d_T_dt)
         heating_rate_H_I = torch.ones((self.train_set_size))
@@ -199,9 +202,11 @@ class ODE:
         term3 = 0.0
         term4 = 0.0
         term5 = 0.0
+        # out unit: [ev/cm^3.s]
         term6 = self.compton_cooling_coefficient(T)
         term7 = 0.0
-        term8 = 0.0
+        # out unit: ?????
+        term8 = 7.5 * self.hubble_parameter() * (CONSTANT_BOLTZMANN_EV * T / ratio_mu_nb)
 
         return 4
 
@@ -214,7 +219,7 @@ class ODE:
         Units of values in computed arrays: cm^-3
         """
 
-        density_factor = self.over_densities * torch.pow(1.0 + self.redshift, 3)
+        density_factor = self.over_densities * self.redshift_pow_3
         self.n_hydrogen = density_factor * CONSTANT_n_H_0
         self.n_helium = density_factor * CONSTANT_n_He_0
 
@@ -316,9 +321,9 @@ class ODE:
         Takes in temperature of electron vector and return the compton cooling
         coefficient corresponding to it.
         Ref: equation (80) in section B.4.5 in [1]
-        Units of compton cooling coefficient: eV/cm^2.s
+        Units of compton cooling coefficient: eV/cm^3.s
         """
-        #[TODO]: check this. units computed assuming n_e in (1/cm^2)
+        #[TODO]: check this. units computed assuming n_e in (1/cm^3)
 
         T_gamma = CONSTANT_T_CMB_0 * (1 + self.redshift)
         # out unit -> K
@@ -331,3 +336,14 @@ class ODE:
         term4 = CONSTANT_BOLTZMANN * T_gamma / (CONSTANT_MASS_ELECTRON * CONSTANT_LIGHT_VEL * CONSTANT_LIGHT_VEL)
 
         return 4 * CONSTANT_BOLTZMANN_EV * term1 * term2 * term3 * term4 * self.n_e * CONSTANT_THOMSON_ELEC_CROSS * CONSTANT_LIGHT_VEL
+
+    def hubble_parameter(self):
+        """
+        Return hubbles parameter for the whole batch at the given redshift.
+        Units of hubble parameter:
+        """
+        # [TODO]: figure out units of term (Hubble constant * conversion_factor = 1/s)
+        # [TODO]: verify this relation
+        term = torch.pow((CONSTANT_COSMOS_OMEGA_M * self.redshift_pow_3) + (1.0 - CONSTANT_COSMOS_OMEGA_M) , 0.5)
+
+        return CONSTANT_HUBBLE_Z0 * term * (KM_to_CM/MPC_to_CM)

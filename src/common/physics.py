@@ -114,9 +114,9 @@ class Physics:
         sigma_HeII = self.physics_ionisation_cross_section_helium2(E)
 
         # [delta r] = kpc, [number density] = cm^-3, [sigma] = cm^2
-        tau_HI = sigma_HI * sim_data.delta_radius * np.sum(sim_data.n_H_I[0:index]) * CONSTANT_kpc_to_cm
-        tau_HeI = sigma_HeI * sim_data.delta_radius * np.sum(sim_data.n_He_I[0:index]) * CONSTANT_kpc_to_cm
-        tau_HeII = sigma_HeII * sim_data.delta_radius * np.sum(sim_data.n_He_II[0:index]) * CONSTANT_kpc_to_cm
+        tau_HI = sigma_HI * sim_data.delta_radius * np.sum(sim_data.n_H_I[0:index]) * KPC_to_CM
+        tau_HeI = sigma_HeI * sim_data.delta_radius * np.sum(sim_data.n_He_I[0:index]) * KPC_to_CM
+        tau_HeII = sigma_HeII * sim_data.delta_radius * np.sum(sim_data.n_He_II[0:index]) * KPC_to_CM
 
         return tau_HI + tau_HeI + tau_HeII
 
