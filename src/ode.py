@@ -127,15 +127,19 @@ class ODE:
         """
         # electron number density
         n_e = self.n_e
-        # collision ionisations for He_I and He_II
+
+        # collisional ionisation coefficient for He_I and He_II
         beta_He_I = self.collision_ionisation_He_I(T)
         beta_He_II = self.collision_ionisation_He_II(T)
+
         # recombination coefficient for He_II and He_III
         alpha_He_II = self.recombination_He_II(T)
         alpha_He_III = self.recombination_He_III(T)
+
         # dielectric recombination coefficient for He_II
         xi_He_II = self.dielectric_recombination_He_II(T)
-        # ionsiation rate for He_I, equation (A.7) in [2]
+
+        # ionisation rate for He_I, equation (A.7) in [2]
         ionisation_rate_He_I = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_helium1())
 
         d_xHeII_dt = torch.autograd.grad(x_He_II.sum(), t, create_graph=True)[0]
@@ -156,11 +160,14 @@ class ODE:
         """
         # electron number density
         n_e = self.n_e
+
         # recombination coefficient He_III
         alpha_He_III = self.recombination_He_III(T)
+
         # collision ionisation
         beta_He_II = self.collision_ionisation_He_II(T)
-        # ionsiation rate for He_II, equation (A.8) in [2]
+
+        # ionisation rate for He_II, equation (A.8) in [2]
         ionisation_rate_He_II = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_helium2())
 
         d_xHeIII_dt = torch.autograd.grad(x_He_III.sum(), t, create_graph=True)[0]
