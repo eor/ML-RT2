@@ -27,14 +27,7 @@ class ODE:
         by substituting the output of neural network in our system of four differential equations.
         """
 
-        u_prediction = u_approximation(flux_vector, state_vector, time_vector)
-        print('log_x_H_II',u_prediction[:, 0])
-
-        # unpack the prediction vector
-        x_H_II_prediction = torch.pow(10, u_prediction[:, 0])
-        x_He_II_prediction = torch.pow(10, u_prediction[:, 1])
-        x_He_III_prediction = torch.pow(10, u_prediction[:, 2])
-        T_prediction = torch.pow(10, u_prediction[:, 3])
+        x_H_II_prediction, x_He_II_prediction, x_He_III_prediction, T_prediction = u_approximation(flux_vector, state_vector, time_vector)
 
         # compute ionisation fractions from the prediction vectors
         x_H_I_prediction = 1.0 - x_H_II_prediction
