@@ -1,6 +1,8 @@
 import torch
 import numpy as np
+from numpy import pi
 from common.physics import *
+from common.physics_constants import *
 from common.settings_crt import *
 
 
@@ -34,11 +36,10 @@ class ODE:
         x_He_I_prediction = 1.0 - x_He_II_prediction - x_He_III_prediction
 
         # unpack the parameter vector and obtain redshift
-        redshift = parameter_vector[:, 1]
+        self.redshift = parameter_vector[:, 1]
 
         # initialise the number densities for the H & He ions and the free electrons
-        self.init_number_density_vectors(redshift,
-                                         x_H_I_prediction,
+        self.init_number_density_vectors(x_H_I_prediction,
                                          x_H_II_prediction,
                                          x_He_I_prediction,
                                          x_He_II_prediction,
@@ -178,10 +179,6 @@ class ODE:
         Ref: equation (A.9) in [2], a simplified form of equation (36) in [1]
         """
 
-        # TODO: move constants to physics.py
-        CONSTANT_c = 2.9979e10          # speed of light in cm/s
-        CONSTANT_k_B_eV = 8.6173e-5     # Boltzmann constant in eV/K
-
         n_e = self.n_e  # electron number density
         n_H_I = self.n_H_I
         n_H_II = self.n_H_II
@@ -198,10 +195,17 @@ class ODE:
         term_1 = torch.multiply(n_H_I, heating_rate_H_I) \
                  + torch.multiply(n_He_I, heating_rate_He_I) \
                  + torch.multiply(n_He_II, heating_rate_He_II)
+        term2 = 0.0
+        term3 = 0.0
+        term4 = 0.0
+        term5 = 0.0
+        term6 = self.compton_cooling_coefficient(T)
+        term7 = 0.0
+        term8 = 0.0
 
         return 4
 
-    def init_number_density_vectors(self, redshift, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III):
+    def init_number_density_vectors(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III):
         """
         Takes in the redshift and ionisation fractions for H and He and initialises the
         number density variables for all the H and He ionisation fractions. Also,
@@ -210,7 +214,7 @@ class ODE:
         Units of values in computed arrays: cm^-3
         """
 
-        density_factor = self.over_densities * torch.pow(1.0 + redshift, 3)
+        density_factor = self.over_densities * torch.pow(1.0 + self.redshift, 3)
         self.n_hydrogen = density_factor * CONSTANT_n_H_0
         self.n_helium = density_factor * CONSTANT_n_He_0
 
@@ -306,3 +310,24 @@ class ODE:
         term3 = torch.exp(-6.315e5/temperature_vector)
 
         return 5.68e-12 * term1 * term2 * term3
+
+    def compton_cooling_coefficient(self, temperature_vector):
+        """
+        Takes in temperature of electron vector and return the compton cooling
+        coefficient corresponding to it.
+        Ref: equation (80) in section B.4.5 in [1]
+        Units of compton cooling coefficient: eV/cm^2.s
+        """
+        #[TODO]: check this. units computed assuming n_e in (1/cm^2)
+
+        T_gamma = CONSTANT_T_CMB_0 * (1 + self.redshift)
+        # out unit -> K
+        term1 = temperature_vector - T_gamma
+        # out unit -> None
+        term2 = pi**2/15
+        # out unit -> cm^(-3)
+        term3 = torch.pow(((CONSTANT_BOLTZMANN_EV * T_gamma)/(CONSTANT_PLANCK_EV * CONSTANT_LIGHT_VEL)), 3)
+        # out unit -> None
+        term4 = CONSTANT_BOLTZMANN * T_gamma / (CONSTANT_MASS_ELECTRON * CONSTANT_LIGHT_VEL * CONSTANT_LIGHT_VEL)
+
+        return 4 * CONSTANT_BOLTZMANN_EV * term1 * term2 * term3 * term4 * self.n_e * CONSTANT_THOMSON_ELEC_CROSS * CONSTANT_LIGHT_VEL
