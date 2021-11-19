@@ -17,6 +17,11 @@ class MLP1(nn.Module):
 
             return layers
 
+        def init_weights(m):
+            if isinstance(m, nn.Linear):
+                torch.nn.init.uniform_(m.weight, a=0.0, b=1.0)
+                m.bias.data.fill_(0.01)
+
         self.NN_flux = nn.Sequential(
             *block(conf.len_SED_input, 512, normalise=False, dropout=False),
             *block(512, 256),
@@ -37,6 +42,11 @@ class MLP1(nn.Module):
             *block(128, 64),
             nn.Linear(64, 4)
         )
+
+        # self.NN_flux.apply(init_weights)
+        # self.NN.apply(init_weights)
+
+
 
     def forward(self, x_flux_vector, x_state_vector, time_vector):
         """

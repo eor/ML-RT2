@@ -28,12 +28,13 @@ class ODE:
         """
 
         u_prediction = u_approximation(flux_vector, state_vector, time_vector)
+        print('log_x_H_II',u_prediction[:, 0])
 
         # unpack the prediction vector
-        x_H_II_prediction, x_He_II_prediction, x_He_III_prediction, T_prediction = u_prediction[:, 0], \
-                                                                                   u_prediction[:, 1], \
-                                                                                   u_prediction[:, 2], \
-                                                                                   u_prediction[:, 3]
+        x_H_II_prediction = torch.pow(10, u_prediction[:, 0])
+        x_He_II_prediction = torch.pow(10, u_prediction[:, 1])
+        x_He_III_prediction = torch.pow(10, u_prediction[:, 2])
+        T_prediction = torch.pow(10, u_prediction[:, 3])
 
         # compute ionisation fractions from the prediction vectors
         x_H_I_prediction = 1.0 - x_H_II_prediction
@@ -102,6 +103,19 @@ class ODE:
         d_xHII_dt = torch.squeeze(d_xHII_dt)
         term1 = torch.multiply(ionisation_rate_H_I, x_H_I)
         term2 = torch.multiply(alpha_H_II, torch.divide(torch.square(n_e), n_H))
+
+        print("ionisation_term1", ionisation_term1)
+        print("ionisation_term2", ionisation_term2)
+        print("ionisation_rate_H_I", ionisation_rate_H_I)
+        print("x_H_I", x_H_I)
+        print("x_H_II", x_H_II)
+        print("alpha_H_II", alpha_H_II)
+        print("n_e", n_e)
+        print("n_H", n_H)
+        print("beta1", beta1)
+        print("T", T)
+        print("term1", term1)
+        print("term2", term2)
 
         return d_xHII_dt - term1 + term2
 
