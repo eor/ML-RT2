@@ -16,33 +16,30 @@ class Physics:
 
     __instance = None
 
-
     @staticmethod
     def getInstance():
         """ Static access method. """
-        if Physics.__instance == None:
+        if Physics.__instance is None:
             Physics()
         return Physics.__instance
 
-
     def __init__(self):
 
-        if Physics.__instance != None:
+        if Physics.__instance is not None:
             raise Exception("This class is a singleton. Please access it using Physics.getInstance()")
         else:
             Physics.__instance = self
 
-        # varaibles to store the data set by the user
+        # variables to store the data set by the user
         self.energy_vector = None
         self.flux_vector = None
         self.reset_pre_computed_variables()
-
 
     def get_photo_ionisation_cross_section_hydrogen(self):
         """ Returns the photo ionisation cross section for hydrogen
         if the energy_vector is not None.
 
-        Units:  Takes in energy_vector with enegies in eV
+        Units:  Takes in energy_vector with energies in eV
                 Return photo_ionisation_cross_section in cm^2
         """
         if self.energy_vector is None:
@@ -53,17 +50,17 @@ class Physics:
         else:
             # compute cross_section for each energy E in energy_vector
             sigma_HI = [self.physics_ionisation_cross_section_hydrogen(E) for E in self.energy_vector]
+
             # convert lists to numpy array
             self.sigma_HI = np.asarray(sigma_HI)
 
             return self.sigma_HI
 
-
     def get_photo_ionisation_cross_section_helium1(self):
         """ Returns the photo ionisation cross section for helium1
         if the energy_vector is not None.
 
-        Units:  Takes in energy_vector with enegies in eV
+        Units:  Takes in energy_vector with energies in eV
                 Return photo_ionisation_cross_section in cm^2
         """
         if self.energy_vector is None:
@@ -74,17 +71,17 @@ class Physics:
         else:
             # compute cross_section for each energy E in energy_vector
             sigma_HeI = [self.physics_ionisation_cross_section_helium1(E) for E in self.energy_vector]
+
             # convert lists to numpy array
             self.sigma_HeI = np.asarray(sigma_HeI)
 
             return self.sigma_HeI
 
-
     def get_photo_ionisation_cross_section_helium2(self):
         """ Returns the photo ionisation cross section for helum2
         if the energy_vector is not None.
 
-        Units:  Takes in energy_vector with enegies in eV
+        Units:  Takes in energy_vector with energies in eV
                 Return photo_ionisation_cross_section in cm^2
         """
         if self.energy_vector is None:
@@ -95,11 +92,11 @@ class Physics:
         else:
             # compute cross_section for each energy E in energy_vector
             sigma_HeII = [self.physics_ionisation_cross_section_helium2(E) for E in self.energy_vector]
+
             # convert lists to numpy array
             self.sigma_HeII = np.asarray(sigma_HeII)
 
             return self.sigma_HeII
-
 
     def get_tau(self, sim_data, E, index):
         """
@@ -120,9 +117,9 @@ class Physics:
 
         return tau_HI + tau_HeI + tau_HeII
 
-
     def get_ionisation_rate_integral_hydrogen(self):
-        """ Solves the integral in the equation for the computation of
+        """
+        Solves the integral in the equation for the computation of
         ionisation rate of Hydrogen, given the energy vector and the flux vector.
         Note: This function just returns the integral and needs to multiplied
         with beta_1 and n_e to complete the equation.
@@ -142,19 +139,22 @@ class Physics:
         else:
             # get the training_data_size
             train_set_size = self.flux_vector.shape[0]
+
             # compute the value of integrand for each energy E in energy_vector
             integrand = self.sigma_HI[None, :] * self.flux_vector / self.energy_vector[None, :]
+
             # placeholder array to store the computed the integrals
             self.integral_hydrogen_ionisation_rate = np.zeros(train_set_size)
+
             # compute the integrals using simpsons integration
             for i in range(train_set_size):
                 self.integral_hydrogen_ionisation_rate[i] = utils_simpson_integration(integrand[i], self.energy_vector)
 
             return self.integral_hydrogen_ionisation_rate
 
-
     def get_ionisation_rate_integral_helium1(self):
-        """ Solves the integral in the equation for the computation of
+        """
+        Solves the integral in the equation for the computation of
         ionisation rate of helium1, given the energy vector and the flux vector.
         Ref: equation (A.7) in [2]
         Units:
@@ -172,19 +172,22 @@ class Physics:
         else:
             # get the training_data_size
             train_set_size = self.flux_vector.shape[0]
+
             # compute the value of integrand for each energy E in energy_vector
             integrand = self.sigma_HeI[None, :] * self.flux_vector / self.energy_vector[None, :]
+
             # placeholder array to store the computed the integrals
             self.integral_helium1_ionisation_rate = np.zeros(train_set_size)
+
             # compute the integrals using simpsons integration
             for i in range(train_set_size):
                 self.integral_helium1_ionisation_rate[i] = utils_simpson_integration(integrand[i], self.energy_vector)
 
             return self.integral_helium1_ionisation_rate
 
-
     def get_ionisation_rate_integral_helium2(self):
-        """ Solves the integral in the equation for the computation of
+        """
+        Solves the integral in the equation for the computation of
         ionisation rate of helium2, given the energy vector and the flux vector.
         Ref: equation (A.8) in [2]
         Units:
@@ -202,48 +205,52 @@ class Physics:
         else:
             # get the training_data_size
             train_set_size = self.flux_vector.shape[0]
+
             # compute the value of integrand for each energy E in energy_vector
             integrand = self.sigma_HeII[None, :] * self.flux_vector / self.energy_vector[None, :]
+
             # placeholder array to store the computed the integrals
             self.integral_helium2_ionisation_rate = np.zeros(train_set_size)
+
             # compute the integrals using simpsons integration
             for i in range(train_set_size):
                 self.integral_helium2_ionisation_rate[i] = utils_simpson_integration(integrand[i], self.energy_vector)
 
             return self.integral_helium2_ionisation_rate
 
-
     def reset_pre_computed_variables(self):
-        """ This function sets all the pre-computed stored variables to None
+        """
+        This function sets all the pre-computed stored variables to None
         when it is called. Must be called anytime, the data for this class changes.
         """
+
         # photo ionisation cross sections
         self.sigma_HI = None
         self.sigma_HeI = None
         self.sigma_HeII = None
+
         # integrals for computing ionisation rates
         self.integral_hydrogen_ionisation_rate = None
         self.integral_helium1_ionisation_rate = None
         self.integral_helium2_ionisation_rate = None
 
-
     def set_energy_vector(self, energy_vector):
-        """ Updates the energy_vector of shape (n_energy_bins) for
+        """
+        Updates the energy_vector of shape (n_energy_bins) for
         this class and resets all the pre-computed variables.
         Units: Takes in energy vector in eV
         """
         self.energy_vector = energy_vector
         self.reset_pre_computed_variables()
 
-
     def set_flux_vector(self, flux_vector):
-        """ Updates the flux_vector of shape (train_set_size, n_energy_bins) for
+        """
+        Updates the flux_vector of shape (train_set_size, n_energy_bins) for
         this class and resets all the pre-computed variables.
         Units:
         """
         self.flux_vector = flux_vector
         self.reset_pre_computed_variables()
-
 
     def physics_ionisation_cross_section_hydrogen(self, photon_energy):
         """
@@ -265,7 +272,6 @@ class Physics:
 
         return sigma
 
-
     def physics_ionisation_cross_section_helium1(self, photon_energy):
         """
         Takes in photon energy in eV, returns helium ionisation cross-section
@@ -284,7 +290,6 @@ class Physics:
         sigma = sigma_0 * (fraction_1 - fraction_2)
 
         return sigma
-
 
     def physics_ionisation_cross_section_helium2(self, photon_energy):
         """
@@ -306,27 +311,3 @@ class Physics:
 
         return sigma
 
-
-# def physics_ionisation_cross_section_hydrogen2(photon_energy):
-#     """
-#     Takes in photon energy in EV, returns hydrogen ionisation cross-section
-#     for the transition n=2 --> free. Return unit is cm^2.
-#     Based on Fukugita, M. & Kawasaki, M. 1994, MNRAS 269, 563, equation B14
-#     """
-#
-#     if photon_energy < IONIZATION_ENERGY_HYDROGEN:
-#         return 0.0
-#
-#     sigma_0 = 1.08e-13
-#
-#     z = (photon_energy/IONIZATION_ENERGY_HYDROGEN - 0.25)**2
-#
-#     numerator = (3.0 + 4.0*z*z) * (5.0 + 4.0*z*z) * np.exp(-4.0 * np.arctan(2*z)/z)
-#
-#     denominator = np.power(1.0 + 4.0*z*z, 3.0) * (1.0 - np.exp(-2.0 * np.pi / z))
-#
-#     fraction = numerator / denominator
-#
-#     sigma = sigma_0 * np.power(photon_energy, -3) * fraction
-#
-#     return sigma

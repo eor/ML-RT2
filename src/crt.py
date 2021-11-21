@@ -48,7 +48,7 @@ class SimulationData:
         self.x_He_III = np.zeros(self.grid_length)
 
         # IGM temperature
-        init_T = CONSTANT_T_CMB_0 * np.power(1. + self.redshift, 2) / (1.0 + CONSTANT_z_T_kin_EQ_T_CMB)
+        init_T = CONSTANT_COSMO_T_CMB_0 * np.power(1. + self.redshift, 2) / (1.0 + CONSTANT_z_T_kin_EQ_T_CMB)
         self.T = np.ones(self.grid_length) * init_T
 
         # over density = 1.0 for now.
