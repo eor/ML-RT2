@@ -1,6 +1,8 @@
 import torch
 import numpy as np
+from numpy import pi
 from common.physics import *
+from common.physics_constants import *
 from common.settings_crt import *
 
 
@@ -27,24 +29,18 @@ class ODE:
         by substituting the output of neural network in our system of four differential equations.
         """
 
-        u_prediction = u_approximation(flux_vector, state_vector, time_vector)
-
-        # unpack the prediction vector
-        x_H_II_prediction, x_He_II_prediction, x_He_III_prediction, T_prediction = u_prediction[:, 0], \
-                                                                                   u_prediction[:, 1], \
-                                                                                   u_prediction[:, 2], \
-                                                                                   u_prediction[:, 3]
+        x_H_II_prediction, x_He_II_prediction, x_He_III_prediction, T_prediction = u_approximation(flux_vector, state_vector, time_vector)
 
         # compute ionisation fractions from the prediction vectors
         x_H_I_prediction = 1.0 - x_H_II_prediction
         x_He_I_prediction = 1.0 - x_He_II_prediction - x_He_III_prediction
 
         # unpack the parameter vector and obtain redshift
-        redshift = parameter_vector[:, 1]
+        self.redshift = parameter_vector[:, 1]
+        self.redshift_pow_3 = torch.pow(1.0 + self.redshift, 3)
 
         # initialise the number densities for the H & He ions and the free electrons
-        self.init_number_density_vectors(redshift,
-                                         x_H_I_prediction,
+        self.init_number_density_vectors(x_H_I_prediction,
                                          x_H_II_prediction,
                                          x_He_I_prediction,
                                          x_He_II_prediction,
@@ -102,6 +98,21 @@ class ODE:
         d_xHII_dt = torch.squeeze(d_xHII_dt)
         term1 = torch.multiply(ionisation_rate_H_I, x_H_I)
         term2 = torch.multiply(alpha_H_II, torch.divide(torch.square(n_e), n_H))
+
+        # temporarily here....
+
+        # print("ionisation_term1", ionisation_term1)
+        # print("ionisation_term2", ionisation_term2)
+        # print("ionisation_rate_H_I", ionisation_rate_H_I)
+        # print("x_H_I", x_H_I)
+        # print("x_H_II", x_H_II)
+        # print("alpha_H_II", alpha_H_II)
+        # print("n_e", n_e)
+        # print("n_H", n_H)
+        # print("beta1", beta1)
+        # print("T", T)
+        # print("term1", term1)
+        # print("term2", term2)
 
         return d_xHII_dt - term1 + term2
 
@@ -170,10 +181,8 @@ class ODE:
         by substituting the output in the fourth differential equation for electron temperature evolution.
         Ref: equation (A.9) in [2], a simplified form of equation (36) in [1]
         """
-
-        # TODO: move constants to physics.py
-        CONSTANT_c = 2.9979e10          # speed of light in cm/s
-        CONSTANT_k_B_eV = 8.6173e-5     # Boltzmann constant in eV/K
+        # The equation coded up here is obtained
+        # after dividing both sides in [1] by nb
 
         n_e = self.n_e  # electron number density
         n_H_I = self.n_H_I
@@ -181,6 +190,10 @@ class ODE:
         n_He_I = self.n_He_I
         n_He_II = self.n_He_II
         n_He_III = self.n_He_III
+
+        mu = 1.24
+        n_H_n_B_ratio = 1.0/(1.0 + 4*(0.15/1.9))
+        n_He_n_B_ratio = 1.0/((1.9/0.15) + 4)
 
         d_T_dt = torch.autograd.grad(T.sum(), t, create_graph=True)[0]
         d_T_dt = torch.squeeze(d_T_dt)
@@ -191,10 +204,31 @@ class ODE:
         term_1 = torch.multiply(n_H_I, heating_rate_H_I) \
                  + torch.multiply(n_He_I, heating_rate_He_I) \
                  + torch.multiply(n_He_II, heating_rate_He_II)
+        term2 = 0.0
+        term3 = 0.0
+        term4 = 0.0
+
+        # [TODO] units are quite weird here. enrgy units here are in ergs while the other terms have it in eV.
+        # Apart from this, as per fukugita, the units of each coefficient are listed to be diff. too.
+        # coefficient units -> erg.cm3/s, erg/s, erg.cm3/s
+        term5 = self.n_e * (\
+        (x_H_I * self.collisional_excitation_cooling_H_I(T)) + \
+        (x_He_I * self.collisional_excitation_cooling_He_I(T)) + \
+        (x_He_II * self.collisional_excitation_cooling_He_II(T)))
+
+        # [TODO] missing nb here after dividing.......?????
+        # out unit: [ev/cm^3.s]
+        term6 = self.compton_cooling_coefficient(T)
+
+        # out unit: ??? * 1 * (1/cm^3)
+        term7 = self.free_free_cooling_coefficient(T) * (x_H_II*n_H_n_B_ratio + x_He_II*n_He_n_B_ratio + (4*x_He_III*n_He_n_B_ratio)) * self.n_e
+
+        # out unit: 1/s * ev/K * K * (1/?????) --- missing
+        term8 = 7.5 * self.hubble_parameter() * (CONSTANT_BOLTZMANN_EV * T / mu)
 
         return 4
 
-    def init_number_density_vectors(self, redshift, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III):
+    def init_number_density_vectors(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III):
         """
         Takes in the redshift and ionisation fractions for H and He and initialises the
         number density variables for all the H and He ionisation fractions. Also,
@@ -203,7 +237,7 @@ class ODE:
         Units of values in computed arrays: cm^-3
         """
 
-        density_factor = self.over_densities * torch.pow(1.0 + redshift, 3)
+        density_factor = self.over_densities * self.redshift_pow_3
         self.n_hydrogen = density_factor * CONSTANT_n_H_0
         self.n_helium = density_factor * CONSTANT_n_He_0
 
@@ -299,3 +333,75 @@ class ODE:
         term3 = torch.exp(-6.315e5/temperature_vector)
 
         return 5.68e-12 * term1 * term2 * term3
+
+    def collisional_excitation_cooling_H_I(self, temperature_vector):
+        """
+        Takes in temperature of electron vector and returns the free-free
+        cooling coefficient corresponding to each temperature in vector.
+        Ref: equation (76) in section B.4.3 in [1]
+        Units of free-free cooling coefficient: erg.cm^3/s
+        """
+        term1 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
+        term2 = torch.exp(-1.18e5/temperature_vector)
+        return 7.5e-19 * term1 * term2
+
+    def collisional_excitation_cooling_He_I(self, temperature_vector):
+        """
+        Takes in temperature of electron vector and returns the free-free
+        cooling coefficient corresponding to each temperature in vector.
+        Ref: equation (77) in section B.4.3 in [1]
+        Units of free-free cooling coefficient: erg/s
+        """
+        term1 = torch.pow(temperature_vector, -0.1687)
+        term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
+        term3 = torch.exp(-1.31e4/temperature_vector)
+        return 9.10e-27 * term1 * term2 * term3 * self.n_e * self.n_He_II
+
+    def collisional_excitation_cooling_He_II(self, temperature_vector):
+        """
+        Takes in temperature of electron vector and returns the free-free
+        cooling coefficient corresponding to each temperature in vector.
+        Ref: equation (78) in section B.4.3 in [1]
+        Units of free-free cooling coefficient: erg.cm3/s
+        """
+        term1 = torch.pow(temperature_vector, -0.397)
+        term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
+        term3 = torch.exp(-4.73e5/temperature_vector)
+        return 5.54e-17 * term1 * term2 * term3
+
+    def free_free_cooling_coefficient(self, temperature_vector):
+        """
+        Takes in temperature of electron vector and returns the free-free
+        cooling coefficient corresponding to each temperature in vector.
+        Ref: equation (79) in section B.4.4 in [1]
+        Units of free-free cooling coefficient:-----?
+        """
+        return 1.42e-27 * 1.1 * torch.pow(temperature_vector, 0.5)
+
+    def compton_cooling_coefficient(self, temperature_vector):
+        """
+        Takes in temperature of electron vector and return the compton cooling
+        coefficient corresponding to it.
+        Ref: equation (80) in section B.4.5 in [1]
+        Units of compton cooling coefficient: eV/cm^3.s
+        """
+
+        T_gamma = CONSTANT_T_CMB_0 * (1 + self.redshift)
+        # out unit -> K
+        term1 = temperature_vector - T_gamma
+        # out unit -> None
+        term2 = pi**2/15
+        # out unit -> cm^(-3)
+        term3 = torch.pow(((CONSTANT_BOLTZMANN_EV * T_gamma * 2 * pi)/(CONSTANT_PLANCK_EV * CONSTANT_LIGHT_VEL)), 3)
+        # out unit -> None
+        term4 = CONSTANT_BOLTZMANN * T_gamma / (CONSTANT_MASS_ELECTRON * CONSTANT_LIGHT_VEL * CONSTANT_LIGHT_VEL)
+
+        return 4 * CONSTANT_BOLTZMANN_EV * term1 * term2 * term3 * term4 * self.n_e * CONSTANT_THOMSON_ELEC_CROSS * CONSTANT_LIGHT_VEL
+
+    def hubble_parameter(self):
+        """
+        Return hubbles parameter for the whole batch at the given redshift.
+        Units of hubble parameter: 1/s
+        """
+        term = torch.pow((CONSTANT_COSMOS_OMEGA_M * self.redshift_pow_3) + (1.0 - CONSTANT_COSMOS_OMEGA_M) , 0.5)
+        return CONSTANT_HUBBLE_Z0 * term * (KM_to_CM/MPC_to_CM)
