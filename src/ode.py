@@ -352,35 +352,36 @@ class ODE:
         Takes in temperature of electron vector and returns the free-free
         cooling coefficient corresponding to each temperature in vector.
         Ref: equation (B25) in section B4.3 in [1]
-        Units of free-free cooling coefficient: erg cm^3 s^-1
+        Units of free-free cooling coefficient: eV cm^3 s^-1
         """
         term1 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
         term2 = torch.exp(-1.18e5/temperature_vector)
-        return 7.5e-19 * term1 * term2
+        return 7.5e-19 * term1 * term2 * ERG_TO_EV
 
     def collisional_excitation_cooling_He_I(self, temperature_vector):
         """
         Takes in temperature of electron vector and returns the free-free
         cooling coefficient corresponding to each temperature in vector.
         Ref: equation (B26) in section B4.3 in [1]
-        Units of free-free cooling coefficient: erg cm^3 s^-1
+        Units of free-free cooling coefficient: eV cm^3 s^-1
         """
         term1 = torch.pow(temperature_vector, -0.1687)
         term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
         term3 = torch.exp(-1.31e4/temperature_vector)
-        return 9.10e-27 * term1 * term2 * term3 * self.n_e * self.n_He_II
+        return 9.10e-27 * term1 * term2 * term3 * self.n_e * \
+            self.n_He_II * ERG_TO_EV
 
     def collisional_excitation_cooling_He_II(self, temperature_vector):
         """
         Takes in temperature of electron vector and returns the free-free
         cooling coefficient corresponding to each temperature in vector.
         Ref: equation (B27) in section B4.3 in [1]
-        Units of free-free cooling coefficient: erg cm^3 s^-1
+        Units of free-free cooling coefficient: eV cm^3 s^-1
         """
         term1 = torch.pow(temperature_vector, -0.397)
         term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
         term3 = torch.exp(-4.73e5/temperature_vector)
-        return 5.54e-17 * term1 * term2 * term3
+        return 5.54e-17 * term1 * term2 * term3 * ERG_TO_EV
 
     def free_free_cooling_coefficient(self, temperature_vector):
         """
