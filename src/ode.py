@@ -124,7 +124,7 @@ class ODE:
         # print("term1", term1)
         # print("term2", term2)
 
-        return (d_xHII_dt - term1 + term2) / MYR_TO_SEC
+        return (d_xHII_dt - term1 + term2) / MYR_to_SEC
 
     def get_x_He_II_loss(self, x_He_I, x_He_II, x_He_III, T, t):
         """
@@ -164,7 +164,7 @@ class ODE:
         # out unit: 1/s
         term6 = torch.multiply(xi_He_II, torch.multiply(n_e, x_He_II))
 
-        return (d_xHeII_dt - term1 - term2 + term3 + term4 - term5 + term6) / MYR_TO_SEC
+        return (d_xHeII_dt - term1 - term2 + term3 + term4 - term5 + term6) / MYR_to_SEC
 
     def get_x_He_III_loss(self, x_He_I, x_He_II, x_He_III, T, t):
         """
@@ -194,7 +194,7 @@ class ODE:
         # out unit: 1/s
         term3 = torch.multiply(alpha_He_III, torch.multiply(n_e, x_He_III))
 
-        return (d_xHeIII_dt - term1 - term2 + term3) / MYR_TO_SEC
+        return (d_xHeIII_dt - term1 - term2 + term3) / MYR_to_SEC
 
     def get_temperature_loss(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III, T, t):
         """
@@ -371,7 +371,7 @@ class ODE:
         """
         term1 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
         term2 = torch.exp(-1.18e5/temperature_vector)
-        return 7.5e-19 * term1 * term2 * ERG_TO_EV
+        return 7.5e-19 * term1 * term2 * ERG_to_EV
 
     def collisional_excitation_cooling_He_I(self, temperature_vector):
         """
@@ -384,7 +384,7 @@ class ODE:
         term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
         term3 = torch.exp(-1.31e4/temperature_vector)
         return 9.10e-27 * term1 * term2 * term3 * self.n_e * \
-            self.n_He_II * ERG_TO_EV
+            self.n_He_II * ERG_to_EV
 
     def collisional_excitation_cooling_He_II(self, temperature_vector):
         """
@@ -396,7 +396,7 @@ class ODE:
         term1 = torch.pow(temperature_vector, -0.397)
         term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
         term3 = torch.exp(-4.73e5/temperature_vector)
-        return 5.54e-17 * term1 * term2 * term3 * ERG_TO_EV
+        return 5.54e-17 * term1 * term2 * term3 * ERG_to_EV
 
     def free_free_cooling_coefficient(self, temperature_vector):
         """
