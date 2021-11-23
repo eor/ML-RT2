@@ -124,7 +124,7 @@ class Physics:
         Note: This function just returns the integral and needs to multiplied
         with beta_1 and n_e to complete the equation.
         Ref: equation (A.6) in [2]
-        Units:
+        Units: 
         """
         # sanity checks
         if self.energy_vector is None:
@@ -310,4 +310,3 @@ class Physics:
         sigma = sigma_0 * np.power(photon_energy, -4) * fraction
 
         return sigma
-

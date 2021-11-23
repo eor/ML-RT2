@@ -85,23 +85,28 @@ class ODE:
         by substituting the output in the first differential equation for H_II evolution.
         Ref: equation (A.3) in [2], which is a simplified form of equation (26) in [1].
         """
-        # hydrogen number density
+        # hydrogen number density (1/cm^3)
         n_H = self.n_hydrogen
-        # electron number density
+        # electron number density (1/cm^3)
         n_e = self.n_e
-        # recombination coefficient H_II
+        # recombination coefficient H_II (cm^3/s)
         alpha_H_II = self.recombination_H_II(T)
-        # collision_ionisation for hydrogen
+        # collision_ionisation for hydrogen (cm^3/s)
         beta1 = self.collision_ionisation_H_I(T)
 
-        # ionisation rate for H_I, equation (A.6) in [2]
+        # ionisation rate for H_I, equation (A.6) in [2] (1/s)
+        # out unit: (1/s)
         ionisation_term1 = beta1 * n_e
         ionisation_term2 = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_hydrogen())
+        # out unit: (1/s)
         ionisation_rate_H_I = ionisation_term1 + ionisation_term2
 
+        # out unit: (1/s)
         d_xHII_dt = torch.autograd.grad(x_H_II.sum(), t, create_graph=True)[0]
+        # out unit: (1/s)
         d_xHII_dt = torch.squeeze(d_xHII_dt)
         term1 = torch.multiply(ionisation_rate_H_I, x_H_I)
+        # out unit: (1/s)
         term2 = torch.multiply(alpha_H_II, torch.divide(torch.square(n_e), n_H))
 
         # temporarily here....
@@ -119,7 +124,7 @@ class ODE:
         # print("term1", term1)
         # print("term2", term2)
 
-        return d_xHII_dt - term1 + term2
+        return (d_xHII_dt - term1 + term2) / MYR_TO_SEC
 
     def get_x_He_II_loss(self, x_He_I, x_He_II, x_He_III, T, t):
         """
@@ -127,33 +132,39 @@ class ODE:
         by substituting the output in the second differential equation for He_II evolution.
         Ref: equation (A.4) in [2], a simplified form of equation (29) in [1]
         """
-        # electron number density
+        # electron number density (1/cm^3)
         n_e = self.n_e
 
-        # collisional ionisation coefficient for He_I and He_II
+        # collisional ionisation coefficient for He_I and He_II (cm^3/s)
         beta_He_I = self.collision_ionisation_He_I(T)
         beta_He_II = self.collision_ionisation_He_II(T)
 
-        # recombination coefficient for He_II and He_III
+        # recombination coefficient for He_II and He_III (cm^3/s)
         alpha_He_II = self.recombination_He_II(T)
         alpha_He_III = self.recombination_He_III(T)
 
-        # dielectric recombination coefficient for He_II
+        # dielectric recombination coefficient for He_II (cm^3/s)
         xi_He_II = self.dielectric_recombination_He_II(T)
 
-        # ionisation rate for He_I, equation (A.7) in [2]
+        # ionisation rate for He_I, equation (A.7) in [2] (1/s)
         ionisation_rate_He_I = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_helium1())
 
+        # out unit: 1/s
         d_xHeII_dt = torch.autograd.grad(x_He_II.sum(), t, create_graph=True)[0]
         d_xHeII_dt = torch.squeeze(d_xHeII_dt)
         term1 = torch.multiply(ionisation_rate_He_I, x_He_I)
+        # out unit: 1/s
         term2 = torch.multiply(beta_He_I, torch.multiply(n_e, x_He_I))
+        # out unit: 1/s
         term3 = torch.multiply(beta_He_II, torch.multiply(n_e, x_He_II))
+        # out unit: 1/s
         term4 = torch.multiply(alpha_He_II, torch.multiply(n_e, x_He_II))
+        # out unit: 1/s
         term5 = torch.multiply(alpha_He_III, torch.multiply(n_e, x_He_III))
+        # out unit: 1/s
         term6 = torch.multiply(xi_He_II, torch.multiply(n_e, x_He_II))
 
-        return d_xHeII_dt - term1 - term2 + term3 + term4 - term5 + term6
+        return (d_xHeII_dt - term1 - term2 + term3 + term4 - term5 + term6) / MYR_TO_SEC
 
     def get_x_He_III_loss(self, x_He_I, x_He_II, x_He_III, T, t):
         """
@@ -161,25 +172,29 @@ class ODE:
         by substituting the output in the third differential equation for He_III evolution.
         Ref: equation (A.5) in [2], a simplified form of equation (30) in [1]
         """
-        # electron number density
+        # electron number density (1/cm^3)
         n_e = self.n_e
 
-        # recombination coefficient He_III
+        # recombination coefficient He_III (cm^3/s)
         alpha_He_III = self.recombination_He_III(T)
 
-        # collision ionisation
+        # collision ionisation (cm^3/s)
         beta_He_II = self.collision_ionisation_He_II(T)
 
-        # ionisation rate for He_II, equation (A.8) in [2]
+        # ionisation rate for He_II, equation (A.8) in [2] (1/s)
         ionisation_rate_He_II = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_helium2())
 
+        # out unit: 1/s
         d_xHeIII_dt = torch.autograd.grad(x_He_III.sum(), t, create_graph=True)[0]
         d_xHeIII_dt = torch.squeeze(d_xHeIII_dt)
+        # out unit: 1/s
         term1 = torch.multiply(ionisation_rate_He_II, x_He_II)
+        # out unit: 1/s
         term2 = torch.multiply(beta_He_II, torch.multiply(n_e, x_He_II))
+        # out unit: 1/s
         term3 = torch.multiply(alpha_He_III, torch.multiply(n_e, x_He_III))
 
-        return d_xHeIII_dt - term1 - term2 + term3
+        return (d_xHeIII_dt - term1 - term2 + term3) / MYR_TO_SEC
 
     def get_temperature_loss(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III, T, t):
         """
