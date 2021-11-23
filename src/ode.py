@@ -356,7 +356,7 @@ class ODE:
         """
         term1 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
         term2 = torch.exp(-1.18e5/temperature_vector)
-        return 7.5e-19 * term1 * term2 * ERG_TO_EV
+        return 7.5e-19 * term1 * term2 * ERG_to_EV
 
     def collisional_excitation_cooling_He_I(self, temperature_vector):
         """
@@ -369,7 +369,7 @@ class ODE:
         term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
         term3 = torch.exp(-1.31e4/temperature_vector)
         return 9.10e-27 * term1 * term2 * term3 * self.n_e * \
-            self.n_He_II * ERG_TO_EV
+            self.n_He_II * ERG_to_EV
 
     def collisional_excitation_cooling_He_II(self, temperature_vector):
         """
@@ -381,7 +381,7 @@ class ODE:
         term1 = torch.pow(temperature_vector, -0.397)
         term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
         term3 = torch.exp(-4.73e5/temperature_vector)
-        return 5.54e-17 * term1 * term2 * term3 * ERG_TO_EV
+        return 5.54e-17 * term1 * term2 * term3 * ERG_to_EV
 
     def free_free_cooling_coefficient(self, temperature_vector):
         """

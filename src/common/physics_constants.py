@@ -6,7 +6,8 @@ A module to store all physics constants
 MPC_to_CM = 3.086e24                        # Mega parsec to cm conversion
 KPC_to_CM = 3.086e21                        # kilo parsec to cm conversion
 KM_to_CM = 1.0e5                            # Kilo meters to cm conversion
-ERG_TO_EV = 6.242e+11
+ERG_to_EV = 6.242e+11                       #
+EV_to_ERG = 1.6022e-12                      #
 
 # Speed of light
 CONSTANT_LIGHT_SPEED = 2.9979e10            # speed of light in cm/second
