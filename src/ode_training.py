@@ -142,8 +142,8 @@ def generate_training_data(config):
     # state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T, tau, time), axis=1)
 
     # sample target labels
-    u_actual = np.zeros((train_set_size))  # TODO: this should be removed
-
+    precision_upto_digits = 4
+    u_actual = -1 * precision_upto_digits * np.ones((train_set_size))
 
     return flux_vector, state_vector, time_vector, u_actual, parameter_vector, energies_vector
 
@@ -210,9 +210,12 @@ def main(config):
         x_time_vector = Variable(torch.from_numpy(x_time_vector).float(), requires_grad=True).to(device)
         target_residual = Variable(torch.from_numpy(target_residual).float(), requires_grad=True).to(device)
         parameter_vector = Variable(torch.from_numpy(parameter_vector).float(), requires_grad=True).to(device)
+
         # Loss based on CRT ODEs
         residual = ode_equation.compute_ode_residual(x_flux_vector, x_state_vector, x_time_vector, parameter_vector, u_approximation)
-        loss_ode = F.mse_loss(input=residual, target=target_residual, reduction='mean')
+        log_residual = torch.log10(torch.abs(residual))
+        # loss: [log(residual) - precision]^2
+        loss_ode = F.mse_loss(input=, target=target_residual, reduction='mean')
 
         # compute the gradients
         loss_ode.backward()
@@ -222,8 +225,8 @@ def main(config):
         # make the gradients zero
         optimizer.zero_grad()
 
-        print("[Epoch %d/%d] [Train loss MSE: %e]"
-            % (epoch, config.n_epochs, loss_ode.item()))
+        print("[Epoch %d/%d] [Train loss MSE: %e] [residual: %e]"
+            % (epoch, config.n_epochs, loss_ode.item(), residual.mean().item()))
 
         train_loss_array = np.append(train_loss_array, loss_ode.item())
 
