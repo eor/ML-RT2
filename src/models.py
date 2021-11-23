@@ -24,8 +24,7 @@ class MLP1(nn.Module):
 
         self.NN_flux = nn.Sequential(
             *block(conf.len_SED_input, 512, normalise=False, dropout=False),
-            *block(512, 256),
-            *block(256, 128),
+            *block(512, 128),
             *block(128, 64),
             *block(64, 16),
             nn.Linear(16, conf.len_latent_vector)
@@ -35,10 +34,7 @@ class MLP1(nn.Module):
             *block(conf.len_state_vector + conf.len_latent_vector, 64, normalise=False, dropout=False),
             *block(64, 128),
             *block(128, 256),
-            *block(256, 512),
-            *block(512, 1024),
-            *block(1024, 512),    # TODO: Let's see if NN actually needs this many layers & units
-            *block(512, 128),
+            *block(256, 128),
             *block(128, 64),
             nn.Linear(64, 4)
         )

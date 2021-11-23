@@ -124,6 +124,8 @@ def generate_training_data(config):
     tau = generate_tau_training(energies_vector)
     # obtain flux_vector from intensities_vector by multiplying with tau
     assert intensities_vector.shape == tau.shape, 'tau and intensity vectors should be of same shape. Found: %s and %s'%(tau.shape, intensities_vector.shape)
+    # [TODO:] multiplying by e^-tau results in very large values resulting in nan in loss
+    # might start working after fixing tau
     flux_vector = np.multiply(intensities_vector, tau)
 
     # sample state vector
@@ -131,19 +133,17 @@ def generate_training_data(config):
     x_He_II = np.random.uniform(ps_ode[1][0], ps_ode[1][1], size=(train_set_size, 1))
     x_He_III = np.random.uniform(ps_ode[2][0], ps_ode[2][1], size=(train_set_size, 1))
     T = np.random.uniform(ps_ode[3][0], ps_ode[3][1], size=(train_set_size, 1))
+
     # [TODO]: verify this. upper range will targetSourceAge or sourceAge upper bound from settings?
     lower_bound_time = ps_ode[5][0] * np.ones(shape=(train_set_size, 1))
     upper_bound_time = sourceAge.copy()
     time_vector = np.random.uniform(lower_bound_time, upper_bound_time, size=(train_set_size, 1))
 
     state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T), axis=1)
-    # temporarily removing tau from the state_vector because of it's shape (train_set_size, 2000)
-    # --- can be added back later
-    # state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T, tau, time), axis=1)
 
     # sample target labels
-    u_actual = np.zeros((train_set_size))  # TODO: this should be removed
-
+    precision_upto_digits = 4
+    u_actual = -1 * precision_upto_digits * np.ones((train_set_size))
 
     return flux_vector, state_vector, time_vector, u_actual, parameter_vector, energies_vector
 
@@ -210,9 +210,12 @@ def main(config):
         x_time_vector = Variable(torch.from_numpy(x_time_vector).float(), requires_grad=True).to(device)
         target_residual = Variable(torch.from_numpy(target_residual).float(), requires_grad=True).to(device)
         parameter_vector = Variable(torch.from_numpy(parameter_vector).float(), requires_grad=True).to(device)
+
         # Loss based on CRT ODEs
         residual = ode_equation.compute_ode_residual(x_flux_vector, x_state_vector, x_time_vector, parameter_vector, u_approximation)
-        loss_ode = F.mse_loss(input=residual, target=target_residual, reduction='mean')
+        log_residual = torch.log10(torch.abs(residual))
+        # loss: [log(residual) - precision]^2
+        loss_ode = F.mse_loss(input=log_residual, target=target_residual, reduction='mean')
 
         # compute the gradients
         loss_ode.backward()
@@ -222,8 +225,8 @@ def main(config):
         # make the gradients zero
         optimizer.zero_grad()
 
-        print("[Epoch %d/%d] [Train loss MSE: %e]"
-            % (epoch, config.n_epochs, loss_ode.item()))
+        print("[Epoch %d/%d] [Train loss MSE: %e] [residual: %e]"
+            % (epoch, config.n_epochs, loss_ode.item(), residual.mean().item()))
 
         train_loss_array = np.append(train_loss_array, loss_ode.item())
 
