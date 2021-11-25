@@ -99,6 +99,8 @@ class ODE:
         ionisation_term1 = torch.multiply(beta1, n_e)
         ionisation_term2 = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_hydrogen())
         # out unit: (1/s)
+        import pdb; pdb.set_trace()
+
         ionisation_rate_H_I = ionisation_term1 + ionisation_term2
 
         # out unit: (1/s)
