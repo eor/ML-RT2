@@ -170,7 +170,7 @@ def main(config):
     u_approximation = MLP1(config)
 
     if cuda:
-        model.cuda()
+        u_approximation.cuda()
 
     # initialise the ODE equation
     ode_equation = ODE(config)
@@ -246,7 +246,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='ML-RT - Cosmological radiative transfer with PINNs (PINN)')
 
     parser.add_argument('--out_dir', type=str, default='output', metavar='(string)',
-                    help='Path to output directory, used for all plots and data products, default: ./output/')
+                        help='Path to output directory, used for all plots and data products, default: ./output/')
 
     parser.add_argument("--len_SED_input", type=int, default=2000,
                         help="length of SED input for the model")
@@ -269,7 +269,6 @@ if __name__ == "__main__":
 
     parser.add_argument("--delta_time", type=float, default=DEFAULT_TEMPORAL_RESOLUTION,
                         help="Temporal resolution in Myr. Default = 0.01")
-
 
     # network optimisation
     parser.add_argument("--n_epochs", type=int, default=10000,
