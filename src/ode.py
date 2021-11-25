@@ -77,7 +77,27 @@ class ODE:
                                            T_prediction,
                                            time_vector)
 
-        return loss_x_H_II + loss_x_He_II + loss_x_He_III
+        return loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
+
+    def init_number_density_vectors(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III):
+        """
+        This method initialises the number density variables
+        Inputs: all ionisation fractions of H and He
+        Units: cm^-3
+        """
+        density_factor = self.over_densities * self.redshift_pow_3
+        self.n_hydrogen = density_factor * CONSTANT_n_H_0
+        self.n_helium = density_factor * CONSTANT_n_He_0
+
+        # update number densities
+        self.n_H_I = self.n_hydrogen * x_H_I
+        self.n_H_II = self.n_hydrogen * x_H_II
+        self.n_He_I = self.n_helium * x_He_I
+        self.n_He_II = self.n_helium * x_He_II
+        self.n_He_III = self.n_helium * x_He_III
+
+        # electron number density = sum of number densities of ionised H, He and doubly ionised He
+        self.n_e = self.n_H_II + self.n_He_II + 2 * self.n_He_III
 
     def get_x_H_II_loss(self, x_H_I, x_H_II, T, t):
         """
@@ -99,7 +119,7 @@ class ODE:
         ionisation_term1 = torch.multiply(beta1, n_e)
         ionisation_term2 = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_hydrogen())
         # out unit: (1/s)
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
         ionisation_rate_H_I = ionisation_term1 + ionisation_term2
 
@@ -284,30 +304,6 @@ class ODE:
         total = torch.divide(total, n_B)
 
         return (d_T_dt - total) / MYR_to_SEC
-
-
-    def init_number_density_vectors(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III):
-        """
-        Takes in the redshift and ionisation fractions for H and He and initialises the
-        number density variables for all the H and He ionisation fractions. Also,
-        initialises the electron number density arrays.
-
-        Units of values in computed arrays: cm^-3
-        """
-
-        density_factor = self.over_densities * self.redshift_pow_3
-        self.n_hydrogen = density_factor * CONSTANT_n_H_0
-        self.n_helium = density_factor * CONSTANT_n_He_0
-
-        # update number densities
-        self.n_H_I = self.n_hydrogen * x_H_I
-        self.n_H_II = self.n_hydrogen * x_H_II
-        self.n_He_I = self.n_helium * x_He_I
-        self.n_He_II = self.n_helium * x_He_II
-        self.n_He_III = self.n_helium * x_He_III
-
-        # electron number density = sum of number densities of ionised H, He and doubly ionised He
-        self.n_e = self.n_H_II + self.n_He_II + 2 * self.n_He_III
 
     def recombination_H_II(self, temperature_vector):
         """
