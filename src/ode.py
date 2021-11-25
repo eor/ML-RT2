@@ -96,7 +96,7 @@ class ODE:
 
         # ionisation rate for H_I, equation (A.6) in [2] (1/s)
         # out unit: (1/s)
-        ionisation_term1 = beta1 * n_e
+        ionisation_term1 = torch.multiply(beta1, n_e)
         ionisation_term2 = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_hydrogen())
         # out unit: (1/s)
         ionisation_rate_H_I = ionisation_term1 + ionisation_term2
