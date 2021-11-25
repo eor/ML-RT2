@@ -126,6 +126,8 @@ class ODE:
 
         return (d_xHII_dt - term1 + term2) / MYR_to_SEC
 
+        # TODO: all get*_loss functions need better doc strings
+
     def get_x_He_II_loss(self, x_He_I, x_He_II, x_He_III, T, t):
         """
         Takes in the output of neural network and returns the residual computed
@@ -198,8 +200,9 @@ class ODE:
 
     def get_temperature_loss(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III, T, t):
         """
-        Takes in the output of neural network and returns the residual computed
-        by substituting the output in the fourth differential equation for electron temperature evolution.
+        Takes in the output of neural network
+        Returns: the residual computed by substituting the output in the fourth differential equation for electron
+        temperature evolution.
         Ref: equation (A.9) in [2], a simplified form of equation (36) in [1]
         """
 
@@ -247,7 +250,7 @@ class ODE:
         term_3 += torch.multiply(eta_He_III, torch.multiply(n_e, n_He_III))
 
         # term 4
-        omega_He_II = self.recombination_cooling_coefficient_He_II_dieelectronic(T)
+        omega_He_II = self.recombination_cooling_coefficient_He_II_dielectronic(T)
         term_4 = torch.multiply(omega_He_II, torch.multiply(n_e, n_He_III))
 
         # term 5
@@ -268,7 +271,7 @@ class ODE:
         term_7 = torch.multiply(theta_ff, torch.multiply(number_density_sum, n_e))
 
         # term 8
-        a_dot_a = self.hubble_parameter()  
+        a_dot_a = self.hubble_parameter()
         term_8 = 7.5 * torch.multiply(a_dot_a, torch.multiply(CONSTANT_BOLTZMANN_EV * T / mu, n_B))
 
         # the grand total
@@ -454,7 +457,7 @@ class ODE:
 
         return 1.55e-26 * term1 * ERG_to_EV
 
-    def recombination_cooling_coefficient_He_II_dieelectronic(self, temperature_vector):
+    def recombination_cooling_coefficient_He_II_dielectronic(self, temperature_vector):
         """
         Input: temperature vector
         Returns: recombination cooling coefficient for He II (dielectronic recombination)
