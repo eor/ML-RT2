@@ -69,9 +69,9 @@ def generate_tau_training(energies_vector):
 
     # generate tau for our training
     for t in range(train_set_size):
-        N_H_I = random() * (limit_upper - limit_lower) + limit_lower
-        N_He_I = random() * (limit_upper - limit_lower) + limit_lower
-        N_He_II = random() * (limit_upper - limit_lower) + limit_lower
+        N_H_I = 10**(random() * (limit_upper - limit_lower) + limit_lower)
+        N_He_I = 10**(random() * (limit_upper - limit_lower) + limit_lower)
+        N_He_II = 10**(random() * (limit_upper - limit_lower) + limit_lower)
 
         tau_training_vector[t] = sigmas_H_I * N_H_I + sigmas_He_I * N_He_I + sigmas_He_II * N_He_II
 
