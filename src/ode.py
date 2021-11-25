@@ -85,16 +85,17 @@ class ODE:
         Inputs: all ionisation fractions of H and He
         Units: cm^-3
         """
-        density_factor = self.over_densities * self.redshift_pow_3
+        density_factor = torch.multiply(self.over_densities, self.redshift_pow_3)
         self.n_hydrogen = density_factor * CONSTANT_n_H_0
         self.n_helium = density_factor * CONSTANT_n_He_0
 
         # update number densities
-        self.n_H_I = self.n_hydrogen * x_H_I
-        self.n_H_II = self.n_hydrogen * x_H_II
-        self.n_He_I = self.n_helium * x_He_I
-        self.n_He_II = self.n_helium * x_He_II
-        self.n_He_III = self.n_helium * x_He_III
+        self.n_H_I = torch.multiply(self.n_hydrogen, x_H_I)
+        self.n_H_II = torch.multiply(self.n_hydrogen, x_H_II)
+
+        self.n_He_I = torch.multiply(self.n_helium, x_He_I)
+        self.n_He_II = torch.multiply(self.n_helium, x_He_II)
+        self.n_He_III = torch.multiply(self.n_helium, x_He_III)
 
         # electron number density = sum of number densities of ionised H, He and doubly ionised He
         self.n_e = self.n_H_II + self.n_He_II + 2 * self.n_He_III
