@@ -305,7 +305,5 @@ if __name__ == "__main__":
     for arg in vars(my_config):
         print("\t", arg, getattr(my_config, arg))
 
-
-
     # run main program
     main(my_config)
