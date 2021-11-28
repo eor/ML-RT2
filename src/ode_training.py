@@ -123,9 +123,6 @@ def generate_training_data(config):
     # obtain tau from energies_vector
     tau = generate_tau_training(energies_vector)
     # obtain flux_vector from intensities_vector by multiplying with tau
-    assert intensities_vector.shape == tau.shape, 'tau and intensity vectors should be of same shape. Found: %s and %s'%(tau.shape, intensities_vector.shape)
-    # [TODO:] multiplying by e^-tau results in very large values resulting in nan in loss
-    # might start working after fixing tau
     flux_vector = np.multiply(intensities_vector, tau)
 
     # sample state vector
@@ -299,7 +296,8 @@ if __name__ == "__main__":
 
     my_config.out_dir = os.path.abspath(my_config.out_dir)
     my_config.profile_type = 'C'
-
+    my_config.device = device
+    
     # print summary
     print("\nUsed parameters:\n")
     for arg in vars(my_config):
