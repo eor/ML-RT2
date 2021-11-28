@@ -123,11 +123,7 @@ def generate_training_data(config):
     # obtain tau from energies_vector
     tau = generate_tau_training(energies_vector)
     # obtain flux_vector from intensities_vector by multiplying with tau
-    assert intensities_vector.shape == tau.shape, 'tau and intensity vectors should be of same shape. Found: %s and %s'%(tau.shape, intensities_vector.shape)
-    # [TODO:] multiplying by e^-tau results in very large values resulting in nan in loss
-    # might start working after fixing tau
     flux_vector = np.multiply(intensities_vector, tau)
-
     # sample state vector
     x_H_II = np.random.uniform(ps_ode[0][0], ps_ode[0][1], size=(train_set_size, 1))
     x_He_II = np.random.uniform(ps_ode[1][0], ps_ode[1][1], size=(train_set_size, 1))
