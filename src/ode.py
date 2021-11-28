@@ -76,7 +76,7 @@ class ODE:
                                            x_He_III_prediction,
                                            T_prediction,
                                            time_vector)
-
+        
         return loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
 
     def init_number_density_vectors(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III):
@@ -118,7 +118,8 @@ class ODE:
         # ionisation rate for H_I, equation (A.6) in [2] (1/s)
         # out unit: (1/s)
         ionisation_term1 = torch.multiply(beta1, n_e)
-        ionisation_term2 = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_hydrogen())
+        ionisation_term2 = torch.Tensor(Physics.getInstance().get_ionisation_rate_integral_hydrogen())
+
         # out unit: (1/s)
         # import pdb; pdb.set_trace()
 
@@ -132,20 +133,6 @@ class ODE:
         # out unit: (1/s)
         term2 = torch.multiply(alpha_H_II, torch.divide(torch.square(n_e), n_H))
 
-        # temporarily here....
-
-        # print("ionisation_term1", ionisation_term1)
-        # print("ionisation_term2", ionisation_term2)
-        # print("ionisation_rate_H_I", ionisation_rate_H_I)
-        # print("x_H_I", x_H_I)
-        # print("x_H_II", x_H_II)
-        # print("alpha_H_II", alpha_H_II)
-        # print("n_e", n_e)
-        # print("n_H", n_H)
-        # print("beta1", beta1)
-        # print("T", T)
-        # print("term1", term1)
-        # print("term2", term2)
 
         return (d_xHII_dt - term1 + term2) / MYR_to_SEC
 
@@ -172,7 +159,7 @@ class ODE:
         xi_He_II = self.dielectric_recombination_He_II(T)
 
         # ionisation rate for He_I, equation (A.7) in [2] (1/s)
-        ionisation_rate_He_I = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_helium1())
+        ionisation_rate_He_I = torch.Tensor(Physics.getInstance().get_ionisation_rate_integral_helium1())
 
         # out unit: 1/s
         d_xHeII_dt = torch.autograd.grad(x_He_II.sum(), t, create_graph=True)[0]
@@ -207,7 +194,7 @@ class ODE:
         beta_He_II = self.collision_ionisation_He_II(T)
 
         # ionisation rate for He_II, equation (A.8) in [2] (1/s)
-        ionisation_rate_He_II = torch.FloatTensor(Physics.getInstance().get_ionisation_rate_integral_helium2())
+        ionisation_rate_He_II = torch.Tensor(Physics.getInstance().get_ionisation_rate_integral_helium2())
 
         # out unit: 1/s
         d_xHeIII_dt = torch.autograd.grad(x_He_III.sum(), t, create_graph=True)[0]
@@ -246,10 +233,10 @@ class ODE:
         d_T_dt = torch.squeeze(d_T_dt)
 
         # heating rate integrals
-        heating_rate_H_I = torch.FloatTensor(Physics.getInstance().get_heating_rate_integral_hydrogen())
-        heating_rate_He_I = torch.FloatTensor(Physics.getInstance().get_heating_rate_integral_helium1())
-        heating_rate_He_II = torch.FloatTensor(Physics.getInstance().get_heating_rate_integral_helium2())
-        print(heating_rate_H_I)
+        heating_rate_H_I = torch.Tensor(Physics.getInstance().get_heating_rate_integral_hydrogen())
+        heating_rate_He_I = torch.Tensor(Physics.getInstance().get_heating_rate_integral_helium1())
+        heating_rate_He_II = torch.Tensor(Physics.getInstance().get_heating_rate_integral_helium2())
+
         term_1 = torch.multiply(n_H_I, heating_rate_H_I)
         term_1 += torch.multiply(n_He_I, heating_rate_He_I)
         term_1 += torch.multiply(n_He_II, heating_rate_He_II)

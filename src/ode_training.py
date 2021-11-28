@@ -124,6 +124,7 @@ def generate_training_data(config):
     tau = generate_tau_training(energies_vector)
     # obtain flux_vector from intensities_vector by multiplying with tau
     flux_vector = np.multiply(intensities_vector, tau)
+
     # sample state vector
     x_H_II = np.random.uniform(ps_ode[0][0], ps_ode[0][1], size=(train_set_size, 1))
     x_He_II = np.random.uniform(ps_ode[1][0], ps_ode[1][1], size=(train_set_size, 1))
@@ -295,7 +296,8 @@ if __name__ == "__main__":
 
     my_config.out_dir = os.path.abspath(my_config.out_dir)
     my_config.profile_type = 'C'
-
+    my_config.device = device
+    
     # print summary
     print("\nUsed parameters:\n")
     for arg in vars(my_config):
