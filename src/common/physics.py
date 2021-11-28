@@ -117,6 +117,105 @@ class Physics:
 
         return tau_HI + tau_HeI + tau_HeII
 
+    def get_heating_rate_integral_hydrogen(self):
+        """
+        Solves the integral in the equation for the heating rate of hydrogen,
+        given the energy vector and the flux vector.
+        Ref: term 1 in equation (36) in [1]
+        Units:
+        """
+        # sanity checks
+        if self.energy_vector is None:
+            raise Exception('Energy vector not set!')
+        if self.flux_vector is None:
+            raise Exception('Flux vector not set!')
+        if self.sigma_HI is None:
+            self.sigma_HI = self.get_photo_ionisation_cross_section_hydrogen()
+
+        if self.integral_heating_rate_hydrogen is not None:
+            return self.integral_heating_rate_hydrogen
+        else:
+            # get the training_data_size
+            train_set_size = self.flux_vector.shape[0]
+
+            # compute the value of integrand for each energy E in energy_vector
+            integrand = self.sigma_HI[None, :] * self.flux_vector * (self.energy_vector[None, :] - IONIZATION_ENERGY_HYDROGEN)
+
+            # placeholder array to store the computed the integrals
+            self.integral_heating_rate_hydrogen = np.zeros(train_set_size)
+
+            # compute the integrals using simpsons integration
+            for i in range(train_set_size):
+                self.integral_heating_rate_hydrogen[i] = utils_simpson_integration(integrand[i], self.energy_vector)
+
+            return self.integral_heating_rate_hydrogen * CONSTANT_LIGHT_SPEED
+
+    def get_heating_rate_integral_helium1(self):
+        """
+        Solves the integral in the equation for the heating rate of helium1,
+        given the energy vector and the flux vector.
+        Ref: term 1 in equation (36) in [1]
+        Units:
+        """
+        # sanity checks
+        if self.energy_vector is None:
+            raise Exception('Energy vector not set!')
+        if self.flux_vector is None:
+            raise Exception('Flux vector not set!')
+        if self.sigma_HeI is None:
+            self.sigma_HeI = self.get_photo_ionisation_cross_section_helium1()
+
+        if self.integral_heating_rate_helium1 is not None:
+            return self.integral_heating_rate_helium1
+        else:
+            # get the training_data_size
+            train_set_size = self.flux_vector.shape[0]
+
+            # compute the value of integrand for each energy E in energy_vector
+            integrand = self.sigma_HeI[None, :] * self.flux_vector * (self.energy_vector[None, :] - IONIZATION_ENERGY_HELIUM1)
+
+            # placeholder array to store the computed the integrals
+            self.integral_heating_rate_helium1 = np.zeros(train_set_size)
+
+            # compute the integrals using simpsons integration
+            for i in range(train_set_size):
+                self.integral_heating_rate_helium1[i] = utils_simpson_integration(integrand[i], self.energy_vector)
+
+            return self.integral_heating_rate_helium1 * CONSTANT_LIGHT_SPEED
+
+    def get_heating_rate_integral_helium2(self):
+        """
+        Solves the integral in the equation for the heating rate of helum2,
+        given the energy vector and the flux vector.
+        Ref: term 1 in equation (36) in [1]
+        Units:
+        """
+        # sanity checks
+        if self.energy_vector is None:
+            raise Exception('Energy vector not set!')
+        if self.flux_vector is None:
+            raise Exception('Flux vector not set!')
+        if self.sigma_HeII is None:
+            self.sigma_HeII = self.get_photo_ionisation_cross_section_helium2()
+
+        if self.integral_heating_rate_helium2 is not None:
+            return self.integral_heating_rate_helium2
+        else:
+            # get the training_data_size
+            train_set_size = self.flux_vector.shape[0]
+
+            # compute the value of integrand for each energy E in energy_vector
+            integrand = self.sigma_HeII[None, :] * self.flux_vector * (self.energy_vector[None, :] - IONIZATION_ENERGY_HELIUM2)
+
+            # placeholder array to store the computed the integrals
+            self.integral_heating_rate_helium2 = np.zeros(train_set_size)
+
+            # compute the integrals using simpsons integration
+            for i in range(train_set_size):
+                self.integral_heating_rate_helium2[i] = utils_simpson_integration(integrand[i], self.energy_vector)
+
+            return self.integral_heating_rate_helium2 * CONSTANT_LIGHT_SPEED
+
     def get_ionisation_rate_integral_hydrogen(self):
         """
         Solves the integral in the equation for the computation of
@@ -124,7 +223,7 @@ class Physics:
         Note: This function just returns the integral and needs to multiplied
         with beta_1 and n_e to complete the equation.
         Ref: equation (A.6) in [2]
-        Units: 
+        Units:
         """
         # sanity checks
         if self.energy_vector is None:
@@ -233,6 +332,11 @@ class Physics:
         self.integral_hydrogen_ionisation_rate = None
         self.integral_helium1_ionisation_rate = None
         self.integral_helium2_ionisation_rate = None
+
+        # integral heating rates
+        self.integral_heating_rate_hydrogen = None
+        self.integral_heating_rate_helium1 = None
+        self.integral_heating_rate_helium2 = None
 
     def set_energy_vector(self, energy_vector):
         """

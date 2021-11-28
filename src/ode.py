@@ -246,10 +246,10 @@ class ODE:
         d_T_dt = torch.squeeze(d_T_dt)
 
         # heating rate integrals
-        heating_rate_H_I = torch.ones((self.train_set_size))
-        heating_rate_He_I = torch.ones((self.train_set_size))
-        heating_rate_He_II = torch.ones((self.train_set_size))
-
+        heating_rate_H_I = torch.FloatTensor(Physics.getInstance().get_heating_rate_integral_hydrogen())
+        heating_rate_He_I = torch.FloatTensor(Physics.getInstance().get_heating_rate_integral_helium1())
+        heating_rate_He_II = torch.FloatTensor(Physics.getInstance().get_heating_rate_integral_helium2())
+        print(heating_rate_H_I)
         term_1 = torch.multiply(n_H_I, heating_rate_H_I)
         term_1 += torch.multiply(n_He_I, heating_rate_He_I)
         term_1 += torch.multiply(n_He_II, heating_rate_He_II)
