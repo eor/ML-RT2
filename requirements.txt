@@ -3,3 +3,4 @@ deepxde
 matplotlib
 numpy
 numba
+tensorboard
