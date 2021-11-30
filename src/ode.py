@@ -4,6 +4,7 @@ from numpy import pi
 from common.physics import *
 from common.physics_constants import *
 from common.settings_crt import *
+from common.data_log import *
 
 
 class ODE:
@@ -17,8 +18,8 @@ class ODE:
 
     def __init__(self, conf):
 
-        # obtain train_set_size from config
-        self.train_set_size = conf.train_set_size
+        # retrieve tensorboard instance
+        self.tb = DataLog.getInstance()
 
         # generate over_densities array
         self.over_densities = torch.ones((conf.train_set_size))
@@ -76,7 +77,13 @@ class ODE:
                                            x_He_III_prediction,
                                            T_prediction,
                                            time_vector)
-        
+
+        # log data to the data log
+        self.tb.log('loss_x_H_II', loss_x_H_II.mean())
+        self.tb.log('loss_x_He_II', loss_x_He_II.mean())
+        self.tb.log('loss_x_He_III', loss_x_He_III.mean())
+        self.tb.log('loss_T', loss_T.mean())
+
         return loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
 
     def init_number_density_vectors(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III):

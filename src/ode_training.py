@@ -1,5 +1,6 @@
 import argparse
 import os
+import signal
 
 import torch
 import numpy as np
@@ -13,10 +14,13 @@ from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
 from common.utils import *
 from common.physics import *
 from common.settings_crt import *
+from common.settings import *
+from common.data_log import *
 from sed import sed_numba
 from models import *
 from ode import *
 from random import random
+
 
 # check for CUDA
 if torch.cuda.is_available():
@@ -144,6 +148,10 @@ def generate_training_data(config):
 
     return flux_vector, state_vector, time_vector, u_actual, parameter_vector, energies_vector
 
+def force_stop_signal_handler(sig, frame):
+    global FORCE_STOP
+    FORCE_STOP = True
+    print("\033[96m\033[1m\nTraining will stop after this epoch. Please wait.\033[0m\n")
 
 # -----------------------------------------------------------------
 #  Main
@@ -162,6 +170,12 @@ def main(config):
 
     # data_products_path = os.path.join(config.out_dir, DATA_PRODUCTS_DIR)
     # plot_path = os.path.join(config.out_dir, PLOT_DIR)
+
+    # -----------------------------------------------------------------
+    # tensorboard (to check results, visit localhost:6006)
+    # -----------------------------------------------------------------
+    data_log = DataLog.getInstance(config.out_dir)
+    data_log.start_server()
 
     # initialise the model
     u_approximation = MLP1(config)
@@ -190,6 +204,15 @@ def main(config):
     train_loss_array = np.empty(0)
     val_loss_mse_array = np.empty(0)
     val_loss_dtw_array = np.empty(0)
+
+    # -----------------------------------------------------------------
+    # FORCE_STOP
+    # -----------------------------------------------------------------
+    global FORCE_STOP
+    FORCE_STOP = False
+    if FORCE_STOP_ENABLED:
+        signal.signal(signal.SIGINT, force_stop_signal_handler)
+        print('\n Press Ctrl + C to stop the training anytime and exit while saving the results.\n')
 
     print("\033[96m\033[1m\nTraining starts now\033[0m")
     for epoch in range(1, config.n_epochs + 1):
@@ -227,10 +250,26 @@ def main(config):
 
         train_loss_array = np.append(train_loss_array, loss_ode.item())
 
+        # log data to the data log
+        data_log.log('Residual', residual.mean().item())
+        data_log.log('Loss', loss_ode.item())
+
+        # update the tensorboard after every epoch
+        data_log.update_data()
+
         # TODO: find a criteria to select the best model --- validation ---????
         # TODO: copy the best model based on validation....
 
+        # early stopping check
+        if FORCE_STOP:
+            print("\033[96m\033[1m\nStopping Early\033[0m\n")
+            stopped_early = True
+            epochs_trained = epoch
+            break
+
     print("\033[96m\033[1m\nTraining complete\033[0m\n")
+
+    data_log.close()
 
     # TODO: Save best model and loss functions
     # TODO: add final results to config and rewrite the actual file
@@ -297,7 +336,7 @@ if __name__ == "__main__":
     my_config.out_dir = os.path.abspath(my_config.out_dir)
     my_config.profile_type = 'C'
     my_config.device = device
-    
+
     # print summary
     print("\nUsed parameters:\n")
     for arg in vars(my_config):
