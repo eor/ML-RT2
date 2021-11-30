@@ -65,9 +65,13 @@ class MLP1(nn.Module):
         concat_input = torch.cat((x_state_vector, time_vector, latent_vector), axis=1)
         output = self.NN(concat_input)
 
+        # [Issue] high order of values almost lead to constant values near the extremes of sigmoid
+        # possible fixes: use batch norm by default or somehow normalise the input to be small maybe
         x_H_II_prediction = torch.sigmoid(output[:, 0])
         x_He_II_prediction = torch.sigmoid(output[:, 1])
         x_He_III_prediction = torch.sigmoid(output[:, 2])
         T_prediction = torch.pow(10, 13 * torch.sigmoid(output[:, 3]))
 
         return x_H_II_prediction, x_He_II_prediction, x_He_III_prediction, T_prediction
+
+# separate layers
