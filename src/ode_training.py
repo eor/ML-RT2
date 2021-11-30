@@ -160,7 +160,11 @@ def main(config):
     # -----------------------------------------------------------------
     # create unique output path and run directories, save config
     # -----------------------------------------------------------------
-    run_id = 'run_' + utils_get_current_timestamp()
+    if config.run == '':
+        run_id = 'run_' + utils_get_current_timestamp()
+    else:
+        run_id = 'run_' + config.run
+
     config.out_dir = os.path.join(config.out_dir, run_id)
 
     utils_create_output_dirs([config.out_dir])
@@ -283,6 +287,8 @@ if __name__ == "__main__":
 
     parser.add_argument('--out_dir', type=str, default='output', metavar='(string)',
                         help='Path to output directory, used for all plots and data products, default: ./output/')
+    parser.add_argument('--run', type=str, default='', metavar='(string)',
+                        help='Specific run name for the experiment, default: ./output/timestamp')
 
     parser.add_argument("--len_SED_input", type=int, default=2000,
                         help="length of SED input for the model")

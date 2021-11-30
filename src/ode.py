@@ -37,6 +37,12 @@ class ODE:
         x_He_III_prediction = u_2
         T_prediction = u_3
 
+        # log data to the data log
+        self.tb.log('x_H_II_prediction', x_H_II_prediction.mean())
+        self.tb.log('x_He_II_prediction', x_He_II_prediction.mean())
+        self.tb.log('x_He_III_prediction', x_He_III_prediction.mean())
+        self.tb.log('T_prediction', T_prediction.mean())
+
         # compute ionisation fractions from the prediction vectors
         x_H_I_prediction = 1.0 - x_H_II_prediction
         x_He_I_prediction = 1.0 - x_He_II_prediction - x_He_III_prediction
