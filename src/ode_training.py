@@ -221,6 +221,10 @@ def main(config):
     for epoch in range(1, config.n_epochs + 1):
 
         # TODO: look for boundary conditions???
+
+        # [Issue] generating training data after every epoch leads to lots of noise in loss function
+        # possible fixes: generate training data/validation data in a systematic way and
+        # then evaluate the model.
         x_flux_vector, x_state_vector, x_time_vector, target_residual, parameter_vector, energies_vector = generate_training_data(config)
 
         # update the data in this physics module
@@ -241,6 +245,11 @@ def main(config):
                                                                                        parameter_vector,
                                                                                        u_approximation)
 
+        # [Issue] using log10(abs(prediction)) here introduces two problems:
+        # 1. we lose sign information
+        # 2. log doesn't have a minimum so we cant minimise it.
+        # possible fixes: use sigmoid or tanh here, which helps us get rid of
+        # both above issues
         out_x_H_II = torch.tanh(r_x_H_II)
         out_x_He_II = torch.tanh(r_x_He_II)
         out_x_He_III = torch.tanh(r_x_He_III)
@@ -268,7 +277,7 @@ def main(config):
         # log data to the data log
         data_log.log('out_H_II', out_x_H_II.mean().item())
         data_log.log('out_He_II', out_x_He_II.mean().item())
-        data_log.log('out_He_III', loss_x_He_III.mean().item())
+        data_log.log('out_He_III', out_x_He_III.mean().item())
         data_log.log('out_T', out_T.mean().item())
         data_log.log('Loss', loss_ode.item())
 

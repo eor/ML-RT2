@@ -30,7 +30,7 @@ class ODE:
         by substituting the output of neural network in our system of four differential equations.
         """
 
-        # [TODO] verify correctness. time_vector in Myr here. can we work with this?
+        # [Issue] verify correctness. time_vector in Myr here. can we work with this?
         u_0, u_1, u_2, u_3 = u_approximation(flux_vector, state_vector, time_vector)
 
         x_H_II_prediction = u_0
