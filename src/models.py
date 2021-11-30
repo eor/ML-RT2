@@ -71,3 +71,5 @@ class MLP1(nn.Module):
         T_prediction = torch.pow(10, 13 * torch.sigmoid(output[:, 3]))
 
         return x_H_II_prediction, x_He_II_prediction, x_He_III_prediction, T_prediction
+
+# separate layers

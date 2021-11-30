@@ -143,8 +143,7 @@ def generate_training_data(config):
     state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T), axis=1)
 
     # sample target labels
-    precision_upto_digits = 4
-    u_actual = -1 * precision_upto_digits * np.ones((train_set_size))
+    u_actual = np.zeros((train_set_size))
 
     return flux_vector, state_vector, time_vector, u_actual, parameter_vector, energies_vector
 
@@ -236,11 +235,23 @@ def main(config):
         parameter_vector = Variable(torch.from_numpy(parameter_vector).float(), requires_grad=True).to(device)
 
         # Loss based on CRT ODEs
-        residual = ode_equation.compute_ode_residual(x_flux_vector, x_state_vector, x_time_vector, parameter_vector, u_approximation)
-        log_residual = torch.log10(torch.abs(residual))
-        # loss: [log(residual) - precision]^2
-        loss_ode = F.mse_loss(input=log_residual, target=target_residual, reduction='mean')
+        r_x_H_II, r_x_He_II, r_x_He_III, r_T = ode_equation.compute_ode_residual(x_flux_vector,
+                                                                                       x_state_vector,
+                                                                                       x_time_vector,
+                                                                                       parameter_vector,
+                                                                                       u_approximation)
 
+        out_x_H_II = torch.tanh(r_x_H_II)
+        out_x_He_II = torch.tanh(r_x_He_II)
+        out_x_He_III = torch.tanh(r_x_He_III)
+        out_T = torch.tanh(r_T)
+
+        loss_x_H_II = F.mse_loss(input=out_x_H_II, target=target_residual , reduction='mean')
+        loss_x_He_II = F.mse_loss(input=out_x_He_II, target=target_residual , reduction='mean')
+        loss_x_He_III = F.mse_loss(input=out_x_He_III, target=target_residual , reduction='mean')
+        loss_T = F.mse_loss(input=out_T, target=target_residual , reduction='mean')
+
+        loss_ode = loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
         # compute the gradients
         loss_ode.backward()
 
@@ -249,13 +260,16 @@ def main(config):
         # make the gradients zero
         optimizer.zero_grad()
 
-        print("[Epoch %d/%d] [Train loss MSE: %e] [residual: %e]"
-            % (epoch, config.n_epochs, loss_ode.item(), residual.mean().item()))
+        print("[Epoch %d/%d] [Train loss MSE: %e]"
+            % (epoch, config.n_epochs, loss_ode.item()))
 
         train_loss_array = np.append(train_loss_array, loss_ode.item())
 
         # log data to the data log
-        data_log.log('Residual', residual.mean().item())
+        data_log.log('out_H_II', out_x_H_II.mean().item())
+        data_log.log('out_He_II', out_x_He_II.mean().item())
+        data_log.log('out_He_III', loss_x_He_III.mean().item())
+        data_log.log('out_T', out_T.mean().item())
         data_log.log('Loss', loss_ode.item())
 
         # update the tensorboard after every epoch
@@ -296,8 +310,8 @@ if __name__ == "__main__":
                         help="length of reduced SED vector")
     parser.add_argument("--len_state_vector", type=int, default=5,
                         help="length of state vector (Xi, T, t) to be concatenated with latent_vector")
-    parser.add_argument("--train_set_size", type=int, default=128,
-                        help="size of the randomly generated training set (default=128)")
+    parser.add_argument("--train_set_size", type=int, default=512,
+                        help="size of the randomly generated training set (default=512)")
 
     # grid settings
     parser.add_argument("--radius_max", type=float, default=DEFAULT_RADIUS_MAX,

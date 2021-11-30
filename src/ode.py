@@ -30,6 +30,7 @@ class ODE:
         by substituting the output of neural network in our system of four differential equations.
         """
 
+        # [TODO] verify correctness. time_vector in Myr here. can we work with this?
         u_0, u_1, u_2, u_3 = u_approximation(flux_vector, state_vector, time_vector)
 
         x_H_II_prediction = u_0
@@ -85,12 +86,14 @@ class ODE:
                                            time_vector)
 
         # log data to the data log
-        self.tb.log('loss_x_H_II', loss_x_H_II.mean())
-        self.tb.log('loss_x_He_II', loss_x_He_II.mean())
-        self.tb.log('loss_x_He_III', loss_x_He_III.mean())
-        self.tb.log('loss_T', loss_T.mean())
+        self.tb.log('residual_x_H_II', loss_x_H_II.mean())
+        self.tb.log('residual_x_He_II', loss_x_He_II.mean())
+        self.tb.log('residual_x_He_III', loss_x_He_III.mean())
+        self.tb.log('residual_T', loss_T.mean())
 
-        return loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
+        return loss_x_H_II, loss_x_He_II, loss_x_He_III, loss_T
+
+    # try running the model without specific loss terms
 
     def init_number_density_vectors(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III):
         """
