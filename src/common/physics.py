@@ -207,7 +207,7 @@ class Physics:
             # compute the value of integrand for each energy E in energy_vector
             integrand = self.sigma_HeII[None, :] * self.flux_vector * (self.energy_vector[None, :] - IONIZATION_ENERGY_HELIUM2)
 
-            # placeholder array to store the computed the integrals
+            # placeholder array to store the computed integrals
             self.integral_heating_rate_helium2 = np.zeros(train_set_size)
 
             # compute the integrals using simpsons integration

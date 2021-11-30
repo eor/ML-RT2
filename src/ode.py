@@ -549,8 +549,6 @@ class ODE:
         return 4 * CONSTANT_BOLTZMANN_EV * term1 * term2 * term3 * term4 * \
             self.n_e * CONSTANT_THOMSON_ELEC_CROSS * CONSTANT_LIGHT_SPEED
 
-        # TODO re-check units here!!
-
     def hubble_parameter(self):
         """
         Return the Hubble parameter for the whole batch at the given redshift.
