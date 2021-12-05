@@ -46,7 +46,7 @@ def adjust_sample_to_parameter_ranges(p_list, samples):
     for i in range(0, N):
         for j in range(0, M):
             x = samples[i, j]
-            limits = p_list[j][1]
+            limits = p_list[j]
             a = limits[0]
             b = limits[1]
             samples[i, j] = recast_sample_value(x, a, b)
@@ -126,14 +126,12 @@ def create_sample_main(path, key, n_samples):
     sample_data = []
 
     for sample in sample_set:
-        print("Generating SED for parameter sample " + sample)
+        print("Generating SED for parameter sample ... ")
+        print(sample)
         # TODO: run sed gen here, add results to a 2d array called sample_data
 
-
-
     # print sample_set
-    write_data(sample_data=sample_data, target_file=sample_file, directory=sample_dir)
-
+    # write_data(sample_data=sample_data, target_file=sample_file, directory=sample_dir)
 
 
 
@@ -144,6 +142,6 @@ if __name__ == "__main__":
 
     dir = '../../data/sed_samples/'
 
-    create_sample_main(path=dir, key='set_1', n_samples=500)
+    create_sample_main(path=dir, key='set_1', n_samples=100)
 
 
