@@ -146,7 +146,6 @@ class ODE:
         # out unit: (1/s)
         term2 = torch.multiply(alpha_H_II, torch.divide(torch.square(n_e), n_H))
 
-
         return (d_xHII_dt - term1 + term2) / MYR_to_SEC
 
         # TODO: all get*_loss functions need better doc strings
