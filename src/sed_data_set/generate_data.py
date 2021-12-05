@@ -10,7 +10,7 @@ import numpy as np
 from pyDOE import lhs
 
 
-from common.settings_sed import p8_limits as ps_sed
+from settings_sed import p8_limits as ps_sed
 from settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
 
 
@@ -37,8 +37,7 @@ def adjust_sample_to_parameter_ranges(p_list, samples):
     """
 
     if len(samples[0]) != len(p_list):
-        print
-        'Error sample set and parameter dectionary incompatible. Exiting.'
+        print('Error sample set and parameter dectionary incompatible. Exiting.')
         exit(1)
 
     N = samples.shape[0]
@@ -115,7 +114,7 @@ def write_data(sample_data, target_file, directory=None):
 # main
 # -----------------------------------------------------------------
 def create_sample_main(path, key, n_samples):
-    
+
     sample_file = 'sed_%s_N%d.npy' % (key, n_samples)
 
     sample_dir = setup_sample_dir(path, key, n_samples)
@@ -143,7 +142,7 @@ def create_sample_main(path, key, n_samples):
 # -----------------------------------------------------------------
 if __name__ == "__main__":
 
-    dir = '../data/sed_samples/'
+    dir = '../../data/sed_samples/'
 
     create_sample_main(path=dir, key='set_1', n_samples=500)
 
