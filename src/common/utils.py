@@ -107,6 +107,28 @@ def utils_load_config(path, file_name='config.dict'):
 
     return config
 
+# -----------------------------------------------------------------
+# Load pre-training dataset
+# -----------------------------------------------------------------
+def utils_load_pretraining_data(path, file_name='data_pretraining.npy.npz'):
+    if path.endswith(file_name):
+        p = path
+    else:
+        p = osp.join(path, file_name)
+
+    print('\nLoading pretraining data from disk.....\n')
+    data = np.load(p)
+    print('loaded data arrays:', data.files)
+
+    parameters = data['parameters']
+    energies = data['energies']
+    intensities = data['intensities']
+    density_vector = data['density_vector']
+    tau = data['tau']
+    flux_vector = data['flux_vector']
+
+    return parameters, energies, intensities, density_vector, tau, flux_vector
+
 @jit(nopython=True)
 def utils_simpson_integration(y,x):
     # source: https://masonstoecker.com/2021/04/03/Simpson-and-Numba.html

@@ -111,7 +111,7 @@ def write_data(target_file, parameters, energies, intensities,
     else:
         path = './' + target_file
 
-    np.savez(path,
+    np.savez_compressed(path,
              parameters=parameters,
              energies=energies,
              intensities=intensities,
