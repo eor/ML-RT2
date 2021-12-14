@@ -2,17 +2,21 @@
 # coding: utf-8
 
 import sys
-sys.path.append('../sed')
-sys.path.append('../common')
+sys.path.append('..')
+import tqdm
 import os
 import math as m
 import numpy as np
 from pyDOE import lhs
+import multiprocessing
 
-
-from settings_sed import p8_limits as ps_sed
-from settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
-
+from common.settings import DATA_GENERATION_SEED
+from common.physics import *
+from common.settings_sed import p8_limits as ps_sed
+from common.settings_sed import density_vector_limits
+from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
+import sed.sed_numba as sed_nb
+from timeit import default_timer as timer
 
 # we need
 # 1. function to do the latin hypercube sampling
@@ -99,16 +103,72 @@ def setup_sample_dir(path, key, nSamples):
 #-----------------------------------------------------------------
 # write samples to file
 #-----------------------------------------------------------------
-def write_data(sample_data, target_file, directory=None):
+def write_data(target_file, parameters, energies, intensities,
+                    density_vector, tau, flux_vector, directory=None):
 
     if directory:
         path = directory+'/' + target_file
     else:
         path = './' + target_file
 
+    np.savez(path,
+             parameters=parameters,
+             energies=energies,
+             intensities=intensities,
+             density_vector=density_vector,
+             tau=tau,
+             flux_vector=flux_vector)
 
-    # TODO: write npy file
 
+def generate_output(parameters, tau_per_sed=10):
+
+    # generate sed from parameters
+    energies, intensities = sed_nb.generate_SED_IMF_PL(halo_mass=parameters[0],
+                          redshift=parameters[1],
+                          eLow=SED_ENERGY_MIN,
+                          eHigh=SED_ENERGY_MAX,
+                          N=2000,  logGrid=True,
+                          starMassMin=parameters[7],
+                          starMassMax=500,
+                          imfBins=50,
+                          imfIndex=parameters[6],
+                          fEsc=parameters[5],
+                          alpha=parameters[3],
+                          qsoEfficiency=parameters[4],
+                          targetSourceAge=parameters[2])
+
+    # sample parameters density vector, tau_per_sed times for every sed
+    r = np.random.randint(density_vector_limits[0][0], density_vector_limits[0][1], size=(tau_per_sed, 1))
+    redshift = np.random.randint(density_vector_limits[1][0], density_vector_limits[1][1], size=(tau_per_sed, 1))
+    num_density_H_II = np.random.randint(density_vector_limits[2][0], density_vector_limits[2][1], size=(tau_per_sed, 1))
+    num_density_He_II = np.random.randint(density_vector_limits[3][0], density_vector_limits[3][1], size=(tau_per_sed, 1))
+    num_density_He_III = np.random.randint(density_vector_limits[4][0], density_vector_limits[4][1], size=(tau_per_sed, 1))
+
+    # concatenate indiviual parameters to density_vector
+    density_vector = np.concatenate((r, redshift, num_density_H_II,
+     num_density_He_II, num_density_He_III), axis=1)
+
+    # obtain photoionisation cross-sections from energies
+    physics = Physics.getInstance()
+    physics.set_energy_vector(energies)
+    sigmas_H_I = physics.get_photo_ionisation_cross_section_hydrogen()
+    sigmas_He_I = physics.get_photo_ionisation_cross_section_helium1()
+    sigmas_He_II = physics.get_photo_ionisation_cross_section_helium2()
+
+    # generate tau from density_vector
+    tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II + \
+        sigmas_H_I[np.newaxis, :] * num_density_He_II + \
+        sigmas_H_I[np.newaxis, :] * num_density_He_III) * r
+
+    # generate flux_vector
+    flux_vector = intensities[np.newaxis, :] * np.exp(-1 * tau)
+
+    # reshape/broadcast input parameters to shape (tau_per_sed, parameters)
+    parameters = np.repeat(parameters[np.newaxis, :], tau_per_sed, axis=0)
+    energies = np.repeat(energies[np.newaxis, :], tau_per_sed, axis=0)
+    intensities = np.repeat(intensities[np.newaxis, :], tau_per_sed, axis=0)
+
+    return parameters, energies, intensities, density_vector, tau, flux_vector
 
 # -----------------------------------------------------------------
 # main
@@ -123,15 +183,21 @@ def create_sample_main(path, key, n_samples):
     sample_set = get_norm_sample_set(n_parameters=len(p_list), n_samples=n_samples)
     sample_set = adjust_sample_to_parameter_ranges(p_list=p_list, samples=sample_set)
 
-    sample_data = []
+    # using multiprocessing and the sampled parameters, generate data
+    with multiprocessing.Pool() as pool:
+        parameters, energies, intensities, density_vector, tau, flux_vector = zip(*tqdm.tqdm(pool.imap(generate_output, sample_set),total=sample_set.shape[0]))
 
-    for sample in sample_set:
-        print("Generating SED for parameter sample ... ")
-        print(sample)
-        # TODO: run sed gen here, add results to a 2d array called sample_data
+    # concatenate numpy arrays
+    parameters = np.concatenate(parameters, axis=0)
+    energies = np.concatenate(energies, axis=0)
+    intensities = np.concatenate(intensities, axis=0)
+    density_vector = np.concatenate(density_vector, axis=0)
+    tau = np.concatenate(tau, axis=0)
+    flux_vector = np.concatenate(flux_vector, axis=0)
 
-    # print sample_set
-    # write_data(sample_data=sample_data, target_file=sample_file, directory=sample_dir)
+    # write the data
+    write_data(sample_file, parameters, energies, intensities, density_vector,
+                                            tau, flux_vector, directory=sample_dir)
 
 
 
@@ -139,9 +205,9 @@ def create_sample_main(path, key, n_samples):
 # execute this when file is executed
 # -----------------------------------------------------------------
 if __name__ == "__main__":
-
-    dir = '../../data/sed_samples/'
-
-    create_sample_main(path=dir, key='set_1', n_samples=100)
-
-
+    np.random.seed(DATA_GENERATION_SEED)
+    dir = '../../data/sed_samples'
+    start = timer()
+    create_sample_main(path=dir, key='set_1', n_samples=1000)
+    end = timer()
+    print("total time:", (end - start))

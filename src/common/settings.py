@@ -21,6 +21,7 @@ ARCH_COMPARISON_DIR = 'arch_comparison'
 SPLIT_FRACTION = (0.80, 0.10, 0.10)  # training, validation, testing
 SHUFFLE = True
 SHUFFLE_SEED = 42
+DATA_GENERATION_SEED = 1111
 
 SCALE_PARAMETERS = True
 USE_LOG_PROFILES = True
