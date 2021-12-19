@@ -116,7 +116,7 @@ def utils_load_pretraining_data(path, file_name='data_pretraining.npy.npz'):
     else:
         p = osp.join(path, file_name)
 
-    print('\nLoading pretraining data from disk.....\n')
+    print('\nLoading pretraining data from disk.....')
     data = np.load(p)
     print('loaded data arrays:', data.files)
 

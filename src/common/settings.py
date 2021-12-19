@@ -18,13 +18,17 @@ ARCH_COMPARISON_DIR = 'arch_comparison'
 # -----------------------------------------------------------------
 # settings for the data set
 # -----------------------------------------------------------------
-SPLIT_FRACTION = (0.80, 0.10, 0.10)  # training, validation, testing
-SHUFFLE = True
-SHUFFLE_SEED = 42
 DATA_GENERATION_SEED = 1111
 
-SCALE_PARAMETERS = True
-USE_LOG_PROFILES = True
+
+# -----------------------------------------------------------------
+# settings for the pretraining
+# -----------------------------------------------------------------
+PRETRAINING_SPLIT_FRACTION = (0.80, 0.10, 0.10)  # training, validation, testing
+PRETRAINING_SEED = 1111
+PRETRAINING_LOG_PROFILES = True
+PRETRAINING_SHUFFLE = True
+
 
 # -----------------------------------------------------------------
 # run settings

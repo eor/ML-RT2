@@ -10,6 +10,7 @@ import numpy as np
 from pyDOE import lhs
 import multiprocessing
 
+from common.physics_constants import *
 from common.settings import DATA_GENERATION_SEED
 from common.physics import *
 from common.settings_sed import p8_limits as ps_sed
@@ -158,7 +159,7 @@ def generate_output(parameters, tau_per_sed=10):
     # generate tau from density_vector
     tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II + \
         sigmas_H_I[np.newaxis, :] * num_density_He_II + \
-        sigmas_H_I[np.newaxis, :] * num_density_He_III) * r
+        sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
 
     # generate flux_vector
     flux_vector = intensities[np.newaxis, :] * np.exp(-1 * tau)
