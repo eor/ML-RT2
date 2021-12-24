@@ -129,6 +129,25 @@ def utils_load_pretraining_data(path, file_name='data_pretraining.npy.npz'):
 
     return parameters, energies, intensities, density_vector, tau, flux_vector
 
+# -----------------------------------------------------------------
+# save flux_vectors (true & regenerated)
+# -----------------------------------------------------------------
+def utils_save_pretraining_test_data(flux_vectors_true, flux_vectors_gen, path, epoch, prefix='test'):
+
+    flux_vectors_true_filename = prefix + '_flux_vectors_true_%d_epochs.npy' % (epoch)
+    flux_vectors_gen_filename = prefix + '_flux_vectors_gen_%d_epochs.npy' % (epoch)
+
+    flux_vectors_true_path = osp.join(path, flux_vectors_true_filename)
+    flux_vectors_gen_path = osp.join(path, flux_vectors_gen_filename)
+
+    print('\nSaving results in the following files:\n')
+    print('\t%s' % flux_vectors_true_path)
+    print('\t%s\n' % flux_vectors_gen_path)
+
+    np.save(flux_vectors_true_path, flux_vectors_true)
+    np.save(flux_vectors_gen_path, flux_vectors_gen)
+
+
 @jit(nopython=True)
 def utils_simpson_integration(y,x):
     # source: https://masonstoecker.com/2021/04/03/Simpson-and-Numba.html

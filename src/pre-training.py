@@ -2,6 +2,7 @@ import argparse
 import os
 import signal
 
+import copy
 import torch
 import numpy as np
 import torch.nn as nn
@@ -32,6 +33,84 @@ else:
     torch.set_default_tensor_type(torch.FloatTensor)
 
 
+
+# -----------------------------------------------------------------
+#   use AE with test or val set
+# -----------------------------------------------------------------
+def pretraining_evaluation(current_epoch, data_loader, model, path, config, print_results=False, save_results=False, best_model=False):
+    """
+    function runs the given dataset through the Autoencoder, returns mse_loss,
+    and saves the results as well as ground truth to file, if save_results=True.
+
+    Args:
+        current_epoch: current epoch
+        data_loader: data loader used for the inference, most likely the test set
+        path: path to output directory
+        model: current model state
+        config: config object with user supplied parameters
+        save_results: whether to save actual and generated profiles locally (default: False)
+        best_model: flag for testing on best model
+    """
+
+    if save_results:
+        print("\033[94m\033[1mTesting the Autoencoder at epoch %d \033[0m" % current_epoch)
+
+    if cuda:
+        model.cuda()
+
+    if save_results:
+        input_flux_vectors = torch.tensor([], device=device)
+        regen_flux_vectors = torch.tensor([], device=device)
+
+    model.eval()
+
+    loss_mse = 0.0
+
+    with torch.no_grad():
+        for i, flux_vectors in enumerate(data_loader):
+
+            # configure input
+            flux_vectors = Variable(flux_vectors)
+
+            # pass through the model
+            out_flux_vector = model(flux_vectors)
+
+            # compute loss via MSE:
+            loss = F.mse_loss(input=out_flux_vector, target=flux_vectors, reduction='mean')
+
+            loss_mse += loss.item()
+
+            if save_results:
+                # collate data
+                input_flux_vectors = torch.cat((input_flux_vectors, flux_vectors), 0)
+                regen_flux_vectors = torch.cat((regen_flux_vectors, out_flux_vector), 0)
+
+    # mean of computed losses
+    loss_mse = loss_mse / len(data_loader)
+
+    if print_results:
+        print("Results: AVERAGE MSE: %e" % (loss_mse))
+
+    if save_results:
+        # move data to CPU, re-scale parameters, and write everything to file
+        input_flux_vectors = input_flux_vectors.cpu().numpy()
+        regen_flux_vectors = regen_flux_vectors.cpu().numpy()
+
+        if best_model:
+            prefix = 'best'
+        else:
+            prefix = 'test'
+
+        utils_save_pretraining_test_data(
+            flux_vectors_true=input_flux_vectors,
+            flux_vectors_gen=regen_flux_vectors,
+            path=path,
+            epoch=current_epoch,
+            prefix=prefix
+        )
+
+    return loss_mse
+
 # -----------------------------------------------------------------
 #  Main
 # -----------------------------------------------------------------
@@ -47,13 +126,13 @@ def main(config):
     config.out_dir = os.path.join(config.out_dir, run_id)
     setattr(config, 'run', run_id)
 
-    utils_create_output_dirs([config.out_dir])
+    utils_create_run_directories(config.out_dir, DATA_PRODUCTS_DIR, PLOT_DIR)
     utils_save_config_to_log(config)
     utils_save_config_to_file(config)
 
-    # # path to store the data and plots after training
-    # data_products_path = os.path.join(config.out_dir, DATA_PRODUCTS_DIR)
-    # plot_path = os.path.join(config.out_dir, PLOT_DIR)
+    # path to store the data and plots after training
+    data_products_path = os.path.join(config.out_dir, DATA_PRODUCTS_DIR)
+    plot_path = os.path.join(config.out_dir, PLOT_DIR)
 
     # -----------------------------------------------------------------
     # load the data and update config with the dataset conifguration
@@ -100,7 +179,7 @@ def main(config):
     # -----------------------------------------------------------------
     train_loader = torch_data.DataLoader(train_dataset, batch_size=config.batch_size, shuffle=False)
     val_loader = torch_data.DataLoader(validation_dataset, batch_size=config.batch_size, shuffle=False)
-    train_loader = torch_data.DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
+    test_loader = torch_data.DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
 
     # -----------------------------------------------------------------
     # tensorboard (to check results, visit localhost:6006)
@@ -126,12 +205,20 @@ def main(config):
         betas=(config.b1, config.b2)
     )
 
-
     # -----------------------------------------------------------------
     # book keeping arrays
     # -----------------------------------------------------------------
     avg_train_loss_array = np.empty(0)
-    avg_val_loss_mse_array = np.empty(0)
+    avg_val_loss_array = np.empty(0)
+
+    # -----------------------------------------------------------------
+    # keep the model with min validation loss
+    # -----------------------------------------------------------------
+    best_model = copy.deepcopy(model)
+    best_loss = np.inf
+    best_epoch = 0
+    n_epoch_without_improvement = 0
+
 
     # -----------------------------------------------------------------
     #  Main training loop
@@ -161,11 +248,58 @@ def main(config):
         train_loss = epoch_loss / len(train_loader)
         avg_train_loss_array = np.append(avg_train_loss_array, train_loss)
 
-        # [TODO] validation
+        val_loss = pretraining_evaluation(
+            current_epoch=epoch,
+            data_loader=val_loader,
+            model=model,
+            path=data_products_path,
+            config=config,
+            print_results=False,
+            save_results=False,
+            best_model=False
+        )
+
+        avg_val_loss_array = np.append(avg_val_loss_array, val_loss)
+        if val_loss < best_loss:
+            best_loss = val_loss
+            best_model = copy.deepcopy(model)
+            best_epoch = epoch
+            n_epoch_without_improvement = 0
+        else:
+            n_epoch_without_improvement += 1
+
 
         print("[Epoch %d/%d] [Train loss: %e] [Validation loss: %e][Best_epoch: %d]"
-         % (epoch, config.n_epochs, train_loss, 0, 0))
+         % (epoch, config.n_epochs, train_loss, val_loss, best_epoch))
 
+        if epoch % config.testing_interval == 0:
+            pretraining_evaluation(best_epoch, test_loader, best_model, data_products_path, config, print_results=True, save_results=True)
+
+    # save train and validation losses.............
+
+    # -----------------------------------------------------------------
+    # Evaluate the best model by using the test set
+    # -----------------------------------------------------------------
+    test_loss = pretraining_evaluation(
+        current_epoch=best_epoch,
+        data_loader=test_loader,
+        model=best_model,
+        path=data_products_path,
+        config=config,
+        print_results=True,
+        save_results=True,
+        best_model=True
+    )
+
+    # save best model here................
+
+    # -----------------------------------------------------------------
+    # Save some results to config object for later use
+    # -----------------------------------------------------------------
+    setattr(config, 'best_epoch', best_epoch)
+
+    setattr(config, 'best_val_mse', best_loss)
+    setattr(config, 'best_test_mse', test_loss)
 
     # -----------------------------------------------------------------
     # Overwrite config object
@@ -185,18 +319,8 @@ if __name__ == "__main__":
     parser.add_argument('--run', type=str, default='', metavar='(string)',
                         help='Specific run name for the experiment, default: ./output/timestamp')
 
-    # grid settings
-    parser.add_argument("--radius_max", type=float, default=DEFAULT_RADIUS_MAX,
-                        help="Maximum radius in kpc. Default = 1500.0")
-
-    parser.add_argument("--radius_min", type=float, default=DEFAULT_RADIUS_MIN,
-                        help="Minimum radius in kpc. Default = 0.1")
-
-    parser.add_argument("--delta_radius", type=float, default=DEFAULT_SPATIAL_RESOLUTION,
-                        help="Spatial resolution in kpc. Default = 1")
-
-    parser.add_argument("--delta_time", type=float, default=DEFAULT_TEMPORAL_RESOLUTION,
-                        help="Temporal resolution in Myr. Default = 0.01")
+    parser.add_argument("--testing_interval", type=int,
+                        default=50, help="epoch interval between testing runs")
 
     # network optimisation
     parser.add_argument("--n_epochs", type=int, default=100,
