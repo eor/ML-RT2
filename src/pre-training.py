@@ -33,14 +33,13 @@ else:
     torch.set_default_tensor_type(torch.FloatTensor)
 
 
-
 # -----------------------------------------------------------------
 #   use AE with test or val set
 # -----------------------------------------------------------------
 def pretraining_evaluation(current_epoch, data_loader, model, path, config, print_results=False, save_results=False, best_model=False):
     """
     function runs the given dataset through the Autoencoder, returns mse_loss,
-    and saves the results as well as ground truth to file, if save_results=True.
+    and saves the results as well as ground truth to numpy file, if save_results=True.
 
     Args:
         current_epoch: current epoch
@@ -159,7 +158,6 @@ def main(config):
     # -----------------------------------------------------------------
     # convert data into tensors and split it into requried legths
     # -----------------------------------------------------------------
-
     # numpy array to tensors
     flux_vectors = torch.Tensor(flux_vectors)
 
@@ -275,7 +273,6 @@ def main(config):
         if epoch % config.testing_interval == 0:
             pretraining_evaluation(best_epoch, test_loader, best_model, data_products_path, config, print_results=True, save_results=True)
 
-    # save train and validation losses.............
 
     # -----------------------------------------------------------------
     # Evaluate the best model by using the test set
@@ -291,7 +288,22 @@ def main(config):
         best_model=True
     )
 
-    # save best model here................
+
+    # -----------------------------------------------------------------
+    # Save the loss functions
+    # -----------------------------------------------------------------
+    utils_save_loss(avg_train_loss_array, data_products_path, config.n_epochs, prefix='train')
+    utils_save_loss(avg_val_loss_array, data_products_path, config.n_epochs, prefix='val')
+
+
+    # -----------------------------------------------------------------
+    # Save the best model and the final model
+    # -----------------------------------------------------------------
+    utils_save_pretraining_model(best_model.state_dict(),
+                                data_products_path, best_epoch, best_model=True)
+    utils_save_pretraining_model(model.state_dict(),
+                            data_products_path, config.n_epochs, best_model=False)
+
 
     # -----------------------------------------------------------------
     # Save some results to config object for later use
@@ -306,6 +318,11 @@ def main(config):
     # -----------------------------------------------------------------
     utils_save_config_to_log(config)
     utils_save_config_to_file(config)
+
+
+    # [TODO] do analysis here......
+    # 1. plot loss functions.
+    # 2. try some ways to represent and compare the true and regen flux vectors.
 
 
 if __name__ == "__main__":
@@ -356,7 +373,6 @@ if __name__ == "__main__":
     my_config = parser.parse_args()
 
     my_config.out_dir = os.path.abspath(my_config.out_dir)
-    my_config.profile_type = 'C'
     my_config.device = device
 
     # print summary

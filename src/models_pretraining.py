@@ -18,7 +18,7 @@ class AE1(nn.Module):
             return layers
 
 
-        self.enocder = nn.Sequential(
+        self.encoder = nn.Sequential(
             *block(conf.len_SED_input, 512, normalise=False, dropout=False),
             *block(512, 128),
             *block(128, 64),
@@ -31,8 +31,7 @@ class AE1(nn.Module):
             *block(128, 512),
             nn.Linear(512, conf.len_SED_input)
         )
-
-
+        
 
     def forward(self, x_flux_vector):
         """
@@ -53,7 +52,7 @@ class AE1(nn.Module):
         return regenerated_flux_vector
 
     def encode(self, flux_vector):
-        return self.enocder(flux_vector)
+        return self.encoder(flux_vector)
 
     def decode(self, latent_rep):
         return self.decoder(latent_rep)
