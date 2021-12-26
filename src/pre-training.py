@@ -182,8 +182,8 @@ def main(config):
     # -----------------------------------------------------------------
     # tensorboard (to check results, visit localhost:6006)
     # -----------------------------------------------------------------
-    # data_log = DataLog.getInstance(config.out_dir)
-    # data_log.start_server()
+    data_log = DataLog.getInstance(config.out_dir)
+    data_log.start_server()
 
     # -----------------------------------------------------------------
     # initialise model
@@ -266,6 +266,9 @@ def main(config):
         else:
             n_epoch_without_improvement += 1
 
+        # log losses in tensorboard
+        data_log.log_losses(train_loss, val_loss)
+        data_log.update_data()
 
         print("[Epoch %d/%d] [Train loss: %e] [Validation loss: %e][Best_epoch: %d]"
          % (epoch, config.n_epochs, train_loss, val_loss, best_epoch))
@@ -319,6 +322,10 @@ def main(config):
     utils_save_config_to_log(config)
     utils_save_config_to_file(config)
 
+    # -----------------------------------------------------------------
+    # shutdown tensorboard server
+    # -----------------------------------------------------------------
+    data_log.close()
 
     # [TODO] do analysis here......
     # 1. plot loss functions.

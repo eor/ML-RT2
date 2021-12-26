@@ -50,6 +50,15 @@ class DataLog:
         """
         self.tensorboard.add_scalar(key, value, self.curr_epoch)
 
+    def log_losses(self, train_loss, val_loss):
+        """ log the train and validation loss as a scalar for the
+        global_step to the tensorboard.
+        """
+        self.tensorboard.add_scalars(f'loss/train_and_validation', {
+            'train_loss': train_loss,
+            'val_loss': val_loss,
+        }, self.curr_epoch)
+
     def update_data(self):
         """ Update the data to the tensorboard and increment the global_step.
         The data logged after calling this function will be logged for the next
@@ -67,4 +76,5 @@ class DataLog:
         print("\033[96m\033[1m\nTerminating tensorboard server\033[0m")
         if self.process is not None:
             return_code = self.process.terminate()
+        time.sleep(3)
         self.tensorboard.close()
