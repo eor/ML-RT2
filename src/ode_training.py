@@ -1,7 +1,7 @@
 import argparse
 import os
 import signal
-
+import sys
 import torch
 import numpy as np
 import torch.nn as nn
@@ -9,6 +9,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 from common.settings_ode import ode_parameter_limits as ps_ode
+from common.settings_sed import density_vector_limits
 from common.settings_sed import p8_limits as ps_sed
 from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
 from common.utils import *
@@ -18,7 +19,7 @@ from common.settings import *
 from common.data_log import *
 from sed import sed_numba
 from models import *
-from ode import *
+from ode_system import *
 from random import random
 
 
@@ -33,53 +34,71 @@ else:
     torch.set_default_tensor_type(torch.FloatTensor)
 
 
-def generate_tau_training(energies_vector):
+def generate_flux_vector_training(parameters):
     """
-    The generated training data produces two inputs to the neural network: a state vector and the source flux, which
-    represents the SED that is attenuated by the IGM in between the source and a given point of interest.
-    The attenuation can be expressed a factor exp(-tau(E,r,t)), where tau is the optical depth.
-
-    This function is meant to serve as a realistic approximation to tau(E). Time dependence can be discounted and
-    the radial dependence can be interpreted as a column density, since for a discreet computing grid tau(E)
-    can be written as
-
-    sum_i [ sigma_i(E) sum_r {n_i(r) delta_r } ] = sum_i [sigma_i(E)] N_i,
-
-    where i = (H I, He I, He II) and N_i = sum_r {n_i(r) delta_r} is called the column density
-
-    We pick suitable column densities, compute tau and return a vector tau(energies)
+    Explaination to be added
     """
 
-    train_set_size = energies_vector.shape[0]
-    len_energy_vector = energies_vector.shape[1]
+    # obtain training_set_size
+    train_set_size = parameters.shape[0]
+    intensities_vector = []
+    energies_vector = []
 
-    sigmas_H_I = np.zeros(len_energy_vector)
-    sigmas_He_I = np.zeros(len_energy_vector)
-    sigmas_He_II = np.zeros(len_energy_vector)
-    tau_training_vector = np.zeros((train_set_size, len_energy_vector))
+    # generate intensities for the training.
+    for i in range(train_set_size):
+        # generate sed from parameters
+        energies, intensities = sed_numba.generate_SED_IMF_PL(halo_mass=parameters[i][0],
+                              redshift=parameters[i][1],
+                              eLow=SED_ENERGY_MIN,
+                              eHigh=SED_ENERGY_MAX,
+                              N=2000,  logGrid=True,
+                              starMassMin=parameters[i][7],
+                              starMassMax=500,
+                              imfBins=50,
+                              imfIndex=parameters[i][6],
+                              fEsc=parameters[i][5],
+                              alpha=parameters[i][3],
+                              qsoEfficiency=parameters[i][4],
+                              targetSourceAge=parameters[i][2])
+        intensities_vector.append(intensities)
+        energies_vector.append(energies)
 
-    # obtain sigmas for the energy_vector
-    # we have same energy vector for every sample in train_set
-    # Hence, can be computed just once
+
+    # convert lists to numpy arrays (train_set_size)
+    intensities_vector = np.asarray(intensities_vector)
+    energies_vector = np.asarray(energies_vector)
+
+    # obtain sigmas for the energy_vector. As we have same energy vector for
+    # every sample in train_set. Hence, can be computed just once. shape: (2000)
     physics = Physics.getInstance()
     physics.set_energy_vector(energies_vector[0])
     sigmas_H_I = physics.get_photo_ionisation_cross_section_hydrogen()
     sigmas_He_I = physics.get_photo_ionisation_cross_section_helium1()
     sigmas_He_II = physics.get_photo_ionisation_cross_section_helium2()
 
-    # define column densities
-    limit_lower = -20.0
-    limit_upper = 0.0
+    # sample parameters density vector
+    r = np.random.randint(density_vector_limits[0][0], density_vector_limits[0][1], size=(train_set_size, 1))
+    redshift = np.random.randint(density_vector_limits[1][0], density_vector_limits[1][1], size=(train_set_size, 1))
+    num_density_H_II = np.random.randint(density_vector_limits[2][0], density_vector_limits[2][1], size=(train_set_size, 1))
+    num_density_He_II = np.random.randint(density_vector_limits[3][0], density_vector_limits[3][1], size=(train_set_size, 1))
+    num_density_He_III = np.random.randint(density_vector_limits[4][0], density_vector_limits[4][1], size=(train_set_size, 1))
 
-    # generate tau for our training
-    for t in range(train_set_size):
-        N_H_I = 10**(random() * (limit_upper - limit_lower) + limit_lower)
-        N_He_I = 10**(random() * (limit_upper - limit_lower) + limit_lower)
-        N_He_II = 10**(random() * (limit_upper - limit_lower) + limit_lower)
+    # concatenate indiviual parameters to density_vector
+    density_vector = np.concatenate((r, redshift, num_density_H_II,
+     num_density_He_II, num_density_He_III), axis=1)
 
-        tau_training_vector[t] = sigmas_H_I * N_H_I + sigmas_He_I * N_He_I + sigmas_He_II * N_He_II
+    # generate tau from density_vector. shape: (train_set_size, 2000)
+    tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II + \
+        sigmas_H_I[np.newaxis, :] * num_density_He_II + \
+        sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
 
-    return tau_training_vector
+
+    # obtain flux_vector from intensities_vector by multiplying with tau
+    # [TODO] fix this realtionship to new function........(!important)
+    flux_vector = intensities_vector * np.exp(-1 * tau)
+    flux_vector = np.log10(flux_vector + 1.0e-6)
+
+    return flux_vector, density_vector, energies_vector
 
 
 def generate_training_data(config):
@@ -89,9 +108,6 @@ def generate_training_data(config):
     # retrieve train_set_size
     train_set_size = config.train_set_size
 
-    # sample SED vector
-    intensities_vector = []
-    energies_vector = []
     haloMassLog = np.random.uniform(ps_sed[0][0], ps_sed[0][1], size=(train_set_size, 1))
     redshift = np.random.uniform(ps_sed[1][0], ps_sed[1][1], size=(train_set_size, 1))
     sourceAge = np.random.uniform(ps_sed[2][0], ps_sed[2][1], size=(train_set_size, 1))
@@ -104,53 +120,35 @@ def generate_training_data(config):
     parameter_vector = np.concatenate((haloMassLog, redshift, sourceAge, qsoAlpha,
      qsoEfficiency, starsEscFrac, starsIMFSlope, starsIMFMassMin), axis=1)
 
-    for i in range(train_set_size):
-        energies, intensities = sed_numba.generate_SED_IMF_PL(halo_mass=haloMassLog[i][0],
-                                                              redshift=redshift[i][0],
-                                                              eLow=SED_ENERGY_MIN,
-                                                              eHigh=SED_ENERGY_MAX,
-                                                              N=2000,  logGrid=True,
-                                                              starMassMin=starsIMFMassMin[i][0],
-                                                              starMassMax=500,
-                                                              imfBins=50,
-                                                              imfIndex=starsIMFSlope[i][0],
-                                                              fEsc=starsEscFrac[i][0],
-                                                              alpha=qsoAlpha[i][0],
-                                                              qsoEfficiency=qsoEfficiency[i][0],
-                                                              targetSourceAge=sourceAge[i][0])
-        intensities_vector.append(intensities)
-        energies_vector.append(energies)
 
-    # convert lists to numpy arrays
-    intensities_vector = np.asarray(intensities_vector)
-    energies_vector = np.asarray(energies_vector)
-    # obtain tau from energies_vector
-    tau = generate_tau_training(energies_vector)
-    # obtain flux_vector from intensities_vector by multiplying with tau
-    flux_vector = np.multiply(intensities_vector, tau)
+    # sample flux_vectors using parameters
+    flux_vectors, density_vector, energies_vector = generate_flux_vector_training(parameter_vector)
 
-    # sample state vector
+
+    # sample state vectors
     x_H_II = np.random.uniform(ps_ode[0][0], ps_ode[0][1], size=(train_set_size, 1))
     x_He_II = np.random.uniform(ps_ode[1][0], ps_ode[1][1], size=(train_set_size, 1))
     x_He_III = np.random.uniform(ps_ode[2][0], ps_ode[2][1], size=(train_set_size, 1))
     T = np.random.uniform(ps_ode[3][0], ps_ode[3][1], size=(train_set_size, 1))
 
-    # [TODO]: verify this. upper range will targetSourceAge or sourceAge upper bound from settings?
+    # sample time vectors
     lower_bound_time = ps_ode[5][0] * np.ones(shape=(train_set_size, 1))
     upper_bound_time = sourceAge.copy()
     time_vector = np.random.uniform(lower_bound_time, upper_bound_time, size=(train_set_size, 1))
 
     state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T), axis=1)
 
-    # sample target labels
-    u_actual = np.zeros((train_set_size))
+    # sample target residual labels
+    target_residual = np.zeros((train_set_size))
 
-    return flux_vector, state_vector, time_vector, u_actual, parameter_vector, energies_vector
+    return flux_vectors, state_vector, time_vector, target_residual, parameter_vector, energies_vector
+
 
 def force_stop_signal_handler(sig, frame):
     global FORCE_STOP
     FORCE_STOP = True
     print("\033[96m\033[1m\nTraining will stop after this epoch. Please wait.\033[0m\n")
+
 
 # -----------------------------------------------------------------
 #  Main
@@ -232,11 +230,11 @@ def main(config):
         physics.set_flux_vector(x_flux_vector)
 
         # TODO: figure out: for what inputs do we need to set requires_grad=True
-        x_flux_vector = Variable(torch.from_numpy(x_flux_vector).float(), requires_grad=True).to(device)
-        x_state_vector = Variable(torch.from_numpy(x_state_vector).float(), requires_grad=True).to(device)
-        x_time_vector = Variable(torch.from_numpy(x_time_vector).float(), requires_grad=True).to(device)
-        target_residual = Variable(torch.from_numpy(target_residual).float(), requires_grad=True).to(device)
-        parameter_vector = Variable(torch.from_numpy(parameter_vector).float(), requires_grad=True).to(device)
+        x_flux_vector = torch.tensor(x_flux_vector, dtype=torch.float)
+        x_state_vector = torch.tensor(x_state_vector, dtype=torch.float)
+        x_time_vector = torch.tensor(x_time_vector, dtype=torch.float, requires_grad=True)
+        target_residual = torch.tensor(target_residual, dtype=torch.float)
+        parameter_vector = torch.tensor(parameter_vector, dtype=torch.float)
 
         # Loss based on CRT ODEs
         r_x_H_II, r_x_He_II, r_x_He_III, r_T = ode_equation.compute_ode_residual(x_flux_vector,
@@ -310,6 +308,8 @@ if __name__ == "__main__":
 
     parser.add_argument('--out_dir', type=str, default='output', metavar='(string)',
                         help='Path to output directory, used for all plots and data products, default: ./output/')
+    parser.add_argument('--pretraining_model_dir', type=str, default='./output_pretraining/run_2022_01_02__22_56_48', metavar='(string)',
+                            help='Path of the run directory for the pre-trained model, default: ../data/sed_samples')
     parser.add_argument('--run', type=str, default='', metavar='(string)',
                         help='Specific run name for the experiment, default: ./output/timestamp')
 
@@ -319,8 +319,8 @@ if __name__ == "__main__":
                         help="length of reduced SED vector")
     parser.add_argument("--len_state_vector", type=int, default=5,
                         help="length of state vector (Xi, T, t) to be concatenated with latent_vector")
-    parser.add_argument("--train_set_size", type=int, default=512,
-                        help="size of the randomly generated training set (default=512)")
+    parser.add_argument("--train_set_size", type=int, default=64,
+                        help="size of the randomly generated training set (default=64)")
 
     # grid settings
     parser.add_argument("--radius_max", type=float, default=DEFAULT_RADIUS_MAX,

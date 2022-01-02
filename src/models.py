@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from common.utils import *
 
 
 class MLP1(nn.Module):
@@ -22,13 +23,7 @@ class MLP1(nn.Module):
                 torch.nn.init.uniform_(m.weight, a=0.0, b=1.0)
                 m.bias.data.fill_(0.01)
 
-        self.NN_flux = nn.Sequential(
-            *block(conf.len_SED_input, 512, normalise=False, dropout=False),
-            *block(512, 128),
-            *block(128, 64),
-            *block(64, 16),
-            nn.Linear(16, conf.len_latent_vector)
-        )
+        self.NN_flux = utils_load_pretraining_model(conf.pretraining_model_dir, best_model=True)
 
         self.NN = nn.Sequential(
             *block(conf.len_state_vector + conf.len_latent_vector, 64, normalise=False, dropout=False),
@@ -60,8 +55,10 @@ class MLP1(nn.Module):
 
         2) (batch_size, len_state_vector):
         """
-
-        latent_vector = self.NN_flux(x_flux_vector)
+        with torch.no_grad():
+            latent_vector = self.NN_flux.encode(x_flux_vector)
+        # This should be false for pre-trained model to be frozen.
+        # print(latent_vector.requires_grad)
         concat_input = torch.cat((x_state_vector, time_vector, latent_vector), axis=1)
         output = self.NN(concat_input)
 
