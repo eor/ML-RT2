@@ -94,8 +94,7 @@ def generate_flux_vector_training(parameters):
 
 
     # obtain flux_vector from intensities_vector by multiplying with tau
-    # [TODO] fix this realtionship to new function........(!important)
-    flux_vector = intensities_vector * np.exp(-1 * tau)
+    flux_vector = intensities_vector * np.exp(-1 * tau)/ (4 * np.pi * np.power(r, 2))
     flux_vector = np.log10(flux_vector + 1.0e-6)
 
     return flux_vector, density_vector, energies_vector
@@ -319,8 +318,8 @@ if __name__ == "__main__":
                         help="length of reduced SED vector")
     parser.add_argument("--len_state_vector", type=int, default=5,
                         help="length of state vector (Xi, T, t) to be concatenated with latent_vector")
-    parser.add_argument("--train_set_size", type=int, default=64,
-                        help="size of the randomly generated training set (default=64)")
+    parser.add_argument("--train_set_size", type=int, default=128,
+                        help="size of the randomly generated training set (default=128)")
 
     # grid settings
     parser.add_argument("--radius_max", type=float, default=DEFAULT_RADIUS_MAX,

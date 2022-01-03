@@ -162,7 +162,7 @@ def generate_output(parameters, tau_per_sed=10):
         sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
 
     # generate flux_vector
-    flux_vector = intensities[np.newaxis, :] * np.exp(-1 * tau)
+    flux_vector = (intensities[np.newaxis, :] * np.exp(-1 * tau))/(4 * np.pi * np.power(r, 2))
 
     # reshape/broadcast input parameters to shape (tau_per_sed, parameters)
     parameters = np.repeat(parameters[np.newaxis, :], tau_per_sed, axis=0)
