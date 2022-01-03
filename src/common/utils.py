@@ -1,3 +1,5 @@
+import sys
+sys.path.append('..')
 import numpy as np
 import os
 import pickle
@@ -7,6 +9,11 @@ import os.path as osp
 from datetime import datetime
 from configparser import ConfigParser
 from numba import jit
+from models_pretraining import *
+try:
+    from common.settings import *
+except ImportError:
+    import settings
 
 # -----------------------------------------------------------------
 # join path and check if file exists
@@ -107,6 +114,7 @@ def utils_load_config(path, file_name='config.dict'):
 
     return config
 
+
 # -----------------------------------------------------------------
 # Load pre-training dataset
 # -----------------------------------------------------------------
@@ -128,6 +136,80 @@ def utils_load_pretraining_data(path, file_name='data_pretraining.npy.npz'):
     flux_vector = data['flux_vector']
 
     return parameters, energies, intensities, density_vector, tau, flux_vector
+
+
+# -----------------------------------------------------------------
+# save state of pretraining model
+# -----------------------------------------------------------------
+def utils_load_pretraining_model(run_dir_path, best_model=False, file_name=None):
+    # initialise the model
+    config = utils_load_config(run_dir_path)
+    if config.model == 'AE1':
+        model = AE1(config)
+
+    # if no file name is provided, construct one here
+    if file_name is None:
+        if best_model:
+            file_name = 'best_model_pretraining_%d_epochs.pth.tar' % (config.best_epoch)
+        else:
+            file_name = 'model_pretraining_%d_epochs.pth.tar' % (config.n_epochs)
+
+    # load the saved parameters into the model
+    model_path = osp.join(run_dir_path, DATA_PRODUCTS_DIR, file_name)
+    model.load_state_dict(torch.load(model_path))
+    print('\nLoaded pre-trained model from:\t%s\n' % model_path)
+
+    # switch the model to eval mode
+    model.eval()
+
+    return model
+
+# -----------------------------------------------------------------
+# save state of pretraining model
+# -----------------------------------------------------------------
+def utils_save_pretraining_model(state, path, n_epoch, best_model=False, file_name=None):
+
+    # if no file name is provided, construct one here
+    if file_name is None:
+        file_name = 'model_pretraining_%d_epochs.pth.tar' % (n_epoch)
+
+        if best_model:
+            file_name = 'best_' + file_name
+
+    path = osp.join(path, file_name)
+    torch.save(state, path)
+    print('Saved model to:\t%s' % path)
+
+
+# -----------------------------------------------------------------
+# save pretraining loss as numpy object
+# -----------------------------------------------------------------
+def utils_save_loss(loss_array, path, n_epoch, prefix='train'):
+
+    file_name = prefix + '_pretraining_loss_%d_epochs.npy' % (n_epoch)
+    path = osp.join(path, file_name)
+    np.save(path, loss_array)
+    print('Saved %s loss function to:\t%s' % (prefix, path))
+
+
+# -----------------------------------------------------------------
+# save flux_vectors (true & regenerated)
+# -----------------------------------------------------------------
+def utils_save_pretraining_test_data(flux_vectors_true, flux_vectors_gen, path, epoch, prefix='test'):
+
+    flux_vectors_true_filename = prefix + '_flux_vectors_true_%d_epochs.npy' % (epoch)
+    flux_vectors_gen_filename = prefix + '_flux_vectors_gen_%d_epochs.npy' % (epoch)
+
+    flux_vectors_true_path = osp.join(path, flux_vectors_true_filename)
+    flux_vectors_gen_path = osp.join(path, flux_vectors_gen_filename)
+
+    print('\nSaving results in the following files:\n')
+    print('\t%s' % flux_vectors_true_path)
+    print('\t%s\n' % flux_vectors_gen_path)
+
+    np.save(flux_vectors_true_path, flux_vectors_true)
+    np.save(flux_vectors_gen_path, flux_vectors_gen)
+
 
 @jit(nopython=True)
 def utils_simpson_integration(y,x):
