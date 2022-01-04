@@ -68,9 +68,6 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config, prin
     with torch.no_grad():
         for i, flux_vectors in enumerate(data_loader):
 
-            # configure input
-            flux_vectors = Variable(flux_vectors)
-
             # pass through the model
             out_flux_vector = model(flux_vectors)
 
@@ -170,7 +167,7 @@ def main(config):
     train_dataset, validation_dataset, test_dataset = \
      torch.utils.data.random_split(flux_vectors,
                     (train_length, validation_length,test_length),
-                    generator=torch.Generator().manual_seed(PRETRAINING_SEED))
+                    generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
 
     # -----------------------------------------------------------------
     # dataloaders from dataset
@@ -227,9 +224,8 @@ def main(config):
         # set model mode
         model.train()
         for i, flux_vectors in enumerate(train_loader):
-            # train the model here.
-            flux_vectors = Variable(flux_vectors)
-
+            # train the model here
+            
             # zero the gradients on each iteration
             optimizer.zero_grad()
             regen_flux_vectors = model(flux_vectors)
