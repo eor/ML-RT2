@@ -57,6 +57,7 @@ class MLP1(nn.Module):
         """
         with torch.no_grad():
             latent_vector = self.NN_flux.encode(x_flux_vector)
+
         # This should be false for pre-trained model to be frozen.
         # print(latent_vector.requires_grad)
         concat_input = torch.cat((x_state_vector, time_vector, latent_vector), axis=1)
