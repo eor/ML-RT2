@@ -94,7 +94,8 @@ def generate_flux_vector_training(parameters):
 
 
     # obtain flux_vector from intensities_vector by multiplying with tau
-    flux_vector = intensities_vector * np.exp(-1 * tau)/ (4 * np.pi * np.power(r, 2))
+    # add a small number to r to avoid division by zero
+    flux_vector = intensities_vector * np.exp(-1 * tau)/ (4 * np.pi * np.power(r+1e-5, 2))
     flux_vector = np.log10(flux_vector + 1.0e-6)
 
     return flux_vector, density_vector, energies_vector
