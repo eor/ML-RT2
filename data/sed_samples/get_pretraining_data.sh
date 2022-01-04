@@ -5,14 +5,14 @@
 BASEURL='https://drive.google.com/uc?id='
 
 FILE1='1IMf50ttdlsVS6OnpO3YVv32W55dBMsWn'
-FILE1NAME='pretraining.npy.npz'
+FILE1NAME='data_pretraining.npy.npz'
 CHECKSUM1='7fe1048f4a4ed3b0ed2f19c89fafeabc'
 
 dl() {
 
         gdown $BASEURL$FILE1
 }
-  
+
 
 check() {
 
@@ -22,13 +22,13 @@ check() {
         if [ "$CHECKSUM1" = "$VAR1" ]; then
 
             echo "Checksum OK: "$FILE1NAME
-            
+
         else
-        
-            echo "Checksum NOT ok: "$FILE1NAME       
-            
+
+            echo "Checksum NOT ok: "$FILE1NAME
+
         fi
-        
+
 }
 
 if ! (command -v gdown &> /dev/null)
@@ -45,8 +45,7 @@ if ! (command -v md5sum &> /dev/null)
 then
     echo "Warning: md5sum could not be found. Can't verify file integrity"
     exit
-    
+
 else
     check
 fi
-

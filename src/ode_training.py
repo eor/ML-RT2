@@ -308,7 +308,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--out_dir', type=str, default='output', metavar='(string)',
                         help='Path to output directory, used for all plots and data products, default: ./output/')
-    parser.add_argument('--pretraining_model_dir', type=str, default='./output_pretraining/run_2022_01_02__22_56_48', metavar='(string)',
+    parser.add_argument('--pretraining_model_dir', type=str, default='./output_pretraining/run_main', metavar='(string)',
                             help='Path of the run directory for the pre-trained model, default: ../data/sed_samples')
     parser.add_argument('--run', type=str, default='', metavar='(string)',
                         help='Specific run name for the experiment, default: ./output/timestamp')
