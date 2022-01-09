@@ -21,6 +21,8 @@ from common.data_log import *
 from sed import sed_numba
 from models_pretraining import *
 from random import random
+from matplotlib import pyplot as plt
+
 
 # check for CUDA
 if torch.cuda.is_available():
@@ -151,11 +153,24 @@ def main(config):
     if PRETRAINING_LOG_PROFILES:
         # add a small number to avoid trouble
         flux_vectors = np.log10(flux_vectors + 1.0e-6)
-
+    
+    
     # -----------------------------------------------------------------
-    # convert data into tensors and split it into requried legths
+    # datset distribution
     # -----------------------------------------------------------------
-    # numpy array to tensors
+    print('\nGenerating dataset summary.....')
+    print('Average of values in dataset: ', np.mean(flux_vectors))
+    minimum, maximum = np.min(flux_vectors), np.max(flux_vectors)
+    print('Maximum and minimum value in dataset: ', minimum, maximum)
+    fig, ax = plt.subplots(figsize =(10, 10))
+    ax.hist(flux_vectors.flatten(), bins=10,log=True)
+    plt.savefig(osp.join(plot_path, 'data_set_distribution.png'))
+    print('Successfully saved histogram for dataset to:',
+          osp.join(plot_path, 'data_set_distribution.png'))
+    
+    # -----------------------------------------------------------------
+    # convert data into tensors and split it into required lengths
+    # -----------------------------------------------------------------
     flux_vectors = torch.Tensor(flux_vectors)
 
     # calculate length for train. val and test dataset from fractions
