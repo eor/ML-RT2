@@ -15,6 +15,7 @@ try:
 except ImportError:
     import settings
 
+
 # -----------------------------------------------------------------
 # join path and check if file exists
 # -----------------------------------------------------------------
@@ -28,6 +29,7 @@ def utils_join_path(directory, data_file):
 
     return a
 
+
 # -----------------------------------------------------------------
 # create output directories
 # -----------------------------------------------------------------
@@ -38,6 +40,7 @@ def utils_create_output_dirs(list_of_dirs):
             os.makedirs(x)
             print('Created directory:\t%s' % x)
 
+
 # -----------------------------------------------------------------
 # Current time stamp as a string
 # -----------------------------------------------------------------
@@ -45,6 +48,7 @@ def utils_get_current_timestamp():
 
     # return datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
     return datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+
 
 # -----------------------------------------------------------------
 # Create directories
@@ -95,6 +99,7 @@ def utils_save_config_to_file(config, file_name='config.dict'):
 
     with open(p, 'wb') as f:
         pickle.dump(config, f)
+
 
 # -----------------------------------------------------------------
 # Load argparse config from binary file
@@ -164,6 +169,7 @@ def utils_load_pretraining_model(run_dir_path, best_model=False, file_name=None)
 
     return model
 
+
 # -----------------------------------------------------------------
 # save state of pretraining model
 # -----------------------------------------------------------------
@@ -216,8 +222,10 @@ def utils_save_pretraining_test_data(flux_vectors_true, flux_vectors_gen, parame
 
 
 @jit(nopython=True)
-def utils_simpson_integration(y,x):
+def utils_simpson_integration(y, x):
+
     # source: https://masonstoecker.com/2021/04/03/Simpson-and-Numba.html
+
     n = len(y)-1
     h = np.zeros(n)
     for i in range(n):
@@ -237,7 +245,7 @@ def utils_simpson_integration(y,x):
         gamma = (-a+b+2*c)/h[i-1]
         s += alpha*y[i+1]+beta*y[i]+gamma*y[i-1]
 
-    if ((n+1)%2 == 0):
+    if (n+1)%2 == 0:
         alpha = h[n-1]*(3-h[n-1]/(h[n-1]+h[n-2]))
         beta = h[n-1]*(3+h[n-1]/h[n-2])
         gamma = -h[n-1]*h[n-1]*h[n-1]/(h[n-2]*(h[n-1]+h[n-2]))
