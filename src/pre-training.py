@@ -162,9 +162,8 @@ def main(config):
         # add a small number to avoid trouble
         flux_vectors = np.log10(flux_vectors + 1.0e-6)
     
-    
     # -----------------------------------------------------------------
-    # datset distribution
+    # dataset distribution
     # -----------------------------------------------------------------
     print('\nGenerating dataset summary.....')
     print('Average of values in dataset: ', np.mean(flux_vectors))
@@ -193,7 +192,6 @@ def main(config):
      torch.utils.data.random_split(dataset,
                     (train_length, validation_length,test_length),
                     generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
-
 
     # -----------------------------------------------------------------
     # data loaders from dataset

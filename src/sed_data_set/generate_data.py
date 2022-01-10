@@ -199,6 +199,7 @@ def create_sample_main(path, key, n_samples):
     # write the data
     write_data(sample_file, parameters, energies, intensities, density_vector, tau, flux_vector, directory=sample_dir)
 
+
 # -----------------------------------------------------------------
 # execute this when file is executed
 # -----------------------------------------------------------------

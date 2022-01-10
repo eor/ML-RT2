@@ -36,7 +36,7 @@ else:
 
 def generate_flux_vector(parameters):
     """
-    Explaination to be added
+    Explanation to be added
     """
 
     # obtain training_set_size
@@ -48,21 +48,21 @@ def generate_flux_vector(parameters):
     for i in range(train_set_size):
         # generate sed from parameters
         energies, intensities = sed_numba.generate_SED_IMF_PL(halo_mass=parameters[i][0],
-                              redshift=parameters[i][1],
-                              eLow=SED_ENERGY_MIN,
-                              eHigh=SED_ENERGY_MAX,
-                              N=2000,  logGrid=True,
-                              starMassMin=parameters[i][7],
-                              starMassMax=500,
-                              imfBins=50,
-                              imfIndex=parameters[i][6],
-                              fEsc=parameters[i][5],
-                              alpha=parameters[i][3],
-                              qsoEfficiency=parameters[i][4],
-                              targetSourceAge=parameters[i][2])
+                                                              redshift=parameters[i][1],
+                                                              eLow=SED_ENERGY_MIN,
+                                                              eHigh=SED_ENERGY_MAX,
+                                                              N=2000,  logGrid=True,
+                                                              starMassMin=parameters[i][7],
+                                                              starMassMax=500,
+                                                              imfBins=50,
+                                                              imfIndex=parameters[i][6],
+                                                              fEsc=parameters[i][5],
+                                                              alpha=parameters[i][3],
+                                                              qsoEfficiency=parameters[i][4],
+                                                              targetSourceAge=parameters[i][2])
+
         intensities_vector.append(intensities)
         energies_vector.append(energies)
-
 
     # convert lists to numpy arrays (train_set_size)
     intensities_vector = np.asarray(intensities_vector)
@@ -83,19 +83,17 @@ def generate_flux_vector(parameters):
     num_density_He_II = np.random.randint(density_vector_limits[3][0], density_vector_limits[3][1], size=(train_set_size, 1))
     num_density_He_III = np.random.randint(density_vector_limits[4][0], density_vector_limits[4][1], size=(train_set_size, 1))
 
-    # concatenate indiviual parameters to density_vector
-    density_vector = np.concatenate((r, redshift, num_density_H_II,
-     num_density_He_II, num_density_He_III), axis=1)
+    # concatenate individual parameters to density_vector
+    density_vector = np.concatenate((r, redshift, num_density_H_II, num_density_He_II, num_density_He_III), axis=1)
 
     # generate tau from density_vector. shape: (train_set_size, 2000)
-    tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II + \
-        sigmas_H_I[np.newaxis, :] * num_density_He_II + \
-        sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
-
+    tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II +\
+           sigmas_H_I[np.newaxis, :] * num_density_He_II +\
+           sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
 
     # obtain flux_vector from intensities_vector by multiplying with tau
     # add a small number to r to avoid division by zero
-    flux_vector = intensities_vector * np.exp(-1 * tau)/ (4 * np.pi * np.power(r+1e-5, 2))
+    flux_vector = intensities_vector * np.exp(-1 * tau) / (4 * np.pi * np.power(r+1e-5, 2))
     flux_vector = np.log10(flux_vector + 1.0e-6)
 
     return flux_vector, density_vector, energies_vector
@@ -118,10 +116,8 @@ def generate_data(n_samples, mode='train'):
     parameter_vector = np.concatenate((haloMassLog, redshift, sourceAge, qsoAlpha,
      qsoEfficiency, starsEscFrac, starsIMFSlope, starsIMFMassMin), axis=1)
 
-
     # sample flux_vectors using parameters
     flux_vectors, density_vector, energies_vector = generate_flux_vector(parameter_vector)
-
 
     # sample state vectors
     x_H_II = np.random.uniform(ps_ode[0][0], ps_ode[0][1], size=(n_samples, 1))
@@ -254,10 +250,10 @@ def main(config):
         out_x_He_III = torch.tanh(r_x_He_III)
         out_T = torch.tanh(r_T)
 
-        loss_x_H_II = F.mse_loss(input=out_x_H_II, target=target_residual , reduction='mean')
-        loss_x_He_II = F.mse_loss(input=out_x_He_II, target=target_residual , reduction='mean')
-        loss_x_He_III = F.mse_loss(input=out_x_He_III, target=target_residual , reduction='mean')
-        loss_T = F.mse_loss(input=out_T, target=target_residual , reduction='mean')
+        loss_x_H_II = F.mse_loss(input=out_x_H_II, target=target_residual, reduction='mean')
+        loss_x_He_II = F.mse_loss(input=out_x_He_II, target=target_residual, reduction='mean')
+        loss_x_He_III = F.mse_loss(input=out_x_He_III, target=target_residual, reduction='mean')
+        loss_T = F.mse_loss(input=out_T, target=target_residual, reduction='mean')
 
         loss_ode = loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
 
@@ -311,7 +307,7 @@ if __name__ == "__main__":
     parser.add_argument('--out_dir', type=str, default='output', metavar='(string)',
                         help='Path to output directory, used for all plots and data products, default: ./output/')
     parser.add_argument('--pretraining_model_dir', type=str, default='./output_pretraining/run_main', metavar='(string)',
-                            help='Path of the run directory for the pre-trained model, default: ../data/sed_samples')
+                        help='Path of the run directory for the pre-trained model, default: ../data/sed_samples')
     parser.add_argument('--run', type=str, default='', metavar='(string)',
                         help='Specific run name for the experiment, default: ./output/timestamp')
 
