@@ -13,6 +13,7 @@ import torch.utils.data as torch_data
 from common.settings_ode import ode_parameter_limits as ps_ode
 from common.settings_sed import p8_limits as ps_sed
 from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
+from common.analysis_pretraining import *
 from common.utils import *
 from common.physics import *
 from common.settings_crt import *
@@ -347,6 +348,11 @@ def main(config):
     # 1. plot loss functions.
     # 2. try some ways to represent and compare the true and regen flux vectors.
 
+    if config.analysis:
+        print("\n\033[96m\033[1m\nRunning analysis...\033[0m\n")
+        analysis_auto_plot_flux_vectors(config, k=20, base_path=config.out_dir, prefix='best')
+        print("\n\033[96m\033[1m\nDone with analysis.\033[0m\n")
+
 
 if __name__ == "__main__":
     # parse arguments
@@ -392,6 +398,12 @@ if __name__ == "__main__":
 
     parser.add_argument("--len_latent_vector", type=int, default=8,
                         help="length of reduced SED vector")
+    
+    # analysis
+    parser.add_argument("--analysis", dest='analysis', action='store_true',
+                        help="automatically generate some plots (default)")
+    parser.add_argument("--no-analysis", dest='analysis', action='store_false', help="do not run analysis")
+    parser.set_defaults(analysis=True)
 
     my_config = parser.parse_args()
 
