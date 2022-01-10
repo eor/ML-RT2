@@ -34,7 +34,7 @@ else:
     torch.set_default_tensor_type(torch.FloatTensor)
 
 
-def generate_flux_vector_training(parameters):
+def generate_flux_vector(parameters):
     """
     Explaination to be added
     """
@@ -101,45 +101,43 @@ def generate_flux_vector_training(parameters):
     return flux_vector, density_vector, energies_vector
 
 
-def generate_training_data(config):
+def generate_data(n_samples, mode='train'):
     """
     Explanation here please.
     """
-    # retrieve train_set_size
-    train_set_size = config.train_set_size
 
-    haloMassLog = np.random.uniform(ps_sed[0][0], ps_sed[0][1], size=(train_set_size, 1))
-    redshift = np.random.uniform(ps_sed[1][0], ps_sed[1][1], size=(train_set_size, 1))
-    sourceAge = np.random.uniform(ps_sed[2][0], ps_sed[2][1], size=(train_set_size, 1))
-    qsoAlpha = np.random.uniform(ps_sed[3][0], ps_sed[3][1], size=(train_set_size, 1))
-    qsoEfficiency = np.random.uniform(ps_sed[4][0], ps_sed[4][1], size=(train_set_size, 1))
-    starsEscFrac = np.random.uniform(ps_sed[5][0], ps_sed[5][1], size=(train_set_size, 1))
-    starsIMFSlope = np.random.uniform(ps_sed[6][0], ps_sed[6][1], size=(train_set_size, 1))
-    starsIMFMassMin = np.random.uniform(ps_sed[7][0], ps_sed[7][1], size=(train_set_size, 1))
+    haloMassLog = np.random.uniform(ps_sed[0][0], ps_sed[0][1], size=(n_samples, 1))
+    redshift = np.random.uniform(ps_sed[1][0], ps_sed[1][1], size=(n_samples, 1))
+    sourceAge = np.random.uniform(ps_sed[2][0], ps_sed[2][1], size=(n_samples, 1))
+    qsoAlpha = np.random.uniform(ps_sed[3][0], ps_sed[3][1], size=(n_samples, 1))
+    qsoEfficiency = np.random.uniform(ps_sed[4][0], ps_sed[4][1], size=(n_samples, 1))
+    starsEscFrac = np.random.uniform(ps_sed[5][0], ps_sed[5][1], size=(n_samples, 1))
+    starsIMFSlope = np.random.uniform(ps_sed[6][0], ps_sed[6][1], size=(n_samples, 1))
+    starsIMFMassMin = np.random.uniform(ps_sed[7][0], ps_sed[7][1], size=(n_samples, 1))
 
     parameter_vector = np.concatenate((haloMassLog, redshift, sourceAge, qsoAlpha,
      qsoEfficiency, starsEscFrac, starsIMFSlope, starsIMFMassMin), axis=1)
 
 
     # sample flux_vectors using parameters
-    flux_vectors, density_vector, energies_vector = generate_flux_vector_training(parameter_vector)
+    flux_vectors, density_vector, energies_vector = generate_flux_vector(parameter_vector)
 
 
     # sample state vectors
-    x_H_II = np.random.uniform(ps_ode[0][0], ps_ode[0][1], size=(train_set_size, 1))
-    x_He_II = np.random.uniform(ps_ode[1][0], ps_ode[1][1], size=(train_set_size, 1))
-    x_He_III = np.random.uniform(ps_ode[2][0], ps_ode[2][1], size=(train_set_size, 1))
-    T = np.random.uniform(ps_ode[3][0], ps_ode[3][1], size=(train_set_size, 1))
+    x_H_II = np.random.uniform(ps_ode[0][0], ps_ode[0][1], size=(n_samples, 1))
+    x_He_II = np.random.uniform(ps_ode[1][0], ps_ode[1][1], size=(n_samples, 1))
+    x_He_III = np.random.uniform(ps_ode[2][0], ps_ode[2][1], size=(n_samples, 1))
+    T = np.random.uniform(ps_ode[3][0], ps_ode[3][1], size=(n_samples, 1))
 
     # sample time vectors
-    lower_bound_time = ps_ode[5][0] * np.ones(shape=(train_set_size, 1))
+    lower_bound_time = ps_ode[5][0] * np.ones(shape=(n_samples, 1))
     upper_bound_time = sourceAge.copy()
-    time_vector = np.random.uniform(lower_bound_time, upper_bound_time, size=(train_set_size, 1))
+    time_vector = np.random.uniform(lower_bound_time, upper_bound_time, size=(n_samples, 1))
 
     state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T), axis=1)
 
     # sample target residual labels
-    target_residual = np.zeros((train_set_size))
+    target_residual = np.zeros((n_samples))
 
     return flux_vectors, state_vector, time_vector, target_residual, parameter_vector, energies_vector
 
@@ -223,7 +221,10 @@ def main(config):
         # [Issue] generating training data after every epoch leads to lots of noise in loss function
         # possible fixes: generate training data/validation data in a systematic way and
         # then evaluate the model.
-        x_flux_vector, x_state_vector, x_time_vector, target_residual, parameter_vector, energies_vector = generate_training_data(config)
+        # retrieve train_set_size
+        train_set_size = config.train_set_size
+        x_flux_vector, x_state_vector, x_time_vector, target_residual,\
+        parameter_vector, energies_vector = generate_data(train_set_size)
 
         # update the data in this physics module
         physics.set_energy_vector(energies_vector[0])
@@ -259,6 +260,7 @@ def main(config):
         loss_T = F.mse_loss(input=out_T, target=target_residual , reduction='mean')
 
         loss_ode = loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
+
         # compute the gradients
         loss_ode.backward()
 
