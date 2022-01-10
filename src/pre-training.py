@@ -62,13 +62,14 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config, prin
     if save_results:
         input_flux_vectors = torch.tensor([], device=device)
         regen_flux_vectors = torch.tensor([], device=device)
+        parameter_vectors = torch.tensor([], device=device)
 
     model.eval()
 
     loss_mse = 0.0
 
     with torch.no_grad():
-        for i, flux_vectors in enumerate(data_loader):
+        for i, (parameters, flux_vectors) in enumerate(data_loader):
 
             # pass through the model
             out_flux_vector = model(flux_vectors)
@@ -82,6 +83,7 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config, prin
                 # collate data
                 input_flux_vectors = torch.cat((input_flux_vectors, flux_vectors), 0)
                 regen_flux_vectors = torch.cat((regen_flux_vectors, out_flux_vector), 0)
+                parameter_vectors = torch.cat((parameter_vectors, parameters), 0)
 
     # mean of computed losses
     loss_mse = loss_mse / len(data_loader)
@@ -93,6 +95,7 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config, prin
         # move data to CPU, re-scale parameters, and write everything to file
         input_flux_vectors = input_flux_vectors.cpu().numpy()
         regen_flux_vectors = regen_flux_vectors.cpu().numpy()
+        parameter_vectors = parameter_vectors.cpu().numpy()
 
         if best_model:
             prefix = 'best'
@@ -102,6 +105,7 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config, prin
         utils_save_pretraining_test_data(
             flux_vectors_true=input_flux_vectors,
             flux_vectors_gen=regen_flux_vectors,
+            parameters=parameter_vectors,
             path=path,
             epoch=current_epoch,
             prefix=prefix
@@ -140,7 +144,6 @@ def main(config):
     setattr(config, 'len_SED_input', flux_vectors.shape[1])
     setattr(config, 'n_samples', flux_vectors.shape[0])
 
-
     # -----------------------------------------------------------------
     # shuffle/log space
     # -----------------------------------------------------------------
@@ -149,7 +152,8 @@ def main(config):
         indices = np.arange(config.n_samples, dtype=np.int32)
         indices = np.random.permutation(indices)
         flux_vectors = flux_vectors[indices]
-
+        parameters = parameters[indices]
+        
     if PRETRAINING_LOG_PROFILES:
         # add a small number to avoid trouble
         flux_vectors = np.log10(flux_vectors + 1.0e-6)
@@ -172,6 +176,7 @@ def main(config):
     # convert data into tensors and split it into required lengths
     # -----------------------------------------------------------------
     flux_vectors = torch.Tensor(flux_vectors)
+    parameters = torch.Tensor(parameters)
 
     # calculate length for train. val and test dataset from fractions
     train_length = int(PRETRAINING_SPLIT_FRACTION[0] * config.n_samples)
@@ -179,8 +184,9 @@ def main(config):
     test_length = config.n_samples - train_length - validation_length
 
     # split the dataset
+    dataset = torch.utils.data.TensorDataset(parameters, flux_vectors)
     train_dataset, validation_dataset, test_dataset = \
-     torch.utils.data.random_split(flux_vectors,
+     torch.utils.data.random_split(dataset,
                     (train_length, validation_length,test_length),
                     generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
 
@@ -238,8 +244,7 @@ def main(config):
         epoch_loss = 0
         # set model mode
         model.train()
-        for i, flux_vectors in enumerate(train_loader):
-            # train the model here
+        for i, (_, flux_vectors) in enumerate(train_loader):
             
             # zero the gradients on each iteration
             optimizer.zero_grad()
