@@ -136,7 +136,7 @@ def main(config):
     # load the data and update config with the dataset configuration
     # -----------------------------------------------------------------
     parameters, energies, intensities, density_vector, tau,\
-     flux_vectors = utils_load_pretraining_data(config.data_dir)
+       flux_vectors = utils_load_pretraining_data(config.data_dir)
 
     setattr(config, 'len_SED_input', flux_vectors.shape[1])
     setattr(config, 'n_samples', flux_vectors.shape[0])
@@ -187,7 +187,7 @@ def main(config):
     # initialise model
     # -----------------------------------------------------------------
     model = AE1(config)
-    print('\n\tusing model AE1 on device: %s\n'%(device))
+    print('\n\tUsing model AE1 on device: %s\n'%(device))
 
     if cuda:
         model.cuda()
