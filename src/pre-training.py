@@ -13,6 +13,7 @@ import torch.utils.data as torch_data
 from common.settings_ode import ode_parameter_limits as ps_ode
 from common.settings_sed import p8_limits as ps_sed
 from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
+from common.analysis_pretraining import *
 from common.utils import *
 from common.physics import *
 from common.settings_crt import *
@@ -21,6 +22,8 @@ from common.data_log import *
 from sed import sed_numba
 from models_pretraining import *
 from random import random
+from matplotlib import pyplot as plt
+
 
 # check for CUDA
 if torch.cuda.is_available():
@@ -61,13 +64,14 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config,
     if save_results:
         input_flux_vectors = torch.tensor([], device=device)
         regen_flux_vectors = torch.tensor([], device=device)
+        parameter_vectors = torch.tensor([], device=device)
 
     model.eval()
 
     loss_mse = 0.0
 
     with torch.no_grad():
-        for i, flux_vectors in enumerate(data_loader):
+        for i, (parameters, flux_vectors) in enumerate(data_loader):
 
             # pass through the model
             out_flux_vector = model(flux_vectors)
@@ -81,6 +85,7 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config,
                 # collate data
                 input_flux_vectors = torch.cat((input_flux_vectors, flux_vectors), 0)
                 regen_flux_vectors = torch.cat((regen_flux_vectors, out_flux_vector), 0)
+                parameter_vectors = torch.cat((parameter_vectors, parameters), 0)
 
     # mean of computed losses
     loss_mse = loss_mse / len(data_loader)
@@ -92,6 +97,7 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config,
         # move data to CPU, re-scale parameters, and write everything to file
         input_flux_vectors = input_flux_vectors.cpu().numpy()
         regen_flux_vectors = regen_flux_vectors.cpu().numpy()
+        parameter_vectors = parameter_vectors.cpu().numpy()
 
         if best_model:
             prefix = 'best'
@@ -101,6 +107,7 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config,
         utils_save_pretraining_test_data(
             flux_vectors_true=input_flux_vectors,
             flux_vectors_gen=regen_flux_vectors,
+            parameters=parameter_vectors,
             path=path,
             epoch=current_epoch,
             prefix=prefix
@@ -149,16 +156,31 @@ def main(config):
         indices = np.arange(config.n_samples, dtype=np.int32)
         indices = np.random.permutation(indices)
         flux_vectors = flux_vectors[indices]
-
+        parameters = parameters[indices]
+        
     if PRETRAINING_LOG_PROFILES:
         # add a small number to avoid trouble
         flux_vectors = np.log10(flux_vectors + 1.0e-6)
-
+    
+    
+    # -----------------------------------------------------------------
+    # datset distribution
+    # -----------------------------------------------------------------
+    print('\nGenerating dataset summary.....')
+    print('Average of values in dataset: ', np.mean(flux_vectors))
+    minimum, maximum = np.min(flux_vectors), np.max(flux_vectors)
+    print('Maximum and minimum value in dataset: ', minimum, maximum)
+    fig, ax = plt.subplots(figsize =(10, 10))
+    ax.hist(flux_vectors.flatten(), bins=10,log=True)
+    plt.savefig(osp.join(plot_path, 'data_set_distribution.png'))
+    print('Successfully saved histogram for dataset to:',
+          osp.join(plot_path, 'data_set_distribution.png'))
+    
     # -----------------------------------------------------------------
     # convert data into tensors and split it into required lengths
     # -----------------------------------------------------------------
-    # numpy array to tensors
     flux_vectors = torch.Tensor(flux_vectors)
+    parameters = torch.Tensor(parameters)
 
     # calculate length for train. val and test dataset from fractions
     train_length = int(PRETRAINING_SPLIT_FRACTION[0] * config.n_samples)
@@ -166,9 +188,12 @@ def main(config):
     test_length = config.n_samples - train_length - validation_length
 
     # split the dataset
+    dataset = torch.utils.data.TensorDataset(parameters, flux_vectors)
     train_dataset, validation_dataset, test_dataset = \
-        torch.utils.data.random_split(flux_vectors, (train_length, validation_length, test_length),
-                                      generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
+     torch.utils.data.random_split(dataset,
+                    (train_length, validation_length,test_length),
+                    generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
+
 
     # -----------------------------------------------------------------
     # data loaders from dataset
@@ -223,8 +248,7 @@ def main(config):
         epoch_loss = 0
         # set model mode
         model.train()
-        for i, flux_vectors in enumerate(train_loader):
-            # train the model here
+        for i, (_, flux_vectors) in enumerate(train_loader):
             
             # zero the gradients on each iteration
             optimizer.zero_grad()
@@ -324,6 +348,11 @@ def main(config):
     # 1. plot loss functions.
     # 2. try some ways to represent and compare the true and regen flux vectors.
 
+    if config.analysis:
+        print("\n\033[96m\033[1m\nRunning analysis...\033[0m\n")
+        analysis_auto_plot_flux_vectors(config, k=20, base_path=config.out_dir, prefix='best')
+        print("\n\033[96m\033[1m\nDone with analysis.\033[0m\n")
+
 
 if __name__ == "__main__":
     # parse arguments
@@ -369,6 +398,12 @@ if __name__ == "__main__":
 
     parser.add_argument("--len_latent_vector", type=int, default=8,
                         help="length of reduced SED vector")
+    
+    # analysis
+    parser.add_argument("--analysis", dest='analysis', action='store_true',
+                        help="automatically generate some plots (default)")
+    parser.add_argument("--no-analysis", dest='analysis', action='store_false', help="do not run analysis")
+    parser.set_defaults(analysis=True)
 
     my_config = parser.parse_args()
 

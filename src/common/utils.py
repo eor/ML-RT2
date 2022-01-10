@@ -201,20 +201,24 @@ def utils_save_loss(loss_array, path, n_epoch, prefix='train'):
 # -----------------------------------------------------------------
 # save flux_vectors (true & regenerated)
 # -----------------------------------------------------------------
-def utils_save_pretraining_test_data(flux_vectors_true, flux_vectors_gen, path, epoch, prefix='test'):
-
+def utils_save_pretraining_test_data(flux_vectors_true, flux_vectors_gen, parameters, path, epoch, prefix='test'):
+    
+    parameters_filename = prefix + '_parameters_%d_epochs.npy' % (epoch)
     flux_vectors_true_filename = prefix + '_flux_vectors_true_%d_epochs.npy' % (epoch)
     flux_vectors_gen_filename = prefix + '_flux_vectors_gen_%d_epochs.npy' % (epoch)
 
+    parameters_path = osp.join(path, parameters_filename)
     flux_vectors_true_path = osp.join(path, flux_vectors_true_filename)
     flux_vectors_gen_path = osp.join(path, flux_vectors_gen_filename)
 
     print('\nSaving results in the following files:\n')
     print('\t%s' % flux_vectors_true_path)
-    print('\t%s\n' % flux_vectors_gen_path)
+    print('\t%s' % flux_vectors_gen_path)
+    print('\t%s\n' % parameters_path)
 
     np.save(flux_vectors_true_path, flux_vectors_true)
     np.save(flux_vectors_gen_path, flux_vectors_gen)
+    np.save(parameters_path, parameters)
 
 
 @jit(nopython=True)

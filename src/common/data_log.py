@@ -2,6 +2,7 @@ import subprocess
 import shlex
 import time
 from torch.utils.tensorboard import SummaryWriter
+import os.path as osp
 
 class DataLog:
     """
@@ -58,6 +59,12 @@ class DataLog:
             'train_loss': train_loss,
             'val_loss': val_loss,
         }, self.curr_epoch)
+
+    def plot_histogram(self, key, data):
+        """
+        plot the histogram for given data ranges
+        """
+        self.tensorboard.add_histogram(key, data, self.curr_epoch)
 
     def update_data(self):
         """ Update the data to the tensorboard and increment the global_step.
