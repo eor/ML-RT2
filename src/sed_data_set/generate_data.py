@@ -24,6 +24,7 @@ from timeit import default_timer as timer
 # 2. function to run the SED generator & return the final SED vector
 # 3. a function to collect the vectors, build a .npy file and save it to ../data
 
+
 # -----------------------------------------------------------------
 # obtain latin hypercube sample, normalised to [0, 1] range
 # -----------------------------------------------------------------
@@ -101,9 +102,9 @@ def setup_sample_dir(path, key, nSamples):
     return directory
 
 
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 # write samples to file
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 def write_data(target_file, parameters, energies, intensities,
                     density_vector, tau, flux_vector, directory=None):
 
@@ -113,30 +114,30 @@ def write_data(target_file, parameters, energies, intensities,
         path = './' + target_file
 
     np.savez_compressed(path,
-             parameters=parameters,
-             energies=energies,
-             intensities=intensities,
-             density_vector=density_vector,
-             tau=tau,
-             flux_vector=flux_vector)
+                        parameters=parameters,
+                        energies=energies,
+                        intensities=intensities,
+                        density_vector=density_vector,
+                        tau=tau,
+                        flux_vector=flux_vector)
 
 
 def generate_output(parameters, tau_per_sed=10):
 
     # generate sed from parameters
     energies, intensities = sed_nb.generate_SED_IMF_PL(halo_mass=parameters[0],
-                          redshift=parameters[1],
-                          eLow=SED_ENERGY_MIN,
-                          eHigh=SED_ENERGY_MAX,
-                          N=2000,  logGrid=True,
-                          starMassMin=parameters[7],
-                          starMassMax=500,
-                          imfBins=50,
-                          imfIndex=parameters[6],
-                          fEsc=parameters[5],
-                          alpha=parameters[3],
-                          qsoEfficiency=parameters[4],
-                          targetSourceAge=parameters[2])
+                                                       redshift=parameters[1],
+                                                       eLow=SED_ENERGY_MIN,
+                                                       eHigh=SED_ENERGY_MAX,
+                                                       N=2000,  logGrid=True,
+                                                       starMassMin=parameters[7],
+                                                       starMassMax=500,
+                                                       imfBins=50,
+                                                       imfIndex=parameters[6],
+                                                       fEsc=parameters[5],
+                                                       alpha=parameters[3],
+                                                       qsoEfficiency=parameters[4],
+                                                       targetSourceAge=parameters[2])
 
     # sample parameters density vector, tau_per_sed times for every sed
     r = np.random.randint(density_vector_limits[0][0], density_vector_limits[0][1], size=(tau_per_sed, 1))
@@ -145,11 +146,11 @@ def generate_output(parameters, tau_per_sed=10):
     num_density_He_II = np.random.randint(density_vector_limits[3][0], density_vector_limits[3][1], size=(tau_per_sed, 1))
     num_density_He_III = np.random.randint(density_vector_limits[4][0], density_vector_limits[4][1], size=(tau_per_sed, 1))
 
-    # concatenate indiviual parameters to density_vector
+    # concatenate individual parameters to density_vector
     density_vector = np.concatenate((r, redshift, num_density_H_II,
      num_density_He_II, num_density_He_III), axis=1)
 
-    # obtain photoionisation cross-sections from energies
+    # obtain photo-ionisation cross-sections from energies
     physics = Physics.getInstance()
     physics.set_energy_vector(energies)
     sigmas_H_I = physics.get_photo_ionisation_cross_section_hydrogen()
@@ -157,9 +158,7 @@ def generate_output(parameters, tau_per_sed=10):
     sigmas_He_II = physics.get_photo_ionisation_cross_section_helium2()
 
     # generate tau from density_vector
-    tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II + \
-        sigmas_H_I[np.newaxis, :] * num_density_He_II + \
-        sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
+    tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II + sigmas_H_I[np.newaxis, :] * num_density_He_II + sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
 
     # generate flux_vector (add small number to r to avoid division by zero)
     flux_vector = (intensities[np.newaxis, :] * np.exp(-1 * tau))/(4 * np.pi * np.power(r+1e-5, 2))
@@ -170,6 +169,7 @@ def generate_output(parameters, tau_per_sed=10):
     intensities = np.repeat(intensities[np.newaxis, :], tau_per_sed, axis=0)
 
     return parameters, energies, intensities, density_vector, tau, flux_vector
+
 
 # -----------------------------------------------------------------
 # main
@@ -197,10 +197,7 @@ def create_sample_main(path, key, n_samples):
     flux_vector = np.concatenate(flux_vector, axis=0)
 
     # write the data
-    write_data(sample_file, parameters, energies, intensities, density_vector,
-                                            tau, flux_vector, directory=sample_dir)
-
-
+    write_data(sample_file, parameters, energies, intensities, density_vector, tau, flux_vector, directory=sample_dir)
 
 # -----------------------------------------------------------------
 # execute this when file is executed

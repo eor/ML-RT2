@@ -36,7 +36,8 @@ else:
 # -----------------------------------------------------------------
 #   use AE with test or val set
 # -----------------------------------------------------------------
-def pretraining_evaluation(current_epoch, data_loader, model, path, config, print_results=False, save_results=False, best_model=False):
+def pretraining_evaluation(current_epoch, data_loader, model, path, config,
+                           print_results=False, save_results=False, best_model=False):
     """
     function runs the given dataset through the Autoencoder, returns mse_loss,
     and saves the results as well as ground truth to numpy file, if save_results=True.
@@ -107,6 +108,7 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config, prin
 
     return loss_mse
 
+
 # -----------------------------------------------------------------
 #  Main
 # -----------------------------------------------------------------
@@ -131,13 +133,13 @@ def main(config):
     plot_path = os.path.join(config.out_dir, PLOT_DIR)
 
     # -----------------------------------------------------------------
-    # load the data and update config with the dataset conifguration
+    # load the data and update config with the dataset configuration
     # -----------------------------------------------------------------
     parameters, energies, intensities, density_vector, tau,\
      flux_vectors = utils_load_pretraining_data(config.data_dir)
+
     setattr(config, 'len_SED_input', flux_vectors.shape[1])
     setattr(config, 'n_samples', flux_vectors.shape[0])
-
 
     # -----------------------------------------------------------------
     # shuffle/log space
@@ -153,7 +155,7 @@ def main(config):
         flux_vectors = np.log10(flux_vectors + 1.0e-6)
 
     # -----------------------------------------------------------------
-    # convert data into tensors and split it into requried legths
+    # convert data into tensors and split it into required lengths
     # -----------------------------------------------------------------
     # numpy array to tensors
     flux_vectors = torch.Tensor(flux_vectors)
@@ -165,12 +167,11 @@ def main(config):
 
     # split the dataset
     train_dataset, validation_dataset, test_dataset = \
-     torch.utils.data.random_split(flux_vectors,
-                    (train_length, validation_length,test_length),
-                    generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
+        torch.utils.data.random_split(flux_vectors, (train_length, validation_length, test_length),
+                                      generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
 
     # -----------------------------------------------------------------
-    # dataloaders from dataset
+    # data loaders from dataset
     # -----------------------------------------------------------------
     train_loader = torch_data.DataLoader(train_dataset, batch_size=config.batch_size, shuffle=False)
     val_loader = torch_data.DataLoader(validation_dataset, batch_size=config.batch_size, shuffle=False)
@@ -213,7 +214,6 @@ def main(config):
     best_loss = np.inf
     best_epoch = 0
     n_epoch_without_improvement = 0
-
 
     # -----------------------------------------------------------------
     #  Main training loop
@@ -270,8 +270,8 @@ def main(config):
          % (epoch, config.n_epochs, train_loss, val_loss, best_epoch))
 
         if epoch % config.testing_interval == 0:
-            pretraining_evaluation(best_epoch, test_loader, best_model, data_products_path, config, print_results=True, save_results=True)
-
+            pretraining_evaluation(best_epoch, test_loader, best_model, data_products_path, config,
+                                   print_results=True, save_results=True)
 
     # -----------------------------------------------------------------
     # Evaluate the best model by using the test set
@@ -287,22 +287,19 @@ def main(config):
         best_model=True
     )
 
-
     # -----------------------------------------------------------------
     # Save the loss functions
     # -----------------------------------------------------------------
     utils_save_loss(avg_train_loss_array, data_products_path, config.n_epochs, prefix='train')
     utils_save_loss(avg_val_loss_array, data_products_path, config.n_epochs, prefix='val')
 
-
     # -----------------------------------------------------------------
     # Save the best model and the final model
     # -----------------------------------------------------------------
     utils_save_pretraining_model(best_model.state_dict(),
-                                data_products_path, best_epoch, best_model=True)
+                                 data_products_path, best_epoch, best_model=True)
     utils_save_pretraining_model(model.state_dict(),
-                            data_products_path, config.n_epochs, best_model=False)
-
+                                 data_products_path, config.n_epochs, best_model=False)
 
     # -----------------------------------------------------------------
     # Save some results to config object for later use
