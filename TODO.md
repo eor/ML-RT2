@@ -9,10 +9,6 @@ PS: Edit this list on the main repo directly instead of doing it on your local m
 ## Tasks 📝
 
 ### Pretraining
-- [ ] Add histogram to visualise data  @aayushsingla 2022-01-01 **High** </br>
-Add histogram to visualise input value ranges. Here, N(E). This can probably be done using tensorboard itself.
-- [ ] Add comparison plots @assigned_to yyyy-mm-dd **High** </br>
-Add comparison plots to compare true N(E) and regenerated N(E). This can probably be done using tensorboard itself. However, we will need to have proper plot routines for this for the final paper.
 - [ ] Add loss plots @assigned_to yyyy-mm-dd **low** </br>
 Plot train loss and validation loss for the final paper using matplotlib. Low priority as currently being done using tensorboard.
 - [ ] Hypertune the model. @assigned_to yyyy-mm-dd **High** </br>
@@ -40,6 +36,10 @@ Generate a dataset for testing and validation using generate_data() function bef
 ### Pretraining
 - [x] Input generation @aayushsingla 2022-01-01 **High** </br>
 Generate input N(E) using I(E) and tau to pre-train the model and learn the latent representation.
+- [x] Add histogram to visualise data  @aayushsingla 2022-01-01 **High** </br>
+Add histogram to visualise input value ranges. Here, N(E). This can probably be done using tensorboard itself.
+- [x] Add comparison plots @aayushsingla 2022-01-10 **High** </br>
+Add comparison plots to compare true N(E) and regenerated N(E). This can probably be done using tensorboard itself. However, we will need to have proper plot routines for this for the final paper.
 
 ### ODE training
 
