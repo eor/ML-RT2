@@ -1,15 +1,15 @@
+from models_pretraining import *
+from numba import jit
+from configparser import ConfigParser
+from datetime import datetime
+import os.path as osp
+import torch.nn.functional as F
+import torch
+import pickle
+import os
+import numpy as np
 import sys
 sys.path.append('..')
-import numpy as np
-import os
-import pickle
-import torch
-import torch.nn.functional as F
-import os.path as osp
-from datetime import datetime
-from configparser import ConfigParser
-from numba import jit
-from models_pretraining import *
 try:
     from common.settings import *
 except ImportError:
@@ -131,7 +131,6 @@ def utils_load_pretraining_data(path, file_name='data_pretraining.npy.npz'):
 
     print('\nLoading pretraining data from disk.....')
     data = np.load(p)
-    print('loaded data arrays:', data.files)
 
     parameters = data['parameters']
     energies = data['energies']
@@ -139,6 +138,7 @@ def utils_load_pretraining_data(path, file_name='data_pretraining.npy.npz'):
     density_vector = data['density_vector']
     tau = data['tau']
     flux_vector = data['flux_vector']
+    print('loaded data arrays:', data.files)
 
     return parameters, energies, intensities, density_vector, tau, flux_vector
 
@@ -202,7 +202,7 @@ def utils_save_loss(loss_array, path, n_epoch, prefix='train'):
 # save flux_vectors (true & regenerated)
 # -----------------------------------------------------------------
 def utils_save_pretraining_test_data(flux_vectors_true, flux_vectors_gen, parameters, path, epoch, prefix='test'):
-    
+
     parameters_filename = prefix + '_parameters_%d_epochs.npy' % (epoch)
     flux_vectors_true_filename = prefix + '_flux_vectors_true_%d_epochs.npy' % (epoch)
     flux_vectors_gen_filename = prefix + '_flux_vectors_gen_%d_epochs.npy' % (epoch)
@@ -226,29 +226,29 @@ def utils_simpson_integration(y, x):
 
     # source: https://masonstoecker.com/2021/04/03/Simpson-and-Numba.html
 
-    n = len(y)-1
+    n = len(y) - 1
     h = np.zeros(n)
     for i in range(n):
-        h[i] = x[i+1]-x[i]
+        h[i] = x[i + 1] - x[i]
         if h[i] == 0:
-            np.delete(h,i)
-            np.delete(y,i)
-    n = len(h)-1
+            np.delete(h, i)
+            np.delete(y, i)
+    n = len(h) - 1
     s = 0
-    for i in range(1,n,2):
-        a = h[i]*h[i]
-        b = h[i]*h[i-1]
-        c = h[i-1]*h[i-1]
-        d = h[i] + h[i-1]
-        alpha = (2*a+b-c)/h[i]
-        beta  = d*d*d/b
-        gamma = (-a+b+2*c)/h[i-1]
-        s += alpha*y[i+1]+beta*y[i]+gamma*y[i-1]
+    for i in range(1, n, 2):
+        a = h[i] * h[i]
+        b = h[i] * h[i - 1]
+        c = h[i - 1] * h[i - 1]
+        d = h[i] + h[i - 1]
+        alpha = (2 * a + b - c) / h[i]
+        beta = d * d * d / b
+        gamma = (-a + b + 2 * c) / h[i - 1]
+        s += alpha * y[i + 1] + beta * y[i] + gamma * y[i - 1]
 
-    if (n+1)%2 == 0:
-        alpha = h[n-1]*(3-h[n-1]/(h[n-1]+h[n-2]))
-        beta = h[n-1]*(3+h[n-1]/h[n-2])
-        gamma = -h[n-1]*h[n-1]*h[n-1]/(h[n-2]*(h[n-1]+h[n-2]))
-        return (s+alpha*y[n]+beta*y[n-1]+gamma*y[n-2])/6
+    if (n + 1) % 2 == 0:
+        alpha = h[n - 1] * (3 - h[n - 1] / (h[n - 1] + h[n - 2]))
+        beta = h[n - 1] * (3 + h[n - 1] / h[n - 2])
+        gamma = -h[n - 1] * h[n - 1] * h[n - 1] / (h[n - 2] * (h[n - 1] + h[n - 2]))
+        return (s + alpha * y[n] + beta * y[n - 1] + gamma * y[n - 2]) / 6
     else:
-        return s/6
+        return s / 6

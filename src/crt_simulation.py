@@ -94,7 +94,7 @@ class SimulationData:
         self.n_He_III[radial_index] = self.n_helium[radial_index] * self.x_He_III[radial_index]
 
         # electron number density = sum of number densities of ionised H, He and doubly ionised He
-        self.n_e[radial_index] = self.n_H_II[radial_index] + self.n_He_II[radial_index] + 2*self.n_He_III[radial_index]
+        self.n_e[radial_index] = self.n_H_II[radial_index] + self.n_He_II[radial_index] + 2 * self.n_He_III[radial_index]
 
     def update_current_time(self):
         """

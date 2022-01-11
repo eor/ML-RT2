@@ -4,6 +4,7 @@ import time
 from torch.utils.tensorboard import SummaryWriter
 import os.path as osp
 
+
 class DataLog:
     """
     A class that handles all the data logging and the tensorboard server.
@@ -36,7 +37,7 @@ class DataLog:
         """ Start the tensorboard server in a separate process
         """
         print("\033[96m\033[1m\nStarting tensorboard server\033[0m")
-        start_command = 'tensorboard --load_fast=false --logdir='+ self.log_dir_path
+        start_command = 'tensorboard --load_fast=false --logdir=' + self.log_dir_path
         args = shlex.split(start_command)
         self.process = subprocess.Popen(args)
         time.sleep(3)

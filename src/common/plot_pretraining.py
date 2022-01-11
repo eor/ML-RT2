@@ -10,18 +10,19 @@ import matplotlib as mpl
 from matplotlib import rc
 import seaborn as sns
 try:
-    from common.settings_sed import p8_limits, p8_names_latex
+    from common.settings_sed import p8_names_latex, density_vector_names
 except ImportError:
-    from settings_sed import p8_limits, p8_names_latex
+    from settings_sed import p8_names_latex, density_vector_names
+
 
 # -----------------------------------------------------------------
-# Plot flux vectoes (True and regenerated)
+# Plot flux vectors (True and regenerated)
 # -----------------------------------------------------------------
 def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, output_dir,
-                        prefix, mse, file_type='pdf', parameters=None, add_errors=True):
+                                prefix, mse, file_type='pdf', parameters=None, add_errors=True):
 
     # -----------------------------------------------------------------
-    # font settings 
+    # font settings
     # -----------------------------------------------------------------
     rc('font', **{'family': 'serif'})
     rc('text', usetex=True)
@@ -35,7 +36,7 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, outp
     # -----------------------------------------------------------------
     fig = plt.figure(figsize=(11, 10))
     plt.subplots_adjust(top=0.82)
-        
+
     # -----------------------------------------------------------------
     # grid setup
     # -----------------------------------------------------------------
@@ -72,7 +73,7 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, outp
     ax1.set_xlabel(r'Energy $(eV)$', fontsize=font_size_x_y)
     ax1.set_xticks(np.arange(0, len(flux_vector_true), step=50), minor=True)
     ax1.tick_params(axis='both', which='both', right=True, top=True, labelsize=font_size_ticks)
-    
+
     # -----------------------------------------------------------------
     # add parameters as title
     # -----------------------------------------------------------------
@@ -104,3 +105,91 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, outp
     plt.savefig(os.path.join(output_dir, file_name))
     plt.close('all')
 
+
+# -----------------------------------------------------------------
+# Plot profiles from pre-training dataset
+# -----------------------------------------------------------------
+def plot_profiles_dataset(profiles, parameters, output_dir, prefix, index, file_type='pdf'):
+    # -----------------------------------------------------------------
+    # font settings
+    # -----------------------------------------------------------------
+    rc('font', **{'family': 'serif'})
+    rc('text', usetex=True)
+
+    font_size_title = 22
+    font_size_ticks = 16
+    font_size_legends = 12
+    font_size_x_y = 18
+
+    def get_label_Y(profile_type):
+        if profile_type == 0:
+            return r'$N(E,r,t)$'
+        elif profile_type == 1:
+            return r'$I(E)$'
+        elif profile_type == 2:
+            return r'$\tau(E,r,t)$'
+        elif profile_type == 3:
+            return r'$E(eV)$'
+        else:
+            return r'Physical Unit'
+
+    num_plots = profiles.shape[0]
+
+    # -----------------------------------------------------------------
+    # figure setup
+    # -----------------------------------------------------------------
+    fig = plt.figure(figsize=(11, 10))
+    plt.subplots_adjust(top=0.82)
+
+    # compute size of grid ie. rows and columns to fit all the plots
+    rows = int(np.sqrt(num_plots))
+    columns = int(np.ceil(num_plots / rows))
+
+    # outer grid for the plots
+    outer = gridspec.GridSpec(rows, columns, wspace=0.3, hspace=0.3)
+
+    for i in range(num_plots):
+
+        inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[i], wspace=0.1, hspace=0.0)
+        ax = fig.add_subplot(inner[0])
+
+        # -----------------------------------------------------------------
+        # plot profile[i]
+        # -----------------------------------------------------------------
+        ax.plot(profiles[i], c='blue')
+        # ax.legend(loc=0, frameon=False, prop={'size': font_size_legends})
+        ax.set_ylabel(get_label_Y(i), fontsize=font_size_x_y)
+        ax.grid(which='major', color='#999999', linestyle='-', linewidth='0.4', alpha=0.4)
+        ax.tick_params(axis='y', which='both', right=True, top=True, labelsize=font_size_ticks)
+        fig.add_subplot(ax)
+
+    # -----------------------------------------------------------------
+    # add parameters as title
+    # -----------------------------------------------------------------
+    param_names = p8_names_latex
+    if parameters is not None and len(parameters) > 0:
+        a = ''
+        for j in range(len(param_names)):
+            # add line break after every 3 parameters are added
+            if j != 0 and j % 3 == 0:
+                a += '\n'
+            # append the parameter with its name and value to title string
+            value = parameters[j]
+            name = '$' + param_names[j]
+            a = a + name + ' = ' + str(round(value, 3)) + '$'
+            if j == 2:
+                a += '$\mathrm{Myr}$'
+            a += '\, \, \, '
+
+    fig.suptitle(a, fontsize=font_size_title, y=0.98)
+
+    # -----------------------------------------------------------------
+    # construct file name
+    # -----------------------------------------------------------------
+    file_name = '{:s}_profiles_{:d}'.format(prefix, index)
+    file_name = file_name.replace('.', '_')
+    file_name += '.' + file_type
+
+    plt.savefig(os.path.join(output_dir, file_name))
+    print('generated profile plot:', file_name)
+    plt.close('all')
