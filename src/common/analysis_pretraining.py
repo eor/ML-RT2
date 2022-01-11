@@ -11,7 +11,7 @@ except ImportError:
     from settings import *
 
 # -----------------------------------------------------------------
-# set of functions to operate on saved results from training 
+# set of functions to operate on saved results from training
 # and generate meaningful plots. All results are saved in default PLOT_DIR.
 # ------------------------------------------------------------------
 
@@ -85,17 +85,65 @@ def analysis_auto_plot_flux_vectors(config, k=20, base_path=None, prefix='best',
             mse=mse_array[index]
         )
 
-        
+# -----------------------------------------------------------------
+# Plot K random profiles from dataset.
+# -----------------------------------------------------------------
+def analysis_pretraining_dataset(config, k=50, base_path=None, prefix='data'):
+    if base_path is not None:
+        data_analysis_dir_path = osp.join(base_path, DATA_ANALYSIS)
+    else:
+        data_analysis_dir_path = osp.join(config.out_dir, DATA_ANALYSIS)
+
+    # create directory to store plots
+    utils_create_run_directories(config.out_dir, DATA_ANALYSIS)
+
+    # load the complete dataset
+    parameters, energies, intensities, density_vector, tau,\
+       flux_vectors = utils_load_pretraining_data(config.data_dir)
+
+    # compute mean, min, max in dataset
+    print('\nGenerating dataset summary.....')
+    print('Average of values in dataset: ', np.mean(flux_vectors))
+    minimum, maximum = np.min(flux_vectors), np.max(flux_vectors)
+    print('Maximum and minimum value in dataset: ', minimum, maximum)
+
+    # plot histogram for data_set_distribution
+    fig, ax = plt.subplots(figsize =(10, 10))
+    ax.hist(flux_vectors.flatten(), bins=10,log=True)
+    plt.savefig(osp.join(plot_path, 'data_set_distribution.png'))
+    print('Successfully saved histogram for dataset to:',
+          osp.join(data_analysis_dir_path, 'data_set_distribution.png'))
+
+    # stack the data
+    plot_profile_data = np.stack(flux_vectors, intensities, tau, energies, axis=1)
+    plot_parameter_data = np.stack(parameters, density_vector, axis=1)
+
+    print(plot_profile_data.shape, plot_parameter_data.shape)
+
+    # select k random profiles from dataset
+    np.random.seed(PRETRAINING_SEED)
+    random_indices = np.random.randint(0, high=flux_vectors.shape[0], size=(k))
+    plot_profile_data = plot_profile_data[random_indices, :, :]
+    plot_parameter_data = plot_parameter_data[random_indices, :, :]
+    print(plot_profile_data.shape, plot_parameter_data.shape)
+
+    print('Producing analysis plot(s) for %d random profiles' % k)
+    for i in range(k):
+        # plot profiles here...
+
+
+
+
+
 # -----------------------------------------------------------------
 #  run the following if this file is called directly
 # -----------------------------------------------------------------
 if __name__ == '__main__':
 
     print('Hello there! Let\'s analyse some results\n')
-    
+
     path = '../output_pretraining/run_2022_01_09__06_49_54/'
     config = utils_load_config(path)
     analysis_auto_plot_flux_vectors(config, k=20, base_path=path, prefix='best')
 
     print('\n Completed! \n')
-

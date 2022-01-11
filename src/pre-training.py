@@ -140,11 +140,15 @@ def main(config):
     plot_path = os.path.join(config.out_dir, PLOT_DIR)
 
     # -----------------------------------------------------------------
-    # load the data and update config with the dataset configuration
+    # run dataset analysis
     # -----------------------------------------------------------------
-    parameters, energies, intensities, density_vector, tau,\
-       flux_vectors = utils_load_pretraining_data(config.data_dir)
+    if config.dataset_analysis:
+        analysis_pretraining_dataset(config, k=50, base_path=config.out_dir, prefix='data')
 
+    # -----------------------------------------------------------------
+    # load the data and update config with the dataset configuration,
+    # -----------------------------------------------------------------
+    parameters, _, _, _, _, flux_vectors = utils_load_pretraining_data(config.data_dir)
     setattr(config, 'len_SED_input', flux_vectors.shape[1])
     setattr(config, 'n_samples', flux_vectors.shape[0])
 
@@ -157,24 +161,11 @@ def main(config):
         indices = np.random.permutation(indices)
         flux_vectors = flux_vectors[indices]
         parameters = parameters[indices]
-        
+
     if PRETRAINING_LOG_PROFILES:
         # add a small number to avoid trouble
         flux_vectors = np.log10(flux_vectors + 1.0e-6)
-    
-    # -----------------------------------------------------------------
-    # dataset distribution
-    # -----------------------------------------------------------------
-    print('\nGenerating dataset summary.....')
-    print('Average of values in dataset: ', np.mean(flux_vectors))
-    minimum, maximum = np.min(flux_vectors), np.max(flux_vectors)
-    print('Maximum and minimum value in dataset: ', minimum, maximum)
-    fig, ax = plt.subplots(figsize =(10, 10))
-    ax.hist(flux_vectors.flatten(), bins=10,log=True)
-    plt.savefig(osp.join(plot_path, 'data_set_distribution.png'))
-    print('Successfully saved histogram for dataset to:',
-          osp.join(plot_path, 'data_set_distribution.png'))
-    
+
     # -----------------------------------------------------------------
     # convert data into tensors and split it into required lengths
     # -----------------------------------------------------------------
@@ -247,7 +238,7 @@ def main(config):
         # set model mode
         model.train()
         for i, (_, flux_vectors) in enumerate(train_loader):
-            
+
             # zero the gradients on each iteration
             optimizer.zero_grad()
             regen_flux_vectors = model(flux_vectors)
@@ -396,12 +387,18 @@ if __name__ == "__main__":
 
     parser.add_argument("--len_latent_vector", type=int, default=8,
                         help="length of reduced SED vector")
-    
+
     # analysis
     parser.add_argument("--analysis", dest='analysis', action='store_true',
                         help="automatically generate some plots (default)")
     parser.add_argument("--no-analysis", dest='analysis', action='store_false', help="do not run analysis")
     parser.set_defaults(analysis=True)
+
+    parser.add_argument("--dataset_analysis", dest='dataset_analysis', action='store_true',
+                        help="compute mean, min, max on dataset and generate relevant plots")
+    parser.add_argument("--no_dataset_analysis", dest='dataset_analysis', action='store_false',
+                            help="do not generate data summary")
+    parser.set_defaults(dataset_analysis=False)
 
     my_config = parser.parse_args()
 
