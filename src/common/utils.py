@@ -131,7 +131,6 @@ def utils_load_pretraining_data(path, file_name='data_pretraining.npy.npz'):
 
     print('\nLoading pretraining data from disk.....')
     data = np.load(p)
-    print('loaded data arrays:', data.files)
 
     parameters = data['parameters']
     energies = data['energies']
@@ -139,7 +138,8 @@ def utils_load_pretraining_data(path, file_name='data_pretraining.npy.npz'):
     density_vector = data['density_vector']
     tau = data['tau']
     flux_vector = data['flux_vector']
-
+    print('loaded data arrays:', data.files)
+    
     return parameters, energies, intensities, density_vector, tau, flux_vector
 
 

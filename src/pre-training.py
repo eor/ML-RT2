@@ -143,7 +143,7 @@ def main(config):
     # run dataset analysis
     # -----------------------------------------------------------------
     if config.dataset_analysis:
-        analysis_pretraining_dataset(config, k=50, base_path=config.out_dir, prefix='data')
+        analysis_pretraining_dataset(config, config.data_dir, config.out_dir, prefix='data', k=50)
 
     # -----------------------------------------------------------------
     # load the data and update config with the dataset configuration,

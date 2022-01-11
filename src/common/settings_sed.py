@@ -92,3 +92,11 @@ density_vector_limits.append(p8_limits[1])
 density_vector_limits.append([0, 1000])
 density_vector_limits.append([0, 1000])
 density_vector_limits.append([0, 1000])
+
+density_vector_names = list()
+density_vector_names.append('r(kpc)')
+density_vector_names.append('z')
+density_vector_names.append('n_{H_{II}}')
+density_vector_names.append('n_{He_{II}}')
+density_vector_names.append('n_{He_{III}}')
+
