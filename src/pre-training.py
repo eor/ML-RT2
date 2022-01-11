@@ -19,7 +19,7 @@ from common.physics import *
 from common.settings_crt import *
 from common.settings import *
 from common.data_log import *
-from sed import sed_numba
+import common.sed_numba as sed_numba
 from models_pretraining import *
 from random import random
 from matplotlib import pyplot as plt
@@ -180,9 +180,9 @@ def main(config):
     # split the dataset
     dataset = torch.utils.data.TensorDataset(parameters, flux_vectors)
     train_dataset, validation_dataset, test_dataset = \
-     torch.utils.data.random_split(dataset,
-                    (train_length, validation_length,test_length),
-                    generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
+        torch.utils.data.random_split(dataset,
+                                      (train_length, validation_length, test_length),
+                                      generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
 
     # -----------------------------------------------------------------
     # data loaders from dataset
@@ -201,7 +201,7 @@ def main(config):
     # initialise model
     # -----------------------------------------------------------------
     model = AE1(config)
-    print('\n\tUsing model AE1 on device: %s\n'%(device))
+    print('\n\tUsing model AE1 on device: %s\n' % (device))
 
     if cuda:
         model.cuda()
@@ -280,7 +280,7 @@ def main(config):
         data_log.update_data()
 
         print("[Epoch %d/%d] [Train loss: %e] [Validation loss: %e][Best_epoch: %d]"
-         % (epoch, config.n_epochs, train_loss, val_loss, best_epoch))
+              % (epoch, config.n_epochs, train_loss, val_loss, best_epoch))
 
         if epoch % config.testing_interval == 0:
             pretraining_evaluation(best_epoch, test_loader, best_model, data_products_path, config,
@@ -397,7 +397,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_analysis", dest='dataset_analysis', action='store_true',
                         help="compute mean, min, max on dataset and generate relevant plots")
     parser.add_argument("--no_dataset_analysis", dest='dataset_analysis', action='store_false',
-                            help="do not generate data summary")
+                        help="do not generate data summary")
     parser.set_defaults(dataset_analysis=False)
 
     my_config = parser.parse_args()

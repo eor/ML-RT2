@@ -15,9 +15,9 @@ ode_parameter_limits = list()
 # ode_parameter_limits.append([-6.0, 0.0])
 # ode_parameter_limits.append([-6.0, 0.0])
 # ode_parameter_limits.append([-6.0, 0.0])
-ode_parameter_limits.append([0.0, 1.0]) # linear scale
-ode_parameter_limits.append([0.0, 1.0]) # linear scale
-ode_parameter_limits.append([0.0, 1.0]) # linear scale
+ode_parameter_limits.append([0.0, 1.0])  # linear scale
+ode_parameter_limits.append([0.0, 1.0])  # linear scale
+ode_parameter_limits.append([0.0, 1.0])  # linear scale
 ode_parameter_limits.append([-0.3, 13.1])
 ode_parameter_limits.append([0.0, 6000.0])  # Could be done in log maybe?
 ode_parameter_limits.append([0.01, 20.0])

@@ -95,12 +95,12 @@ def compute_softdtw_backward_cuda(D, R, inv_gamma, bandwidth, max_i, max_j, n_pa
 def jacobean_product_squared_euclidean(X, Y, Bt):
     '''
     jacobean_product_squared_euclidean(X, Y, Bt):
-    
+
     Jacobean product of squared Euclidean distance matrix and alignment matrix.
     See equations 2 and 2.5 of https://arxiv.org/abs/1703.01541
     '''
     # print(X.shape, Y.shape, Bt.shape)
-    
+
     ones = torch.ones(Y.shape).to('cuda' if Bt.is_cuda else 'cpu')
     return 2 * (ones.matmul(Bt) * X - Y.matmul(Bt))
 

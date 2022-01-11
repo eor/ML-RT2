@@ -88,6 +88,8 @@ def analysis_auto_plot_flux_vectors(config, k=20, base_path=None, prefix='best',
 # -----------------------------------------------------------------
 # Plot K random profiles from dataset.
 # -----------------------------------------------------------------
+
+
 def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='data', k=50):
 
     if base_path is not None:
@@ -100,10 +102,10 @@ def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='
 
     # create directories
     utils_create_output_dirs([data_analysis_dir_path])
-    
+
     # load the complete dataset
     parameters, energies, intensities, density_vector, tau, \
-    flux_vectors = utils_load_pretraining_data(data_dir)
+        flux_vectors = utils_load_pretraining_data(data_dir)
 
     # compute mean, min, max in dataset
     print('\nGenerating dataset summary.....')
@@ -112,8 +114,8 @@ def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='
     print('Maximum and minimum value in dataset: ', minimum, maximum)
 
     # plot histogram for data_set_distribution
-    fig, ax = plt.subplots(figsize =(10, 10))
-    ax.hist(flux_vectors.flatten(), bins=10,log=True)
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.hist(flux_vectors.flatten(), bins=10, log=True)
     plt.savefig(osp.join(data_analysis_dir_path, 'data_set_distribution.png'))
     print('Successfully saved histogram for dataset to:',
           osp.join(data_analysis_dir_path, 'data_set_distribution.png'))
@@ -135,9 +137,7 @@ def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='
             data_analysis_dir_path,
             prefix,
             random_indices[i]
-         ) 
-
-
+        )
 
 
 # -----------------------------------------------------------------

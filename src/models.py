@@ -37,8 +37,6 @@ class MLP1(nn.Module):
         # self.NN_flux.apply(init_weights)
         # self.NN.apply(init_weights)
 
-
-
     def forward(self, x_flux_vector, x_state_vector, time_vector):
         """
         Inputs are:

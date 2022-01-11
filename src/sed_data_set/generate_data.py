@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+from timeit import default_timer as timer
+import common.sed_numba as sed_nb
+from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
+from common.settings_sed import density_vector_limits
+from common.settings_sed import p8_limits as ps_sed
+from common.physics import *
+from common.settings import DATA_GENERATION_SEED
+from common.physics_constants import *
+import multiprocessing
+from pyDOE import lhs
+import numpy as np
+import math as m
+import os
+import tqdm
 import sys
 sys.path.append('..')
-import tqdm
-import os
-import math as m
-import numpy as np
-from pyDOE import lhs
-import multiprocessing
 
-from common.physics_constants import *
-from common.settings import DATA_GENERATION_SEED
-from common.physics import *
-from common.settings_sed import p8_limits as ps_sed
-from common.settings_sed import density_vector_limits
-from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
-import sed.sed_numba as sed_nb
-from timeit import default_timer as timer
 
 # we need
 # 1. function to do the latin hypercube sampling
@@ -106,10 +106,10 @@ def setup_sample_dir(path, key, nSamples):
 # write samples to file
 # -----------------------------------------------------------------
 def write_data(target_file, parameters, energies, intensities,
-                    density_vector, tau, flux_vector, directory=None):
+               density_vector, tau, flux_vector, directory=None):
 
     if directory:
-        path = directory+'/' + target_file
+        path = directory + '/' + target_file
     else:
         path = './' + target_file
 
@@ -148,7 +148,7 @@ def generate_output(parameters, tau_per_sed=10):
 
     # concatenate individual parameters to density_vector
     density_vector = np.concatenate((r, redshift, num_density_H_II,
-     num_density_He_II, num_density_He_III), axis=1)
+                                     num_density_He_II, num_density_He_III), axis=1)
 
     # obtain photo-ionisation cross-sections from energies
     physics = Physics.getInstance()
@@ -161,7 +161,7 @@ def generate_output(parameters, tau_per_sed=10):
     tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II + sigmas_H_I[np.newaxis, :] * num_density_He_II + sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
 
     # generate flux_vector (add small number to r to avoid division by zero)
-    flux_vector = (intensities[np.newaxis, :] * np.exp(-1 * tau))/(4 * np.pi * np.power(r+1e-5, 2))
+    flux_vector = (intensities[np.newaxis, :] * np.exp(-1 * tau)) / (4 * np.pi * np.power(r + 1e-5, 2))
 
     # reshape/broadcast input parameters to shape (tau_per_sed, parameters)
     parameters = np.repeat(parameters[np.newaxis, :], tau_per_sed, axis=0)
@@ -186,7 +186,7 @@ def create_sample_main(path, key, n_samples):
 
     # using multiprocessing and the sampled parameters, generate data
     with multiprocessing.Pool() as pool:
-        parameters, energies, intensities, density_vector, tau, flux_vector = zip(*tqdm.tqdm(pool.imap(generate_output, sample_set),total=sample_set.shape[0]))
+        parameters, energies, intensities, density_vector, tau, flux_vector = zip(*tqdm.tqdm(pool.imap(generate_output, sample_set), total=sample_set.shape[0]))
 
     # concatenate numpy arrays
     parameters = np.concatenate(parameters, axis=0)

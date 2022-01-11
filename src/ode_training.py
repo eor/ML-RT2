@@ -8,6 +8,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 
+import common.sed_numba as sed_numba
 from common.settings_ode import ode_parameter_limits as ps_ode
 from common.settings_sed import density_vector_limits
 from common.settings_sed import p8_limits as ps_sed
@@ -17,7 +18,6 @@ from common.physics import *
 from common.settings_crt import *
 from common.settings import *
 from common.data_log import *
-from sed import sed_numba
 from models import *
 from ode_system import *
 from random import random
@@ -87,13 +87,13 @@ def generate_flux_vector(parameters):
     density_vector = np.concatenate((r, redshift, num_density_H_II, num_density_He_II, num_density_He_III), axis=1)
 
     # generate tau from density_vector. shape: (train_set_size, 2000)
-    tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II +\
-           sigmas_H_I[np.newaxis, :] * num_density_He_II +\
+    tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II +
+           sigmas_H_I[np.newaxis, :] * num_density_He_II +
            sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
 
     # obtain flux_vector from intensities_vector by multiplying with tau
     # add a small number to r to avoid division by zero
-    flux_vector = intensities_vector * np.exp(-1 * tau) / (4 * np.pi * np.power(r+1e-5, 2))
+    flux_vector = intensities_vector * np.exp(-1 * tau) / (4 * np.pi * np.power(r + 1e-5, 2))
     flux_vector = np.log10(flux_vector + 1.0e-6)
 
     return flux_vector, density_vector, energies_vector
@@ -114,7 +114,7 @@ def generate_data(n_samples, mode='train'):
     starsIMFMassMin = np.random.uniform(ps_sed[7][0], ps_sed[7][1], size=(n_samples, 1))
 
     parameter_vector = np.concatenate((haloMassLog, redshift, sourceAge, qsoAlpha,
-     qsoEfficiency, starsEscFrac, starsIMFSlope, starsIMFMassMin), axis=1)
+                                       qsoEfficiency, starsEscFrac, starsIMFSlope, starsIMFMassMin), axis=1)
 
     # sample flux_vectors using parameters
     flux_vectors, density_vector, energies_vector = generate_flux_vector(parameter_vector)
@@ -220,7 +220,7 @@ def main(config):
         # retrieve train_set_size
         train_set_size = config.train_set_size
         x_flux_vector, x_state_vector, x_time_vector, target_residual,\
-        parameter_vector, energies_vector = generate_data(train_set_size)
+            parameter_vector, energies_vector = generate_data(train_set_size)
 
         # update the data in this physics module
         physics.set_energy_vector(energies_vector[0])
@@ -235,10 +235,10 @@ def main(config):
 
         # Loss based on CRT ODEs
         r_x_H_II, r_x_He_II, r_x_He_III, r_T = ode_equation.compute_ode_residual(x_flux_vector,
-                                                                                       x_state_vector,
-                                                                                       x_time_vector,
-                                                                                       parameter_vector,
-                                                                                       u_approximation)
+                                                                                 x_state_vector,
+                                                                                 x_time_vector,
+                                                                                 parameter_vector,
+                                                                                 u_approximation)
 
         # [Issue] using log10(abs(prediction)) here introduces two problems:
         # 1. we lose sign information
@@ -266,7 +266,7 @@ def main(config):
         optimizer.zero_grad()
 
         print("[Epoch %d/%d] [Train loss MSE: %e]"
-            % (epoch, config.n_epochs, loss_ode.item()))
+              % (epoch, config.n_epochs, loss_ode.item()))
 
         train_loss_array = np.append(train_loss_array, loss_ode.item())
 
