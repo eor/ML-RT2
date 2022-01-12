@@ -37,10 +37,10 @@ else:
 
 
 # -----------------------------------------------------------------
-#   use AE with test or val set
+#  evaluate network with test or validation data set
 # -----------------------------------------------------------------
-def pretraining_evaluation(current_epoch, data_loader, model, path, config,
-                           print_results=False, save_results=False, best_model=False):
+def pre_training_evaluation(current_epoch, data_loader, model, path, config,
+                            print_results=False, save_results=False, best_model=False):
     """
     function runs the given dataset through the Autoencoder, returns mse_loss,
     and saves the results as well as ground truth to numpy file, if save_results=True.
@@ -53,6 +53,7 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config,
         config: config object with user supplied parameters
         save_results: whether to save actual and generated profiles locally (default: False)
         best_model: flag for testing on best model
+        print_results: print results to screen
     """
 
     if save_results:
@@ -255,7 +256,7 @@ def main(config):
         train_loss = epoch_loss / len(train_loader)
         avg_train_loss_array = np.append(avg_train_loss_array, train_loss)
 
-        val_loss = pretraining_evaluation(
+        val_loss = pre_training_evaluation(
             current_epoch=epoch,
             data_loader=val_loader,
             model=model,
@@ -283,13 +284,13 @@ def main(config):
               % (epoch, config.n_epochs, train_loss, val_loss, best_epoch))
 
         if epoch % config.testing_interval == 0:
-            pretraining_evaluation(best_epoch, test_loader, best_model, data_products_path, config,
-                                   print_results=True, save_results=True)
+            pre_training_evaluation(best_epoch, test_loader, best_model, data_products_path, config,
+                                    print_results=True, save_results=True)
 
     # -----------------------------------------------------------------
     # Evaluate the best model by using the test set
     # -----------------------------------------------------------------
-    test_loss = pretraining_evaluation(
+    test_loss = pre_training_evaluation(
         current_epoch=best_epoch,
         data_loader=test_loader,
         model=best_model,
