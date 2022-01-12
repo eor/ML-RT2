@@ -1,7 +1,17 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import numpy as np
+import math as m
+import tqdm
+import multiprocessing
+import os
+import sys
+sys.path.append('..')
+
+from pyDOE import lhs
 from timeit import default_timer as timer
+
 import common.sed_numba as sed_nb
 from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
 from common.settings_sed import density_vector_limits
@@ -9,14 +19,6 @@ from common.settings_sed import p8_limits as ps_sed
 from common.physics import *
 from common.settings import DATA_GENERATION_SEED
 from common.physics_constants import *
-import multiprocessing
-from pyDOE import lhs
-import numpy as np
-import math as m
-import os
-import tqdm
-import sys
-sys.path.append('..')
 
 
 # -----------------------------------------------------------------
@@ -209,6 +211,7 @@ if __name__ == "__main__":
     sample_directory = '../../data/sed_samples'
 
     start = timer()
-    main(path=sample_directory, key='set_1', n_samples=10000)
+    # main(path=sample_directory, key='set_1', n_samples=10_000)
+    main(path=sample_directory, key='set_1', n_samples=1_000)
     end = timer()
     print("total time:", (end - start))
