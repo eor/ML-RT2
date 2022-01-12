@@ -19,16 +19,15 @@ import sys
 sys.path.append('..')
 
 
-# we need
-# 1. function to do the latin hypercube sampling
-# 2. function to run the SED generator & return the final SED vector
-# 3. a function to collect the vectors, build a .npy file and save it to ../data
-
-
 # -----------------------------------------------------------------
 # obtain latin hypercube sample, normalised to [0, 1] range
 # -----------------------------------------------------------------
 def get_norm_sample_set(n_parameters, n_samples):
+    """
+    this function returns n_samples latin hypercube samples for a given number of parameters (n_parameters),
+    normalised to [0, 1].
+    """
+
     return lhs(n=n_parameters, samples=n_samples)
 
 
@@ -65,7 +64,7 @@ def adjust_sample_to_parameter_ranges(p_list, samples):
 # -----------------------------------------------------------------
 def recast_sample_value(x, a, b):
     """
-    given a float x of interval [0,1] return the corresponding value for the interval [a,b]
+    Given a float x of interval [0,1] return the corresponding value for the interval [a,b].
     """
     return a + (b - a) * x
 
@@ -174,7 +173,7 @@ def generate_output(parameters, tau_per_sed=10):
 # -----------------------------------------------------------------
 # main
 # -----------------------------------------------------------------
-def create_sample_main(path, key, n_samples):
+def main(path, key, n_samples):
 
     sample_file = 'sed_%s_N%d.npy' % (key, n_samples)
 
@@ -204,9 +203,12 @@ def create_sample_main(path, key, n_samples):
 # execute this when file is executed
 # -----------------------------------------------------------------
 if __name__ == "__main__":
+
     np.random.seed(DATA_GENERATION_SEED)
-    dir = '../../data/sed_samples'
+
+    sample_directory = '../../data/sed_samples'
+
     start = timer()
-    create_sample_main(path=dir, key='set_1', n_samples=10000)
+    main(path=sample_directory, key='set_1', n_samples=10000)
     end = timer()
     print("total time:", (end - start))
