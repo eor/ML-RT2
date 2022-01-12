@@ -9,6 +9,10 @@ PS: Edit this list on the main repo directly instead of doing it on your local m
 ## Tasks 📝
 
 ### Pretraining
+- [ ] Find the reason for expldoing tau @eor 2022-01-11 **High**
+- [ ] Regenerate the pre-training dataset. @assigned_to yyyy-mm-dd **High**
+Once reason behind the exploding tau is clear, regenerate the data and upload it on drive. Also, update the download script.
+- [ ] Fix the plots for dataset analysis @aayushsingla 2022-01-11 **High**
 - [ ] Add loss plots @assigned_to yyyy-mm-dd **low** </br>
 Plot train loss and validation loss for the final paper using matplotlib. Low priority as currently being done using tensorboard.
 - [ ] Hypertune the model. @assigned_to yyyy-mm-dd **High** </br>
