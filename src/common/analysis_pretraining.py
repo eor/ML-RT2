@@ -90,6 +90,8 @@ def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best',
 # -----------------------------------------------------------------
 # Plot K random profiles from dataset.
 # -----------------------------------------------------------------
+
+
 def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='data', k=50):
 
     if base_path is not None:
@@ -102,10 +104,10 @@ def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='
 
     # create directories
     utils_create_output_dirs([data_analysis_dir_path])
-    
+
     # load the complete dataset
     parameters, energies, intensities, density_vector, tau, \
-    flux_vectors = utils_load_pretraining_data(data_dir)
+        flux_vectors = utils_load_pretraining_data(data_dir)
 
     # compute mean, min, max in dataset
     print('\nGenerating dataset summary.....')
@@ -150,9 +152,7 @@ def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='
             data_analysis_dir_path,
             prefix,
             random_indices[i]
-         ) 
-
-
+        )
 
 
 # -----------------------------------------------------------------

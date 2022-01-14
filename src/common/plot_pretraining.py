@@ -16,13 +16,13 @@ except ImportError:
 
 
 # -----------------------------------------------------------------
-# Plot flux vectoes (True and regenerated)
+# Plot flux vectors (True and regenerated)
 # -----------------------------------------------------------------
 def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, output_dir,
-                        prefix, mse, file_type='pdf', parameters=None, add_errors=True):
+                                prefix, mse, file_type='pdf', parameters=None, add_errors=True):
 
     # -----------------------------------------------------------------
-    # font settings 
+    # font settings
     # -----------------------------------------------------------------
     rc('font', **{'family': 'serif'})
     rc('text', usetex=True)
@@ -36,7 +36,7 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, outp
     # -----------------------------------------------------------------
     fig = plt.figure(figsize=(11, 10))
     plt.subplots_adjust(top=0.82)
-        
+
     # -----------------------------------------------------------------
     # grid setup
     # -----------------------------------------------------------------
@@ -73,7 +73,7 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, outp
     ax1.set_xlabel(r'Energy $(eV)$', fontsize=font_size_x_y)
     ax1.set_xticks(np.arange(0, len(flux_vector_true), step=50), minor=True)
     ax1.tick_params(axis='both', which='both', right=True, top=True, labelsize=font_size_ticks)
-    
+
     # -----------------------------------------------------------------
     # add parameters as title
     # -----------------------------------------------------------------
@@ -105,9 +105,9 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, outp
     plt.savefig(os.path.join(output_dir, file_name))
     plt.close('all')
 
-    
+
 # -----------------------------------------------------------------
-# Plot profiles from pre-training dataset 
+# Plot profiles from pre-training dataset
 # -----------------------------------------------------------------
 def plot_profiles_dataset(profiles, energy_vector, parameters, output_dir, prefix, index, file_type='pdf'):
     # -----------------------------------------------------------------
@@ -121,7 +121,6 @@ def plot_profiles_dataset(profiles, energy_vector, parameters, output_dir, prefi
     font_size_legends = 12
     font_size_x_y = 18
 
-        
     def get_label_Y(profile_type):
         if profile_type == 0:
             return r'$N(E,r,t)$'
@@ -141,14 +140,13 @@ def plot_profiles_dataset(profiles, energy_vector, parameters, output_dir, prefi
     # -----------------------------------------------------------------
     fig = plt.figure(figsize=(11, 10))
     plt.subplots_adjust(top=0.82)
-    
+
     # compute size of grid ie. rows and columns to fit all the plots
     rows = int(np.sqrt(num_plots))
     columns = int(np.ceil(num_plots / rows))
-    
+
     # outer grid for the plots
     outer = gridspec.GridSpec(rows, columns, wspace=0.3, hspace=0.3)
-
 
     for i in range(num_plots):
 

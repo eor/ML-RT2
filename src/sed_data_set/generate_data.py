@@ -1,34 +1,35 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import numpy as np
+import math as m
+import tqdm
+import multiprocessing
+import os
 import sys
 sys.path.append('..')
-import tqdm
-import os
-import math as m
-import numpy as np
-from pyDOE import lhs
-import multiprocessing
 
-from common.physics_constants import *
-from common.settings import DATA_GENERATION_SEED
-from common.physics import *
-from common.settings_sed import p8_limits as ps_sed
-from common.settings_sed import density_vector_limits
-from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
-import sed.sed_numba as sed_nb
+from pyDOE import lhs
 from timeit import default_timer as timer
 
-# we need
-# 1. function to do the latin hypercube sampling
-# 2. function to run the SED generator & return the final SED vector
-# 3. a function to collect the vectors, build a .npy file and save it to ../data
+import common.sed_numba as sed_nb
+from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
+from common.settings_sed import density_vector_limits
+from common.settings_sed import p8_limits as ps_sed
+from common.physics import *
+from common.settings import DATA_GENERATION_SEED
+from common.physics_constants import *
 
 
 # -----------------------------------------------------------------
 # obtain latin hypercube sample, normalised to [0, 1] range
 # -----------------------------------------------------------------
 def get_norm_sample_set(n_parameters, n_samples):
+    """
+    this function returns n_samples latin hypercube samples for a given number of parameters (n_parameters),
+    normalised to [0, 1].
+    """
+
     return lhs(n=n_parameters, samples=n_samples)
 
 
@@ -65,7 +66,7 @@ def adjust_sample_to_parameter_ranges(p_list, samples):
 # -----------------------------------------------------------------
 def recast_sample_value(x, a, b):
     """
-    given a float x of interval [0,1] return the corresponding value for the interval [a,b]
+    Given a float x of interval [0,1] return the corresponding value for the interval [a,b].
     """
     return a + (b - a) * x
 
@@ -106,10 +107,10 @@ def setup_sample_dir(path, key, nSamples):
 # write samples to file
 # -----------------------------------------------------------------
 def write_data(target_file, parameters, energies, intensities,
-                    density_vector, tau, flux_vector, directory=None):
+               density_vector, tau, flux_vector, directory=None):
 
     if directory:
-        path = directory+'/' + target_file
+        path = directory + '/' + target_file
     else:
         path = './' + target_file
 
@@ -148,7 +149,7 @@ def generate_output(parameters, tau_per_sed=10):
 
     # concatenate individual parameters to density_vector
     density_vector = np.concatenate((r, redshift, num_density_H_II,
-     num_density_He_II, num_density_He_III), axis=1)
+                                     num_density_He_II, num_density_He_III), axis=1)
 
     # obtain photo-ionisation cross-sections from energies
     physics = Physics.getInstance()
@@ -161,7 +162,7 @@ def generate_output(parameters, tau_per_sed=10):
     tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II + sigmas_H_I[np.newaxis, :] * num_density_He_II + sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
 
     # generate flux_vector (add small number to r to avoid division by zero)
-    flux_vector = (intensities[np.newaxis, :] * np.exp(-1 * tau))/(4 * np.pi * np.power(r+1e-5, 2))
+    flux_vector = (intensities[np.newaxis, :] * np.exp(-1 * tau)) / (4 * np.pi * np.power(r + 1e-5, 2))
 
     # reshape/broadcast input parameters to shape (tau_per_sed, parameters)
     parameters = np.repeat(parameters[np.newaxis, :], tau_per_sed, axis=0)
@@ -174,7 +175,7 @@ def generate_output(parameters, tau_per_sed=10):
 # -----------------------------------------------------------------
 # main
 # -----------------------------------------------------------------
-def create_sample_main(path, key, n_samples):
+def main(path, key, n_samples):
 
     sample_file = 'sed_%s_N%d.npy' % (key, n_samples)
 
@@ -186,7 +187,7 @@ def create_sample_main(path, key, n_samples):
 
     # using multiprocessing and the sampled parameters, generate data
     with multiprocessing.Pool() as pool:
-        parameters, energies, intensities, density_vector, tau, flux_vector = zip(*tqdm.tqdm(pool.imap(generate_output, sample_set),total=sample_set.shape[0]))
+        parameters, energies, intensities, density_vector, tau, flux_vector = zip(*tqdm.tqdm(pool.imap(generate_output, sample_set), total=sample_set.shape[0]))
 
     # concatenate numpy arrays
     parameters = np.concatenate(parameters, axis=0)
@@ -204,9 +205,13 @@ def create_sample_main(path, key, n_samples):
 # execute this when file is executed
 # -----------------------------------------------------------------
 if __name__ == "__main__":
+
     np.random.seed(DATA_GENERATION_SEED)
-    dir = '../../data/sed_samples'
+
+    sample_directory = '../../data/sed_samples'
+
     start = timer()
-    create_sample_main(path=dir, key='set_1', n_samples=10000)
+    # main(path=sample_directory, key='set_1', n_samples=10_000)
+    main(path=sample_directory, key='set_1', n_samples=1_000)
     end = timer()
     print("total time:", (end - start))

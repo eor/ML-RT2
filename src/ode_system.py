@@ -232,8 +232,8 @@ class ODE:
         """
 
         mu = 1.24
-        n_H_n_B_ratio = 1.0/(1.0 + 4*(0.15/1.9))
-        n_He_n_B_ratio = 1.0/((1.9/0.15) + 4)
+        n_H_n_B_ratio = 1.0 / (1.0 + 4 * (0.15 / 1.9))
+        n_He_n_B_ratio = 1.0 / ((1.9 / 0.15) + 4)
 
         n_H = self.n_hydrogen       # hydrogen number density (1/cm^3)
         n_B = n_H / n_H_n_B_ratio   # baryon number density
@@ -303,7 +303,7 @@ class ODE:
         total = term_1 + term_2 + term_3 + term_4 + term_5 + term_6 + term_7 + term_8
 
         # divide total by constants from the left hand side of the temperature equation
-        total = total * (2/3) * mu / CONSTANT_BOLTZMANN_EV
+        total = total * (2 / 3) * mu / CONSTANT_BOLTZMANN_EV
         total = torch.divide(total, n_B)
 
         return (d_T_dt - total) / MYR_to_SEC
@@ -316,7 +316,7 @@ class ODE:
         Ref: equation (57) in section B.2 in [1]
         Units of recombination coefficient: cm^3/s
         """
-        return 2.6e-13 * torch.pow((temperature_vector/1.e4), -0.8)
+        return 2.6e-13 * torch.pow((temperature_vector / 1.e4), -0.8)
 
     def recombination_He_II(self, temperature_vector):
         """
@@ -337,8 +337,8 @@ class ODE:
         Units of recombination coefficient: cm^3/s
         """
         term1 = torch.pow(temperature_vector, -0.5)
-        term2 = torch.pow((temperature_vector/1.e3), -0.2)
-        term3 = torch.pow(1 + torch.pow((temperature_vector/4.e6), 0.7), -1.0)
+        term2 = torch.pow((temperature_vector / 1.e3), -0.2)
+        term3 = torch.pow(1 + torch.pow((temperature_vector / 4.e6), 0.7), -1.0)
 
         return 3.36e-10 * term1 * term2 * term3
 
@@ -351,8 +351,8 @@ class ODE:
         Units of recombination coefficient: cm^3 s^-1
         """
         term1 = torch.pow(temperature_vector, -1.5)
-        term2 = torch.exp(-4.7e5/temperature_vector)
-        term3 = 1 + 0.3*torch.exp(-9.4e4/temperature_vector)
+        term2 = torch.exp(-4.7e5 / temperature_vector)
+        term3 = 1 + 0.3 * torch.exp(-9.4e4 / temperature_vector)
 
         return 1.90e-3 * term1 * term2 * term3
 
@@ -365,8 +365,8 @@ class ODE:
         Units of recombination coefficient: cm^3/s
         """
         term1 = torch.pow(temperature_vector, 0.5)
-        term2 = torch.pow(1 + torch.pow((temperature_vector/1.e5), 0.5), -1.0)
-        term3 = torch.exp(-1.578e5/temperature_vector)
+        term2 = torch.pow(1 + torch.pow((temperature_vector / 1.e5), 0.5), -1.0)
+        term3 = torch.exp(-1.578e5 / temperature_vector)
 
         return 5.85e-11 * term1 * term2 * term3
 
@@ -379,8 +379,8 @@ class ODE:
         Units of recombination coefficient: cm^3/s
         """
         term1 = torch.pow(temperature_vector, 0.5)
-        term2 = torch.pow(1 + torch.pow((temperature_vector/1.e5), 0.5), -1.0)
-        term3 = torch.exp(-2.853e5/temperature_vector)
+        term2 = torch.pow(1 + torch.pow((temperature_vector / 1.e5), 0.5), -1.0)
+        term3 = torch.exp(-2.853e5 / temperature_vector)
 
         return 2.38e-11 * term1 * term2 * term3
 
@@ -393,8 +393,8 @@ class ODE:
         Units of recombination coefficient: cm^3/s
         """
         term1 = torch.pow(temperature_vector, 0.5)
-        term2 = torch.pow(1 + torch.pow((temperature_vector/1.e5), 0.5), -1.0)
-        term3 = torch.exp(-6.315e5/temperature_vector)
+        term2 = torch.pow(1 + torch.pow((temperature_vector / 1.e5), 0.5), -1.0)
+        term3 = torch.exp(-6.315e5 / temperature_vector)
 
         return 5.68e-12 * term1 * term2 * term3
 
@@ -406,8 +406,8 @@ class ODE:
         Units: eV cm^3 s^-1
         """
         term1 = torch.pow(temperature_vector, 0.5)
-        term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
-        term3 = torch.exp(-1.58e5/temperature_vector)
+        term2 = torch.pow(1 + torch.pow(temperature_vector / 1e5, 0.5), -1)
+        term3 = torch.exp(-1.58e5 / temperature_vector)
         return 1.27e-21 * term1 * term2 * term3 * ERG_to_EV
 
     def collisional_ionisation_cooling_He_I(self, temperature_vector):
@@ -418,8 +418,8 @@ class ODE:
         Units: eV cm^3 s^-1
         """
         term1 = torch.pow(temperature_vector, 0.5)
-        term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
-        term3 = torch.exp(-2.85e5/temperature_vector)
+        term2 = torch.pow(1 + torch.pow(temperature_vector / 1e5, 0.5), -1)
+        term3 = torch.exp(-2.85e5 / temperature_vector)
         return 9.38e-22 * term1 * term2 * term3 * ERG_to_EV
 
     def collisional_ionisation_cooling_He_II(self, temperature_vector):
@@ -430,8 +430,8 @@ class ODE:
         Units: eV cm^3 s^-1
         """
         term1 = torch.pow(temperature_vector, 0.5)
-        term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
-        term3 = torch.exp(-6.31e5/temperature_vector)
+        term2 = torch.pow(1 + torch.pow(temperature_vector / 1e5, 0.5), -1)
+        term3 = torch.exp(-6.31e5 / temperature_vector)
         return 4.95e-22 * term1 * term2 * term3 * ERG_to_EV
 
     def recombination_cooling_coefficient_H_II(self, temperature_vector):
@@ -442,8 +442,8 @@ class ODE:
         Units: eV cm^3 s^-1
         """
         term1 = torch.pow(temperature_vector, 0.5)
-        term2 = torch.pow(temperature_vector/1e3, -0.2)
-        term3 = torch.pow(1 + torch.pow(temperature_vector/1e6, 0.7), -1)
+        term2 = torch.pow(temperature_vector / 1e3, -0.2)
+        term3 = torch.pow(1 + torch.pow(temperature_vector / 1e6, 0.7), -1)
 
         return 6.50e-27 * term1 * term2 * term3 * ERG_to_EV
 
@@ -466,8 +466,8 @@ class ODE:
         Units: eV cm^3 s^-1
         """
         term1 = torch.pow(temperature_vector, -1.5)
-        term2 = torch.exp(-4.7e5/temperature_vector)
-        term3 = 1 + 0.3 * torch.exp(-9.4e4/temperature_vector)
+        term2 = torch.exp(-4.7e5 / temperature_vector)
+        term3 = 1 + 0.3 * torch.exp(-9.4e4 / temperature_vector)
 
         return 1.24e-13 * term1 * term2 * term3 * ERG_to_EV
 
@@ -479,8 +479,8 @@ class ODE:
         Units: eV cm^3 s^-1
         """
         term1 = torch.pow(temperature_vector, 0.5)
-        term2 = torch.pow(temperature_vector/1e3, -0.2)
-        term3 = torch.pow(1 + torch.pow(temperature_vector/4e6, 0.7), -1)
+        term2 = torch.pow(temperature_vector / 1e3, -0.2)
+        term3 = torch.pow(1 + torch.pow(temperature_vector / 4e6, 0.7), -1)
 
         return 3.48e-26 * term1 * term2 * term3 * ERG_to_EV
 
@@ -491,8 +491,8 @@ class ODE:
         Ref: equation (B25) in section B4.3 in [1]
         Units: eV cm^3 s^-1
         """
-        term1 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
-        term2 = torch.exp(-1.18e5/temperature_vector)
+        term1 = torch.pow(1 + torch.pow(temperature_vector / 1e5, 0.5), -1)
+        term2 = torch.exp(-1.18e5 / temperature_vector)
         return 7.5e-19 * term1 * term2 * ERG_to_EV
 
     def collisional_excitation_cooling_He_I(self, temperature_vector):
@@ -503,8 +503,8 @@ class ODE:
         Units: eV cm^3 s^-1
         """
         term1 = torch.pow(temperature_vector, -0.1687)
-        term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
-        term3 = torch.exp(-1.31e4/temperature_vector)
+        term2 = torch.pow(1 + torch.pow(temperature_vector / 1e5, 0.5), -1)
+        term3 = torch.exp(-1.31e4 / temperature_vector)
         return 9.10e-27 * term1 * term2 * term3 * self.n_e * self.n_He_II * ERG_to_EV
 
     def collisional_excitation_cooling_He_II(self, temperature_vector):
@@ -515,8 +515,8 @@ class ODE:
         Units: eV cm^3 s^-1
         """
         term1 = torch.pow(temperature_vector, -0.397)
-        term2 = torch.pow(1 + torch.pow(temperature_vector/1e5, 0.5), -1)
-        term3 = torch.exp(-4.73e5/temperature_vector)
+        term2 = torch.pow(1 + torch.pow(temperature_vector / 1e5, 0.5), -1)
+        term3 = torch.exp(-4.73e5 / temperature_vector)
         return 5.54e-17 * term1 * term2 * term3 * ERG_to_EV
 
     def free_free_cooling_coefficient(self, temperature_vector):
@@ -544,7 +544,7 @@ class ODE:
         term2 = (pi**2) / 15
 
         # unit is cm^(-3)
-        term3 = torch.pow(((CONSTANT_BOLTZMANN_EV * T_gamma * 2 * pi)/(CONSTANT_PLANCK_EV * CONSTANT_LIGHT_SPEED)), 3)
+        term3 = torch.pow(((CONSTANT_BOLTZMANN_EV * T_gamma * 2 * pi) / (CONSTANT_PLANCK_EV * CONSTANT_LIGHT_SPEED)), 3)
 
         term4 = CONSTANT_BOLTZMANN_ERG * T_gamma / (CONSTANT_MASS_ELECTRON * CONSTANT_LIGHT_SPEED * CONSTANT_LIGHT_SPEED)
 
@@ -558,4 +558,4 @@ class ODE:
         """
         term = torch.pow((CONSTANT_COSMOS_OMEGA_M * self.redshift_pow_3) + (1.0 - CONSTANT_COSMOS_OMEGA_M), 0.5)
 
-        return CONSTANT_HUBBLE_Z0 * term * (KM_to_CM/MPC_to_CM)
+        return CONSTANT_HUBBLE_Z0 * term * (KM_to_CM / MPC_to_CM)

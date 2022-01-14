@@ -19,7 +19,7 @@ from common.physics import *
 from common.settings_crt import *
 from common.settings import *
 from common.data_log import *
-from sed import sed_numba
+import common.sed_numba as sed_numba
 from models_pretraining import *
 from random import random
 from matplotlib import pyplot as plt
@@ -37,10 +37,10 @@ else:
 
 
 # -----------------------------------------------------------------
-#   use AE with test or val set
+#  evaluate network with test or validation data set
 # -----------------------------------------------------------------
-def pretraining_evaluation(current_epoch, data_loader, model, path, config,
-                           print_results=False, save_results=False, best_model=False):
+def pre_training_evaluation(current_epoch, data_loader, model, path, config,
+                            print_results=False, save_results=False, best_model=False):
     """
     function runs the given dataset through the Autoencoder, returns mse_loss,
     and saves the results as well as ground truth to numpy file, if save_results=True.
@@ -53,6 +53,7 @@ def pretraining_evaluation(current_epoch, data_loader, model, path, config,
         config: config object with user supplied parameters
         save_results: whether to save actual and generated profiles locally (default: False)
         best_model: flag for testing on best model
+        print_results: print results to screen
     """
 
     if save_results:
@@ -180,9 +181,9 @@ def main(config):
     # split the dataset
     dataset = torch.utils.data.TensorDataset(parameters, flux_vectors)
     train_dataset, validation_dataset, test_dataset = \
-     torch.utils.data.random_split(dataset,
-                    (train_length, validation_length,test_length),
-                    generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
+        torch.utils.data.random_split(dataset,
+                                      (train_length, validation_length, test_length),
+                                      generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
 
     # -----------------------------------------------------------------
     # data loaders from dataset
@@ -201,7 +202,7 @@ def main(config):
     # initialise model
     # -----------------------------------------------------------------
     model = AE1(config)
-    print('\n\tUsing model AE1 on device: %s\n'%(device))
+    print('\n\tUsing model AE1 on device: %s\n' % (device))
 
     if cuda:
         model.cuda()
@@ -255,7 +256,7 @@ def main(config):
         train_loss = epoch_loss / len(train_loader)
         avg_train_loss_array = np.append(avg_train_loss_array, train_loss)
 
-        val_loss = pretraining_evaluation(
+        val_loss = pre_training_evaluation(
             current_epoch=epoch,
             data_loader=val_loader,
             model=model,
@@ -280,16 +281,16 @@ def main(config):
         data_log.update_data()
 
         print("[Epoch %d/%d] [Train loss: %e] [Validation loss: %e][Best_epoch: %d]"
-         % (epoch, config.n_epochs, train_loss, val_loss, best_epoch))
+              % (epoch, config.n_epochs, train_loss, val_loss, best_epoch))
 
         if epoch % config.testing_interval == 0:
-            pretraining_evaluation(best_epoch, test_loader, best_model, data_products_path, config,
-                                   print_results=True, save_results=True)
+            pre_training_evaluation(best_epoch, test_loader, best_model, data_products_path, config,
+                                    print_results=True, save_results=True)
 
     # -----------------------------------------------------------------
     # Evaluate the best model by using the test set
     # -----------------------------------------------------------------
-    test_loss = pretraining_evaluation(
+    test_loss = pre_training_evaluation(
         current_epoch=best_epoch,
         data_loader=test_loader,
         model=best_model,
@@ -397,7 +398,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_analysis", dest='dataset_analysis', action='store_true',
                         help="compute mean, min, max on dataset and generate relevant plots")
     parser.add_argument("--no_dataset_analysis", dest='dataset_analysis', action='store_false',
-                            help="do not generate data summary")
+                        help="do not generate data summary")
     parser.set_defaults(dataset_analysis=False)
 
     my_config = parser.parse_args()

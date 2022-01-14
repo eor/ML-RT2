@@ -33,7 +33,7 @@ p8_limits.append([0.0, 2.0])
 p8_limits.append([0.0, 1.0])
 p8_limits.append([0.0, 1.0])
 p8_limits.append([0.0, 2.5])
-#p8_limits.append([0.6989700043360189, 2.6989700043360187])  # 5 -> 500
+# p8_limits.append([0.6989700043360189, 2.6989700043360187])  # 5 -> 500
 p8_limits.append([5.0, 500.0])
 
 p8_names_latex = list()
@@ -99,4 +99,3 @@ density_vector_names.append('z')
 density_vector_names.append('n_{H_{II}}')
 density_vector_names.append('n_{He_{II}}')
 density_vector_names.append('n_{He_{III}}')
-
