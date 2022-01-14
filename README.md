@@ -24,8 +24,8 @@ sudo apt install wget unzip md5sum
 Furthermore, the following Python packages are needed:
 
 * pytorch
-* numpy (1.20.x for now)
-* numba (used to generate SEDs)
+* numpy (1.21.1 fixed for now because of a numba bug)
+* numba (0.53.1)
 * pydoe
 * matplotlib
 * deepxde
