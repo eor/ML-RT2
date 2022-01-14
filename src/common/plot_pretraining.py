@@ -109,7 +109,7 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, outp
 # -----------------------------------------------------------------
 # Plot profiles from pre-training dataset 
 # -----------------------------------------------------------------
-def plot_profiles_dataset(profiles, parameters, output_dir, prefix, index, file_type='pdf'):
+def plot_profiles_dataset(profiles, energy_vector, parameters, output_dir, prefix, index, file_type='pdf'):
     # -----------------------------------------------------------------
     # font settings
     # -----------------------------------------------------------------
@@ -130,12 +130,12 @@ def plot_profiles_dataset(profiles, parameters, output_dir, prefix, index, file_
         elif profile_type == 2:
             return r'$\tau(E,r,t)$'
         elif profile_type == 3:
-            return r'$E(eV)$'
+            return r'$\sigma_{H_{II}}$'
         else:
             return r'Physical Unit'
 
     num_plots = profiles.shape[0]
-
+        
     # -----------------------------------------------------------------
     # figure setup
     # -----------------------------------------------------------------
@@ -158,11 +158,18 @@ def plot_profiles_dataset(profiles, parameters, output_dir, prefix, index, file_
         # -----------------------------------------------------------------
         # plot profile[i]
         # -----------------------------------------------------------------
-        ax.plot(profiles[i], c='blue')
-        # ax.legend(loc=0, frameon=False, prop={'size': font_size_legends})
-        ax.set_ylabel(get_label_Y(i), fontsize=font_size_x_y)
+        ax.plot(energy_vector, profiles[i], c='blue')
+        # swtich on grid visibility and tick params
         ax.grid(which='major', color='#999999', linestyle='-', linewidth='0.4', alpha=0.4)
         ax.tick_params(axis='y', which='both', right=True, top=True, labelsize=font_size_ticks)
+        ax.set_xticks(energy_vector, minor=False)
+        # set label to axis
+        ax.set_ylabel(get_label_Y(i), fontsize=font_size_x_y)
+        ax.set_xlabel(r'$ E(eV) $', fontsize=font_size_x_y)
+        # set axis to log-scale
+        ax.set_yscale('log')
+        ax.set_xscale('log')
+        # update the figure
         fig.add_subplot(ax)
 
     # -----------------------------------------------------------------
