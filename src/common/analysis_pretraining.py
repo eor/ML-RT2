@@ -5,10 +5,12 @@ try:
     from common.utils import *
     from common.plot_pretraining import *
     from common.settings import *
+    from common.physics import *
 except ImportError:
     from plot_pretraining import *
     from utils import *
     from settings import *
+    from physics import *
 
 # -----------------------------------------------------------------
 # set of functions to operate on saved results from training
@@ -19,7 +21,7 @@ except ImportError:
 # -----------------------------------------------------------------
 # Automatically plot true and regenerated flux_vectors
 # -----------------------------------------------------------------
-def analysis_auto_plot_flux_vectors(config, k=20, base_path=None, prefix='best', epoch=None):
+def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best', epoch=None):
 
     if base_path is not None:
         data_dir_path = osp.join(base_path, DATA_PRODUCTS_DIR)
@@ -114,25 +116,38 @@ def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='
     print('Maximum and minimum value in dataset: ', minimum, maximum)
 
     # plot histogram for data_set_distribution
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.hist(flux_vectors.flatten(), bins=10, log=True)
+    fig, ax = plt.subplots(figsize =(10, 10))
+    ax.hist(flux_vectors.flatten(), bins=10, log=True, density=True)
     plt.savefig(osp.join(data_analysis_dir_path, 'data_set_distribution.png'))
     print('Successfully saved histogram for dataset to:',
           osp.join(data_analysis_dir_path, 'data_set_distribution.png'))
-
-    # stack the data
-    plot_profile_data = np.stack((flux_vectors, intensities, tau, energies), axis=1)
-
-    # select k random profiles from dataset
+    
+    # obtain ionisation cross-section using enery vector.
+    p = Physics.getInstance()
+    p.set_energy_vector(energies[0])
+    cross_section = p.get_photo_ionisation_cross_section_hydrogen()
+    
+    # generate k random numbers between 0 and len(dataset)
     np.random.seed(PRETRAINING_SEED)
     random_indices = np.random.randint(0, high=flux_vectors.shape[0], size=(k))
-    plot_profile_data = plot_profile_data[random_indices, :, :]
+    # use the random numbers as indices to pick random profiles from dataset
+    flux_vectors = flux_vectors[random_indices, :]
+    intensities = intensities[random_indices, :]
+    tau = tau[random_indices, :]
     parameters = parameters[random_indices, :]
+    
+    # broadcast single profile of cross-section to k profiles.
+    cross_section = np.broadcast_to(cross_section[None, :], (k, len(cross_section)))
+
+    # stack the data to plot
+    plot_profile_data = np.stack((flux_vectors, intensities, tau, cross_section), axis=1)
+
 
     print('Producing analysis plot(s) for %d random profiles' % k)
     for i in range(k):
         plot_profiles_dataset(
             plot_profile_data[i],
+            energies[0],
             parameters[i],
             data_analysis_dir_path,
             prefix,
@@ -150,7 +165,7 @@ if __name__ == '__main__':
     path = '../output_pretraining/run_2022_01_10__13_19_39/'
     data_dir = '../../data/sed_samples/'
     config = utils_load_config(path)
-    analysis_pretraining_dataset(config, data_dir, path, prefix='data', k=50)
+    analysis_pretraining_dataset(config, data_dir, path, prefix='data', k=10)
 #     analysis_auto_plot_flux_vectors(config, k=50, base_path=path, prefix='best')
 
     print('\n Completed! \n')
