@@ -2,13 +2,16 @@ import os
 import os.path as osp
 import numpy as np
 import random
-
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib as mpl
 from matplotlib import rc
 import seaborn as sns
+
+import sys
+sys.path.append('..')
+
 try:
     from common.settings_sed import p8_names_latex, density_vector_names
 except ImportError:

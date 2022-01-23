@@ -6,8 +6,7 @@ import math as m
 import tqdm
 import multiprocessing
 import os
-import sys
-sys.path.append('..')
+import sys; sys.path.append('..')
 
 from pyDOE import lhs
 from timeit import default_timer as timer
