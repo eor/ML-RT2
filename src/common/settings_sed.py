@@ -76,26 +76,3 @@ p5_names_latex.append('-\\alpha_{\mathrm{QSO}}')
 p5_names_latex.append('f_{\mathrm{esc,\\ast}}')
 
 
-# -----------------------------------------------------------------
-#  Setting/Parameter limits for sampling of density vection,
-#  that will be used for computation of tau
-# -----------------------------------------------------------------
-# 1. r -> interval=[0.0, 1500.0] kpc
-# 2. redshift (z) -> interval=same as redshift in p8_limits
-# 3. avergage number density H_II -> interval=[0,1000]
-# 4. avergage number density He_II -> interval=[0,1000]
-# 5. avergage number density He_III -> interval=[0,1000]
-
-density_vector_limits = list()
-density_vector_limits.append([0, 1500])
-density_vector_limits.append(p8_limits[1])
-density_vector_limits.append([0, 1000])
-density_vector_limits.append([0, 1000])
-density_vector_limits.append([0, 1000])
-
-density_vector_names = list()
-density_vector_names.append('r(kpc)')
-density_vector_names.append('z')
-density_vector_names.append('n_{H_{II}}')
-density_vector_names.append('n_{He_{II}}')
-density_vector_names.append('n_{He_{III}}')

@@ -9,10 +9,12 @@ import matplotlib as mpl
 from matplotlib import rc
 import seaborn as sns
 
-import sys
-sys.path.append('..')
+import sys; sys.path.append('..')
 
-from common.settings_sed import p8_names_latex, density_vector_names
+from common.settings_sed import p8_names_latex
+
+# from settings import tau_input_vector_limits
+
 
 # -----------------------------------------------------------------
 # Plot flux vectors (True and regenerated)

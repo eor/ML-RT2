@@ -6,27 +6,28 @@ import math as m
 import tqdm
 import multiprocessing
 import os
-import sys; sys.path.append('..')
-
 from pyDOE import lhs
 from timeit import default_timer as timer
 
+import sys; sys.path.append('..')
+
 import common.sed_numba as sed_nb
 from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
-from common.settings_sed import density_vector_limits
-from common.settings_sed import p8_limits as ps_sed
+from common.settings_sed import p8_limits as parameter_ranges
 from common.physics import *
 from common.settings import DATA_GENERATION_SEED
 from common.physics_constants import *
 
+from settings import tau_input_vector_limits
+
 
 # -----------------------------------------------------------------
-# obtain latin hypercube sample, normalised to [0, 1] range
+# obtain sample set, normalised to [0, 1] range
 # -----------------------------------------------------------------
-def get_norm_sample_set(n_parameters, n_samples):
+def get_normalised_sample_set(n_parameters, n_samples):
     """
-    this function returns n_samples latin hypercube samples for a given number of parameters (n_parameters),
-    normalised to [0, 1].
+    This function returns n_samples for a given number of parameters (n_parameters).
+    It uses latin hypercube sampling via the pyDOE package and therefore all samples are normalised to [0, 1].
     """
 
     return lhs(n=n_parameters, samples=n_samples)
@@ -37,13 +38,15 @@ def get_norm_sample_set(n_parameters, n_samples):
 # -----------------------------------------------------------------
 def adjust_sample_to_parameter_ranges(p_list, samples):
     """
-    Input: Parameter array of M parameters and their ranges, the sample set (NxM)
+    This function re-casts normalised parameter sample values from the [0,1] interval
+    to their respective parameter interval [a,b].
 
-    Sample values are [0,1] and will be re-cast to fall into their respective parameter interval [a,b]
+    Input: The normalised parameter sample set (N samples, M parameters)
+           A list of parameter intervals (M x [a,b])
     """
 
     if len(samples[0]) != len(p_list):
-        print('Error sample set and parameter dectionary incompatible. Exiting.')
+        print('Error sample set and parameter dictionary incompatible. Exiting.')
         exit(1)
 
     N = samples.shape[0]
@@ -71,7 +74,7 @@ def recast_sample_value(x, a, b):
 
 
 # -----------------------------------------------------------------
-# set up a directory for our samples
+# set up a directory for our data set
 # -----------------------------------------------------------------
 def setup_sample_dir(path, key, nSamples):
     directory = '%s/sed_samples_%s_N%d' % (path, key, nSamples)
@@ -106,7 +109,7 @@ def setup_sample_dir(path, key, nSamples):
 # write samples to file
 # -----------------------------------------------------------------
 def write_data(target_file, parameters, energies, intensities,
-               density_vector, tau, flux_vector, directory=None):
+               tau_input_vector, tau, flux_vector, directory=None):
 
     if directory:
         path = directory + '/' + target_file
@@ -117,14 +120,17 @@ def write_data(target_file, parameters, energies, intensities,
                         parameters=parameters,
                         energies=energies,
                         intensities=intensities,
-                        density_vector=density_vector,
+                        tau_input_vector=tau_input_vector,
                         tau=tau,
                         flux_vector=flux_vector)
 
 
+# -----------------------------------------------------------------
+# generate pretraining data
+# -----------------------------------------------------------------
 def generate_output(parameters, tau_per_sed=10):
 
-    # generate sed from parameters
+    # generate sed from parameters (returns arrays for photon energies and intensities)
     energies, intensities = sed_nb.generate_SED_IMF_PL(halo_mass=parameters[0],
                                                        redshift=parameters[1],
                                                        eLow=SED_ENERGY_MIN,
@@ -140,25 +146,27 @@ def generate_output(parameters, tau_per_sed=10):
                                                        targetSourceAge=parameters[2])
 
     # sample parameters density vector, tau_per_sed times for every sed
-    r = np.random.randint(density_vector_limits[0][0], density_vector_limits[0][1], size=(tau_per_sed, 1))
-    redshift = np.random.randint(density_vector_limits[1][0], density_vector_limits[1][1], size=(tau_per_sed, 1))
-    num_density_H_II = np.random.randint(density_vector_limits[2][0], density_vector_limits[2][1], size=(tau_per_sed, 1))
-    num_density_He_II = np.random.randint(density_vector_limits[3][0], density_vector_limits[3][1], size=(tau_per_sed, 1))
-    num_density_He_III = np.random.randint(density_vector_limits[4][0], density_vector_limits[4][1], size=(tau_per_sed, 1))
+    r = np.random.randint(tau_input_vector_limits[0][0], tau_input_vector_limits[0][1], size=(tau_per_sed, 1))
+    redshift = np.random.randint(tau_input_vector_limits[1][0], tau_input_vector_limits[1][1], size=(tau_per_sed, 1))
+    num_density_H_II = np.random.randint(tau_input_vector_limits[2][0], tau_input_vector_limits[2][1], size=(tau_per_sed, 1))
+    num_density_He_II = np.random.randint(tau_input_vector_limits[3][0], tau_input_vector_limits[3][1], size=(tau_per_sed, 1))
+    num_density_He_III = np.random.randint(tau_input_vector_limits[4][0], tau_input_vector_limits[4][1], size=(tau_per_sed, 1))
 
-    # concatenate individual parameters to density_vector
-    density_vector = np.concatenate((r, redshift, num_density_H_II,
-                                     num_density_He_II, num_density_He_III), axis=1)
+    # concatenate individual parameters to tau_input_vector
+    tau_input_vector = np.concatenate((r, redshift, num_density_H_II, num_density_He_II, num_density_He_III), axis=1)
 
-    # obtain photo-ionisation cross-sections from energies
+    # obtain arrays of photo-ionisation cross-sections corresponding to the photon energies array
     physics = Physics.getInstance()
     physics.set_energy_vector(energies)
     sigmas_H_I = physics.get_photo_ionisation_cross_section_hydrogen()
     sigmas_He_I = physics.get_photo_ionisation_cross_section_helium1()
     sigmas_He_II = physics.get_photo_ionisation_cross_section_helium2()
 
-    # generate tau from density_vector
-    tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II + sigmas_H_I[np.newaxis, :] * num_density_He_II + sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
+    # generate tau from tau_input_vector
+    tau = sigmas_H_I[np.newaxis, :] * num_density_H_II
+    tau += sigmas_He_I[np.newaxis, :] * num_density_He_II
+    tau += sigmas_He_II[np.newaxis, :] * num_density_He_III
+    tau *= r * KPC_to_CM
 
     # generate flux_vector (add small number to r to avoid division by zero)
     flux_vector = (intensities[np.newaxis, :] * np.exp(-1 * tau)) / (4 * np.pi * np.power(r + 1e-5, 2))
@@ -168,7 +176,7 @@ def generate_output(parameters, tau_per_sed=10):
     energies = np.repeat(energies[np.newaxis, :], tau_per_sed, axis=0)
     intensities = np.repeat(intensities[np.newaxis, :], tau_per_sed, axis=0)
 
-    return parameters, energies, intensities, density_vector, tau, flux_vector
+    return parameters, energies, intensities, tau_input_vector, tau, flux_vector
 
 
 # -----------------------------------------------------------------
@@ -180,24 +188,25 @@ def main(path, key, n_samples):
 
     sample_dir = setup_sample_dir(path, key, n_samples)
 
-    p_list = ps_sed
-    sample_set = get_norm_sample_set(n_parameters=len(p_list), n_samples=n_samples)
-    sample_set = adjust_sample_to_parameter_ranges(p_list=p_list, samples=sample_set)
+    # generate a sample parameter set
+    sample_set = get_normalised_sample_set(n_parameters=len(parameter_ranges), n_samples=n_samples)
+    sample_set = adjust_sample_to_parameter_ranges(p_list=parameter_ranges, samples=sample_set)
 
     # using multiprocessing and the sampled parameters, generate data
     with multiprocessing.Pool() as pool:
-        parameters, energies, intensities, density_vector, tau, flux_vector = zip(*tqdm.tqdm(pool.imap(generate_output, sample_set), total=sample_set.shape[0]))
+        # TODO: This needs to be re-written or better documented! FK
+        parameters, energies, intensities, tau_input_vector, tau, flux_vector = zip(*tqdm.tqdm(pool.imap(generate_output, sample_set), total=sample_set.shape[0]))
 
     # concatenate numpy arrays
     parameters = np.concatenate(parameters, axis=0)
     energies = np.concatenate(energies, axis=0)
     intensities = np.concatenate(intensities, axis=0)
-    density_vector = np.concatenate(density_vector, axis=0)
+    tau_input_vector = np.concatenate(tau_input_vector, axis=0)
     tau = np.concatenate(tau, axis=0)
     flux_vector = np.concatenate(flux_vector, axis=0)
 
     # write the data
-    write_data(sample_file, parameters, energies, intensities, density_vector, tau, flux_vector, directory=sample_dir)
+    write_data(sample_file, parameters, energies, intensities, tau_input_vector, tau, flux_vector, directory=sample_dir)
 
 
 # -----------------------------------------------------------------
