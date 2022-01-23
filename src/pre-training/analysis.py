@@ -1,21 +1,14 @@
 import numpy as np
 import os.path as osp
 import heapq
-try:
-    from common.utils import *
-    from common.plot_pretraining import *
-    from common.settings import *
-    from common.physics import *
-except ImportError:
-    from plot_pretraining import *
-    from utils import *
-    from settings import *
-    from physics import *
+import sys; sys.path.append('..')
 
-# -----------------------------------------------------------------
-# set of functions to operate on saved results from training
-# and generate meaningful plots. All results are saved in default PLOT_DIR.
-# ------------------------------------------------------------------
+
+from common.utils import *
+from common.settings import *
+from common.physics import *
+
+from plot import *
 
 
 # -----------------------------------------------------------------
@@ -87,11 +80,10 @@ def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best',
             mse=mse_array[index]
         )
 
+
 # -----------------------------------------------------------------
 # Plot K random profiles from dataset.
 # -----------------------------------------------------------------
-
-
 def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='data', k=50):
 
     if base_path is not None:

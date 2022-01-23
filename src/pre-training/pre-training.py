@@ -123,7 +123,7 @@ def pre_training_evaluation(current_epoch, data_loader, model, path, config,
 # -----------------------------------------------------------------
 #  Main
 # -----------------------------------------------------------------
-def main(config):
+def pre_training_main(config):
 
     # -----------------------------------------------------------------
     # create unique output path and run directories, save config
@@ -415,4 +415,4 @@ if __name__ == "__main__":
         print("\t", arg, getattr(my_config, arg))
 
     # run main program
-    main(my_config)
+    pre_training_main(my_config)

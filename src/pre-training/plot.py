@@ -12,11 +12,7 @@ import seaborn as sns
 import sys
 sys.path.append('..')
 
-try:
-    from common.settings_sed import p8_names_latex, density_vector_names
-except ImportError:
-    from settings_sed import p8_names_latex, density_vector_names
-
+from common.settings_sed import p8_names_latex, density_vector_names
 
 # -----------------------------------------------------------------
 # Plot flux vectors (True and regenerated)
