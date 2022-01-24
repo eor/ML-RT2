@@ -128,7 +128,7 @@ def write_data(target_file, parameters, energies, intensities,
 # -----------------------------------------------------------------
 # generate pretraining data
 # -----------------------------------------------------------------
-def generate_output(parameters, tau_per_sed=10):
+def generate_data(parameters, tau_per_sed=10):
 
     # generate sed from parameters (returns arrays for photon energies and intensities)
     energies, intensities = sed_nb.generate_SED_IMF_PL(halo_mass=parameters[0],
@@ -195,7 +195,7 @@ def main(path, key, n_samples):
     # using multiprocessing and the sampled parameters, generate data
     with multiprocessing.Pool() as pool:
         # TODO: This needs to be re-written or better documented! FK
-        parameters, energies, intensities, tau_input_vector, tau, flux_vector = zip(*tqdm.tqdm(pool.imap(generate_output, sample_set), total=sample_set.shape[0]))
+        parameters, energies, intensities, tau_input_vector, tau, flux_vector = zip(*tqdm.tqdm(pool.imap(generate_data, sample_set), total=sample_set.shape[0]))
 
     # concatenate numpy arrays
     parameters = np.concatenate(parameters, axis=0)
