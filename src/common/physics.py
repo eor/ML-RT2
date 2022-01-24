@@ -1,10 +1,9 @@
 import numpy as np
-try:
-    from common.utils import *
-    from common.physics_constants import *
-except ImportError:
-    from utils import *
-    from physics_constants import *
+
+import sys; sys.path.append('..')
+
+from common.utils import *
+from common.physics_constants import *
 
 
 class Physics:
