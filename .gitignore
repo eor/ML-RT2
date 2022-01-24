@@ -133,6 +133,6 @@ dmypy.json
 *.png
 */output/*
 output/*
-*/output_pretraining/*
+pretraining/output_pretraining/*
 output_pretraining/*
 *.npy.npz

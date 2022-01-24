@@ -3,12 +3,11 @@ import os.path as osp
 import heapq
 import sys; sys.path.append('..')
 
-
 from common.utils import *
 from common.settings import *
 from common.physics import *
 
-from plot import *
+from pretraining.plot import *
 
 
 # -----------------------------------------------------------------
@@ -113,12 +112,12 @@ def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='
     plt.savefig(osp.join(data_analysis_dir_path, 'data_set_distribution.png'))
     print('Successfully saved histogram for dataset to:',
           osp.join(data_analysis_dir_path, 'data_set_distribution.png'))
-    
+
     # obtain ionisation cross-section using enery vector.
     p = Physics.getInstance()
     p.set_energy_vector(energies[0])
     cross_section = p.get_photo_ionisation_cross_section_hydrogen()
-    
+
     # generate k random numbers between 0 and len(dataset)
     np.random.seed(PRETRAINING_SEED)
     random_indices = np.random.randint(0, high=flux_vectors.shape[0], size=(k))
@@ -127,7 +126,7 @@ def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='
     intensities = intensities[random_indices, :]
     tau = tau[random_indices, :]
     parameters = parameters[random_indices, :]
-    
+
     # broadcast single profile of cross-section to k profiles.
     cross_section = np.broadcast_to(cross_section[None, :], (k, len(cross_section)))
 
@@ -154,7 +153,7 @@ if __name__ == '__main__':
 
     print('Hello there! Let\'s analyse some results\n')
 
-    path = '../output_pretraining/run_2022_01_10__13_19_39/'
+    path = './output_pretraining/run_main/'
     data_dir = '../../data/sed_samples/'
     config = utils_load_config(path)
     analysis_pretraining_dataset(config, data_dir, path, prefix='data', k=10)

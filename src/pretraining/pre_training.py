@@ -6,10 +6,13 @@ import copy
 import torch
 import numpy as np
 import torch.nn as nn
-from torch.autograd import Variable
 import torch.nn.functional as F
 import torch.utils.data as torch_data
+from torch.autograd import Variable
+from random import random
+from matplotlib import pyplot as plt
 
+import common.sed_numba as sed_numba
 from common.settings_ode import ode_parameter_limits as ps_ode
 from common.settings_sed import p8_limits as ps_sed
 from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
@@ -19,13 +22,9 @@ from common.physics import *
 from common.settings_crt import *
 from common.settings import *
 from common.data_log import *
-import common.sed_numba as sed_numba
+from pretraining.analysis import *
+from pretraining.models import *
 
-
-from analysis import *
-from models import *
-from random import random
-from matplotlib import pyplot as plt
 
 
 # check for CUDA
@@ -353,10 +352,10 @@ if __name__ == "__main__":
 
     parser.add_argument('--out_dir', type=str, default='output_pretraining', metavar='(string)',
                         help='Path to output directory, used for all plots and data products, default: ./output_pretraining/')
-    parser.add_argument('--data_dir', type=str, default='../data/sed_samples', metavar='(string)',
-                        help='Path of the data directory from which data is to be read for training the model, default: ../data/sed_samples')
+    parser.add_argument('--data_dir', type=str, default='../../data/sed_samples', metavar='(string)',
+                        help='Path of the data directory from which data is to be read for training the model, default: ../../data/sed_samples')
     parser.add_argument('--run', type=str, default='', metavar='(string)',
-                        help='Specific run name for the experiment, default: ./output/timestamp')
+                        help='Specific run name for the experiment, default: timestamp')
 
     parser.add_argument("--testing_interval", type=int,
                         default=50, help="epoch interval between testing runs")

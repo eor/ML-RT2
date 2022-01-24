@@ -10,7 +10,6 @@ import torch.nn.functional as F
 
 import common.sed_numba as sed_numba
 from common.settings_ode import ode_parameter_limits as ps_ode
-from common.settings_sed import density_vector_limits
 from common.settings_sed import p8_limits as ps_sed
 from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
 from common.utils import *
@@ -18,6 +17,8 @@ from common.physics import *
 from common.settings_crt import *
 from common.settings import *
 from common.data_log import *
+
+from pretraining.settings import tau_input_vector_limits
 from models import *
 from ode_system import *
 from random import random
@@ -77,26 +78,27 @@ def generate_flux_vector(parameters):
     sigmas_He_II = physics.get_photo_ionisation_cross_section_helium2()
 
     # sample parameters density vector
-    r = np.random.randint(density_vector_limits[0][0], density_vector_limits[0][1], size=(train_set_size, 1))
-    redshift = np.random.randint(density_vector_limits[1][0], density_vector_limits[1][1], size=(train_set_size, 1))
-    num_density_H_II = np.random.randint(density_vector_limits[2][0], density_vector_limits[2][1], size=(train_set_size, 1))
-    num_density_He_II = np.random.randint(density_vector_limits[3][0], density_vector_limits[3][1], size=(train_set_size, 1))
-    num_density_He_III = np.random.randint(density_vector_limits[4][0], density_vector_limits[4][1], size=(train_set_size, 1))
+    r = np.random.randint(tau_input_vector_limits[0][0], tau_input_vector_limits[0][1], size=(train_set_size, 1))
+    redshift = np.random.randint(tau_input_vector_limits[1][0], tau_input_vector_limits[1][1], size=(train_set_size, 1))
+    num_density_H_I = np.random.randint(tau_input_vector_limits[2][0], tau_input_vector_limits[2][1], size=(train_set_size, 1))
+    num_density_He_I = np.random.randint(tau_input_vector_limits[3][0], tau_input_vector_limits[3][1], size=(train_set_size, 1))
+    num_density_He_II = np.random.randint(tau_input_vector_limits[4][0], tau_input_vector_limits[4][1], size=(train_set_size, 1))
 
-    # concatenate individual parameters to density_vector
-    density_vector = np.concatenate((r, redshift, num_density_H_II, num_density_He_II, num_density_He_III), axis=1)
+    # concatenate individual parameters to tau_input_vector
+    tau_input_vector = np.concatenate((r, redshift, num_density_H_I, num_density_He_I, num_density_He_II), axis=1)
 
-    # generate tau from density_vector. shape: (train_set_size, 2000)
-    tau = (sigmas_H_I[np.newaxis, :] * num_density_H_II +
-           sigmas_H_I[np.newaxis, :] * num_density_He_II +
-           sigmas_H_I[np.newaxis, :] * num_density_He_III) * r * KPC_to_CM
+    # generate tau from tau_input_vector
+    tau = sigmas_H_I[np.newaxis, :] * num_density_H_I
+    tau += sigmas_He_I[np.newaxis, :] * num_density_He_I
+    tau += sigmas_He_II[np.newaxis, :] * num_density_He_II
+    tau *= r * KPC_to_CM
 
     # obtain flux_vector from intensities_vector by multiplying with tau
     # add a small number to r to avoid division by zero
     flux_vector = intensities_vector * np.exp(-1 * tau) / (4 * np.pi * np.power(r + 1e-5, 2))
     flux_vector = np.log10(flux_vector + 1.0e-6)
 
-    return flux_vector, density_vector, energies_vector
+    return flux_vector, tau_input_vector, energies_vector
 
 
 def generate_data(n_samples, mode='train'):
@@ -117,7 +119,7 @@ def generate_data(n_samples, mode='train'):
                                        qsoEfficiency, starsEscFrac, starsIMFSlope, starsIMFMassMin), axis=1)
 
     # sample flux_vectors using parameters
-    flux_vectors, density_vector, energies_vector = generate_flux_vector(parameter_vector)
+    flux_vectors, tau_input_vector, energies_vector = generate_flux_vector(parameter_vector)
 
     # sample state vectors
     x_H_II = np.random.uniform(ps_ode[0][0], ps_ode[0][1], size=(n_samples, 1))
@@ -306,10 +308,10 @@ if __name__ == "__main__":
 
     parser.add_argument('--out_dir', type=str, default='output', metavar='(string)',
                         help='Path to output directory, used for all plots and data products, default: ./output/')
-    parser.add_argument('--pretraining_model_dir', type=str, default='./output_pretraining/run_main', metavar='(string)',
-                        help='Path of the run directory for the pre-trained model, default: ../data/sed_samples')
+    parser.add_argument('--pretraining_model_dir', type=str, default='./pretraining/output_pretraining/run_main', metavar='(string)',
+                        help='Path of the run directory for the pre-trained model, default: ./pretraining/output_pretraining/run_main/')
     parser.add_argument('--run', type=str, default='', metavar='(string)',
-                        help='Specific run name for the experiment, default: ./output/timestamp')
+                        help='Specific run name for the experiment, default: timestamp')
 
     parser.add_argument("--len_SED_input", type=int, default=2000,
                         help="length of SED input for the model")

@@ -1,19 +1,17 @@
-from models_pretraining import *
+import torch
+import pickle
+import os
+import numpy as np
 from numba import jit
 from configparser import ConfigParser
 from datetime import datetime
 import os.path as osp
 import torch.nn.functional as F
-import torch
-import pickle
-import os
-import numpy as np
-import sys
-sys.path.append('..')
-try:
-    from common.settings import *
-except ImportError:
-    import settings
+
+import sys; sys.path.append('..')
+
+from pretraining.models import *
+from common.settings import *
 
 
 # -----------------------------------------------------------------

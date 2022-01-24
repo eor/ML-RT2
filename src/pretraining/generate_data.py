@@ -18,7 +18,7 @@ from common.physics import *
 from common.settings import DATA_GENERATION_SEED
 from common.physics_constants import *
 
-from settings import tau_input_vector_limits
+from pretraining.settings import tau_input_vector_limits
 
 
 # -----------------------------------------------------------------
@@ -153,7 +153,7 @@ def generate_data(parameters, tau_per_sed=10):
     num_density_He_II = np.random.randint(tau_input_vector_limits[4][0], tau_input_vector_limits[4][1], size=(tau_per_sed, 1))
 
     # concatenate individual parameters to tau_input_vector
-    tau_input_vector = np.concatenate((r, redshift, num_density_H_I, num_density_He_II, num_density_He_II), axis=1)
+    tau_input_vector = np.concatenate((r, redshift, num_density_H_I, num_density_He_I, num_density_He_II), axis=1)
 
     # obtain arrays of photo-ionisation cross-sections corresponding to the photon energies array
     physics = Physics.getInstance()
