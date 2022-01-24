@@ -153,7 +153,7 @@ if __name__ == '__main__':
 
     print('Hello there! Let\'s analyse some results\n')
 
-    path = '../output_pretraining/run_2022_01_10__13_19_39/'
+    path = './output_pretraining/run_main/'
     data_dir = '../../data/sed_samples/'
     config = utils_load_config(path)
     analysis_pretraining_dataset(config, data_dir, path, prefix='data', k=10)

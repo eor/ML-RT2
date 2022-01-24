@@ -352,10 +352,10 @@ if __name__ == "__main__":
 
     parser.add_argument('--out_dir', type=str, default='output_pretraining', metavar='(string)',
                         help='Path to output directory, used for all plots and data products, default: ./output_pretraining/')
-    parser.add_argument('--data_dir', type=str, default='../data/sed_samples', metavar='(string)',
-                        help='Path of the data directory from which data is to be read for training the model, default: ../data/sed_samples')
+    parser.add_argument('--data_dir', type=str, default='../../data/sed_samples', metavar='(string)',
+                        help='Path of the data directory from which data is to be read for training the model, default: ../../data/sed_samples')
     parser.add_argument('--run', type=str, default='', metavar='(string)',
-                        help='Specific run name for the experiment, default: ./output/timestamp')
+                        help='Specific run name for the experiment, default: timestamp')
 
     parser.add_argument("--testing_interval", type=int,
                         default=50, help="epoch interval between testing runs")
