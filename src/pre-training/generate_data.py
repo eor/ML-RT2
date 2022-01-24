@@ -148,12 +148,12 @@ def generate_output(parameters, tau_per_sed=10):
     # sample parameters density vector, tau_per_sed times for every sed
     r = np.random.randint(tau_input_vector_limits[0][0], tau_input_vector_limits[0][1], size=(tau_per_sed, 1))
     redshift = np.random.randint(tau_input_vector_limits[1][0], tau_input_vector_limits[1][1], size=(tau_per_sed, 1))
-    num_density_H_II = np.random.randint(tau_input_vector_limits[2][0], tau_input_vector_limits[2][1], size=(tau_per_sed, 1))
-    num_density_He_II = np.random.randint(tau_input_vector_limits[3][0], tau_input_vector_limits[3][1], size=(tau_per_sed, 1))
-    num_density_He_III = np.random.randint(tau_input_vector_limits[4][0], tau_input_vector_limits[4][1], size=(tau_per_sed, 1))
+    num_density_H_I = np.random.randint(tau_input_vector_limits[2][0], tau_input_vector_limits[2][1], size=(tau_per_sed, 1))
+    num_density_He_I = np.random.randint(tau_input_vector_limits[3][0], tau_input_vector_limits[3][1], size=(tau_per_sed, 1))
+    num_density_He_II = np.random.randint(tau_input_vector_limits[4][0], tau_input_vector_limits[4][1], size=(tau_per_sed, 1))
 
     # concatenate individual parameters to tau_input_vector
-    tau_input_vector = np.concatenate((r, redshift, num_density_H_II, num_density_He_II, num_density_He_III), axis=1)
+    tau_input_vector = np.concatenate((r, redshift, num_density_H_I, num_density_He_II, num_density_He_II), axis=1)
 
     # obtain arrays of photo-ionisation cross-sections corresponding to the photon energies array
     physics = Physics.getInstance()
@@ -163,9 +163,9 @@ def generate_output(parameters, tau_per_sed=10):
     sigmas_He_II = physics.get_photo_ionisation_cross_section_helium2()
 
     # generate tau from tau_input_vector
-    tau = sigmas_H_I[np.newaxis, :] * num_density_H_II
-    tau += sigmas_He_I[np.newaxis, :] * num_density_He_II
-    tau += sigmas_He_II[np.newaxis, :] * num_density_He_III
+    tau = sigmas_H_I[np.newaxis, :] * num_density_H_I
+    tau += sigmas_He_I[np.newaxis, :] * num_density_He_I
+    tau += sigmas_He_II[np.newaxis, :] * num_density_He_II
     tau *= r * KPC_to_CM
 
     # generate flux_vector (add small number to r to avoid division by zero)
