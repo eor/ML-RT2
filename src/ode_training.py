@@ -77,12 +77,25 @@ def generate_flux_vector(parameters):
     sigmas_He_I = physics.get_photo_ionisation_cross_section_helium1()
     sigmas_He_II = physics.get_photo_ionisation_cross_section_helium2()
 
-    # sample parameters density vector
+    # sample parameters for computing tau
     r = np.random.randint(tau_input_vector_limits[0][0], tau_input_vector_limits[0][1], size=(train_set_size, 1))
-    redshift = np.random.randint(tau_input_vector_limits[1][0], tau_input_vector_limits[1][1], size=(train_set_size, 1))
-    num_density_H_I = np.random.randint(tau_input_vector_limits[2][0], tau_input_vector_limits[2][1], size=(train_set_size, 1))
-    num_density_He_I = np.random.randint(tau_input_vector_limits[3][0], tau_input_vector_limits[3][1], size=(train_set_size, 1))
-    num_density_He_II = np.random.randint(tau_input_vector_limits[4][0], tau_input_vector_limits[4][1], size=(train_set_size, 1))
+    redshift = parameters[:, 1].reshape((train_set_size, -1))
+
+    # compute total initial densities before ionisation using redhsift values
+    n_H_0 = CONSTANT_n_H_0 * np.power(1 + redshift, 3)
+    n_He_0 = CONSTANT_n_He_0 * np.power(1 + redshift, 3)
+
+    # sample random ionisation fractions between 0 and 1 for neutral hydrogen,
+    # helium and singly ionised helium.
+    ionisation_fraction_H_I = np.random.random(size=(train_set_size, 1))
+    ionisation_fraction_He_I = np.random.random(size=(train_set_size, 1))
+    ionisation_fraction_He_II = 1 - ionisation_fraction_He_I
+
+    # use the sampled ionisation fractions and initial number densities to compute
+    # number densities of nuetral hydrogen, helium and singly ionised helium.
+    num_density_H_I = n_H_0 * ionisation_fraction_H_I
+    num_density_He_I = n_He_0 * ionisation_fraction_He_I
+    num_density_He_II = n_He_0 * ionisation_fraction_He_II
 
     # concatenate individual parameters to tau_input_vector
     tau_input_vector = np.concatenate((r, redshift, num_density_H_I, num_density_He_I, num_density_He_II), axis=1)
