@@ -198,8 +198,8 @@ def generate_data(parameters, tau_per_sed=10):
 # -----------------------------------------------------------------
 def main(path, key, n_samples):
 
+    # set up file name and directory
     sample_file = 'sed_%s_N%d.npy' % (key, n_samples)
-
     sample_dir = setup_sample_dir(path, key, n_samples)
 
     # generate a sample parameter set
@@ -209,6 +209,8 @@ def main(path, key, n_samples):
     # using multiprocessing and the sampled parameters, generate data
     with multiprocessing.Pool() as pool:
         # TODO: This needs to be re-written or better documented! FK
+        # shape of arrays?
+        # can this be rewritten to conform to PEP 8?
         parameters, energies, intensities, tau_input_vector, tau, flux_vector = zip(*tqdm.tqdm(pool.imap(generate_data, sample_set), total=sample_set.shape[0]))
 
     # concatenate numpy arrays
