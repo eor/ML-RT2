@@ -146,12 +146,20 @@ def pre_training_main(config):
     # run dataset analysis
     # -----------------------------------------------------------------
     if config.dataset_analysis:
-        analysis_pretraining_dataset(config, config.data_dir, config.out_dir, prefix='data', k=50)
+        analysis_pretraining_dataset(config.data_dir, config.out_dir, prefix='data', k=50)
 
     # -----------------------------------------------------------------
     # load the data and update config with the dataset configuration,
     # -----------------------------------------------------------------
-    parameters, _, _, _, _, flux_vectors = utils_load_pretraining_data(config.data_dir)
+    if config.mode == 'train':
+        # load the main dataset when mode is train
+        parameters, _, _, _, _, flux_vectors = utils_load_pretraining_data(config.data_dir,
+                                                        filename='data_pretraining.npy.npz')
+    else:
+        # load the development dataset when mode is dev
+        parameters, _, _, _, _, flux_vectors = utils_load_pretraining_data(config.data_dir,
+                                                filename='data_pretraining_dev_set.npy.npz')
+        
     setattr(config, 'len_SED_input', flux_vectors.shape[1])
     setattr(config, 'n_samples', flux_vectors.shape[0])
 
@@ -372,6 +380,8 @@ if __name__ == "__main__":
                         help="adam: beta1 - decay of first order momentum of gradient, default=0.9")
     parser.add_argument("--b2", type=float, default=0.999,
                         help="adam: beta2 - decay of first order momentum of gradient, default=0.999")
+    parser.add_argument("--mode", type=str, default='train',
+                        help="Dataset to used for training (dev/train), default=train")
 
     # model configuration
     parser.add_argument("--model", type=str, default='AE1', help="Model to use")

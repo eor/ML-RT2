@@ -235,7 +235,7 @@ if __name__ == "__main__":
     sample_directory = '../../data/sed_samples'
 
     start = timer()
-    # main(path=sample_directory, key='set_1', n_samples=10_000)
-    main(path=sample_directory, key='set_1', n_samples=1_000)
+    # main(path=sample_directory, key='set_1', n_samples=10000)
+    main(path=sample_directory, key='set_1', n_samples=10000)
     end = timer()
     print("total time:", (end - start))
