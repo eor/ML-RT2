@@ -49,7 +49,7 @@ class MLP1(nn.Module):
         with the state vector (2) to form the input to the second network, i.e. NN.
 
         Shape of the inputs:
-        1)  (batch_size, len_flux_input)
+        1) (batch_size, len_flux_input)
 
         2) (batch_size, len_state_vector):
         """

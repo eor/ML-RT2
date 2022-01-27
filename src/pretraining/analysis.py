@@ -83,28 +83,34 @@ def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best',
 # -----------------------------------------------------------------
 # Plot K random profiles from dataset.
 # -----------------------------------------------------------------
-def analysis_pretraining_dataset(config, data_dir=None, base_path=None, prefix='data', k=50):
+def analysis_pretraining_dataset(data_dir, base_path, mode='train', prefix='data', k=10):
 
-    if base_path is not None:
-        data_analysis_dir_path = osp.join(base_path, DATA_ANALYSIS)
-    else:
-        data_analysis_dir_path = osp.join(config.out_dir, DATA_ANALYSIS)
-
-    if data_dir is None:
-        data_dir = config.data_dir
+    # output directory for results
+    data_analysis_dir_path = osp.join(base_path, DATA_ANALYSIS)
 
     # create directories
     utils_create_output_dirs([data_analysis_dir_path])
 
-    # load the complete dataset
-    parameters, energies, intensities, density_vector, tau, \
-        flux_vectors = utils_load_pretraining_data(data_dir)
+    if mode == 'train':
+        # load the main dataset when mode is train
+        parameters, energies, intensities, tau_input_vector, tau, \
+            flux_vectors = utils_load_pretraining_data(data_dir)
+    else:
+        # load the development dataset when mode is dev
+        parameters, energies, intensities, tau_input_vector, tau, \
+                    flux_vectors = utils_load_pretraining_data(data_dir,
+                                file_name='data_pretraining_dev_set.npy.npz')
+
 
     # compute mean, min, max in dataset
     print('\nGenerating dataset summary.....')
-    print('Average of values in dataset: ', np.mean(flux_vectors))
+    print('Average of flux_vectors in dataset: ', np.mean(flux_vectors))
     minimum, maximum = np.min(flux_vectors), np.max(flux_vectors)
-    print('Maximum and minimum value in dataset: ', minimum, maximum)
+    print('Maximum and minimum value of flux_vectors in dataset: ', minimum, maximum)
+
+    print('Average of tau in dataset: ', np.mean(tau))
+    minimum, maximum = np.min(tau), np.max(tau)
+    print('Maximum and minimum value of tau in dataset: ', minimum, maximum)
 
     # plot histogram for data_set_distribution
     fig, ax = plt.subplots(figsize =(10, 10))
@@ -153,10 +159,10 @@ if __name__ == '__main__':
 
     print('Hello there! Let\'s analyse some results\n')
 
-    path = './output_pretraining/run_main/'
+    path = './output_pretraining/'
     data_dir = '../../data/sed_samples/'
-    config = utils_load_config(path)
-    analysis_pretraining_dataset(config, data_dir, path, prefix='data', k=10)
+    # config = utils_load_config(path)
+    analysis_pretraining_dataset(data_dir, path, prefix='data', k=10)
 #     analysis_auto_plot_flux_vectors(config, k=50, base_path=path, prefix='best')
 
     print('\n Completed! \n')

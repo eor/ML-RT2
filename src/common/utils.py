@@ -122,6 +122,7 @@ def utils_load_config(path, file_name='config.dict'):
 # Load pre-training dataset
 # -----------------------------------------------------------------
 def utils_load_pretraining_data(path, file_name='data_pretraining.npy.npz'):
+
     if path.endswith(file_name):
         p = path
     else:
@@ -133,12 +134,12 @@ def utils_load_pretraining_data(path, file_name='data_pretraining.npy.npz'):
     parameters = data['parameters']
     energies = data['energies']
     intensities = data['intensities']
-    density_vector = data['density_vector']
+    tau_input_vector = data['tau_input_vector']
     tau = data['tau']
     flux_vector = data['flux_vector']
     print('loaded data arrays:', data.files)
 
-    return parameters, energies, intensities, density_vector, tau, flux_vector
+    return parameters, energies, intensities, tau_input_vector, tau, flux_vector
 
 
 # -----------------------------------------------------------------
@@ -218,12 +219,20 @@ def utils_save_pretraining_test_data(flux_vectors_true, flux_vectors_gen, parame
     np.save(flux_vectors_gen_path, flux_vectors_gen)
     np.save(parameters_path, parameters)
 
-
+# -----------------------------------------------------------------
+#  Implementation of simpsons's integration in Numba
+# -----------------------------------------------------------------
 @jit(nopython=True)
 def utils_simpson_integration(y, x):
+    """
+    Args:
+    y: output of function to be integrated, for every x it needs to be integrated.
+    x: inputs with which function to be integrated was computed.
 
-    # source: https://masonstoecker.com/2021/04/03/Simpson-and-Numba.html
+    source: https://masonstoecker.com/2021/04/03/Simpson-and-Numba.html
+    """
 
+    #
     n = len(y) - 1
     h = np.zeros(n)
     for i in range(n):

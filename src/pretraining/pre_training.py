@@ -119,6 +119,12 @@ def pre_training_evaluation(current_epoch, data_loader, model, path, config,
     return loss_mse
 
 
+def force_stop_signal_handler(sig, frame):
+    global FORCE_STOP
+    FORCE_STOP = True
+    print("\033[96m\033[1m\nTraining will stop after this epoch. Please wait.\033[0m\n")
+
+
 # -----------------------------------------------------------------
 #  Main
 # -----------------------------------------------------------------
@@ -146,12 +152,20 @@ def pre_training_main(config):
     # run dataset analysis
     # -----------------------------------------------------------------
     if config.dataset_analysis:
-        analysis_pretraining_dataset(config, config.data_dir, config.out_dir, prefix='data', k=50)
+        analysis_pretraining_dataset(config.data_dir, config.out_dir, mode=config.mode, prefix='data', k=50)
 
     # -----------------------------------------------------------------
     # load the data and update config with the dataset configuration,
     # -----------------------------------------------------------------
-    parameters, _, _, _, _, flux_vectors = utils_load_pretraining_data(config.data_dir)
+    if config.mode == 'train':
+        # load the main dataset when mode is train
+        parameters, _, _, _, _, flux_vectors = utils_load_pretraining_data(config.data_dir,
+                                                        file_name='data_pretraining.npy.npz')
+    else:
+        # load the development dataset when mode is dev
+        parameters, _, _, _, _, flux_vectors = utils_load_pretraining_data(config.data_dir,
+                                                file_name='data_pretraining_dev_set.npy.npz')
+
     setattr(config, 'len_SED_input', flux_vectors.shape[1])
     setattr(config, 'n_samples', flux_vectors.shape[0])
 
@@ -233,6 +247,15 @@ def pre_training_main(config):
     n_epoch_without_improvement = 0
 
     # -----------------------------------------------------------------
+    # FORCE_STOP
+    # -----------------------------------------------------------------
+    global FORCE_STOP
+    FORCE_STOP = False
+    if FORCE_STOP_ENABLED:
+        signal.signal(signal.SIGINT, force_stop_signal_handler)
+        print('\n Press Ctrl + C to stop the training anytime and exit while saving the results.\n')
+
+    # -----------------------------------------------------------------
     #  Main training loop
     # -----------------------------------------------------------------
     print("\033[96m\033[1m\nTraining starts now\033[0m")
@@ -284,6 +307,13 @@ def pre_training_main(config):
 
         print("[Epoch %d/%d] [Train loss: %e] [Validation loss: %e][Best_epoch: %d]"
               % (epoch, config.n_epochs, train_loss, val_loss, best_epoch))
+
+        # early stopping check
+        if FORCE_STOP:
+            print("\033[96m\033[1m\nStopping Early\033[0m\n")
+            stopped_early = True
+            epochs_trained = epoch
+            break
 
         if epoch % config.testing_interval == 0:
             pre_training_evaluation(best_epoch, test_loader, best_model, data_products_path, config,
@@ -372,6 +402,8 @@ if __name__ == "__main__":
                         help="adam: beta1 - decay of first order momentum of gradient, default=0.9")
     parser.add_argument("--b2", type=float, default=0.999,
                         help="adam: beta2 - decay of first order momentum of gradient, default=0.999")
+    parser.add_argument("--mode", type=str, default='train',
+                        help="Dataset to be used for training (dev/train), default=train")
 
     # model configuration
     parser.add_argument("--model", type=str, default='AE1', help="Model to use")

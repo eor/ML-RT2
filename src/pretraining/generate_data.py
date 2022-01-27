@@ -145,12 +145,26 @@ def generate_data(parameters, tau_per_sed=10):
                                                        qsoEfficiency=parameters[4],
                                                        targetSourceAge=parameters[2])
 
-    # sample parameters density vector, tau_per_sed times for every sed
+    # sample parameters for computing tau
     r = np.random.randint(tau_input_vector_limits[0][0], tau_input_vector_limits[0][1], size=(tau_per_sed, 1))
-    redshift = np.random.randint(tau_input_vector_limits[1][0], tau_input_vector_limits[1][1], size=(tau_per_sed, 1))
-    num_density_H_I = np.random.randint(tau_input_vector_limits[2][0], tau_input_vector_limits[2][1], size=(tau_per_sed, 1))
-    num_density_He_I = np.random.randint(tau_input_vector_limits[3][0], tau_input_vector_limits[3][1], size=(tau_per_sed, 1))
-    num_density_He_II = np.random.randint(tau_input_vector_limits[4][0], tau_input_vector_limits[4][1], size=(tau_per_sed, 1))
+    # redshift used to obtain I(E) from source.
+    redshift = parameters[1] * np.ones((tau_per_sed, 1))
+
+    # compute total initial densities before ionisation using redhsift values
+    n_H_0 = CONSTANT_n_H_0 * np.power(1 + redshift, 3)
+    n_He_0 = CONSTANT_n_He_0 * np.power(1 + redshift, 3)
+
+    # sample random ionisation fractions between 0 and 1 for neutral hydrogen,
+    # helium and singly ionised helium.
+    ionisation_fraction_H_I = np.random.random(size=(tau_per_sed, 1))
+    ionisation_fraction_He_I = np.random.random(size=(tau_per_sed, 1))
+    ionisation_fraction_He_II = 1 - ionisation_fraction_He_I
+
+    # use the sampled ionisation fractions and initial number densities to compute
+    # number densities of nuetral hydrogen, helium and singly ionised helium.
+    num_density_H_I = n_H_0 * ionisation_fraction_H_I
+    num_density_He_I = n_He_0 * ionisation_fraction_He_I
+    num_density_He_II = n_He_0 * ionisation_fraction_He_II
 
     # concatenate individual parameters to tau_input_vector
     tau_input_vector = np.concatenate((r, redshift, num_density_H_I, num_density_He_I, num_density_He_II), axis=1)
@@ -221,7 +235,7 @@ if __name__ == "__main__":
     sample_directory = '../../data/sed_samples'
 
     start = timer()
-    # main(path=sample_directory, key='set_1', n_samples=10_000)
-    main(path=sample_directory, key='set_1', n_samples=1_000)
+    # main(path=sample_directory, key='set_1', n_samples=10000)
+    main(path=sample_directory, key='set_1', n_samples=1000)
     end = timer()
     print("total time:", (end - start))

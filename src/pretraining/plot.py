@@ -110,7 +110,7 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, outp
 # -----------------------------------------------------------------
 # Plot profiles from pre-training dataset
 # -----------------------------------------------------------------
-def plot_profiles_dataset(profiles, energy_vector, parameters, output_dir, prefix, index, file_type='pdf'):
+def plot_profiles_dataset(profiles, energy_vector, parameters, output_dir, prefix, index, file_type='png'):
     # -----------------------------------------------------------------
     # font settings
     # -----------------------------------------------------------------
@@ -135,7 +135,7 @@ def plot_profiles_dataset(profiles, energy_vector, parameters, output_dir, prefi
             return r'Physical Unit'
 
     num_plots = profiles.shape[0]
-        
+
     # -----------------------------------------------------------------
     # figure setup
     # -----------------------------------------------------------------
