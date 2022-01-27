@@ -236,6 +236,6 @@ if __name__ == "__main__":
 
     start = timer()
     # main(path=sample_directory, key='set_1', n_samples=10000)
-    main(path=sample_directory, key='set_1', n_samples=10000)
+    main(path=sample_directory, key='set_1', n_samples=1000)
     end = timer()
     print("total time:", (end - start))

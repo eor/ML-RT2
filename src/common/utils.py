@@ -220,20 +220,19 @@ def utils_save_pretraining_test_data(flux_vectors_true, flux_vectors_gen, parame
     np.save(parameters_path, parameters)
 
 # -----------------------------------------------------------------
-#  Implementation of simpsons's integration in Number 
+#  Implementation of simpsons's integration in Numba
 # -----------------------------------------------------------------
 @jit(nopython=True)
 def utils_simpson_integration(y, x):
     """
-    Args: 
-    y: output of function which we need to integrate at some x. 
-       yi corresponds to the value computed at xi.
-    x: input with which function to be integrated was computed.
-    
+    Args:
+    y: output of function to be integrated, for every x it needs to be integrated.
+    x: inputs with which function to be integrated was computed.
+
     source: https://masonstoecker.com/2021/04/03/Simpson-and-Numba.html
     """
 
-    # 
+    #
     n = len(y) - 1
     h = np.zeros(n)
     for i in range(n):

@@ -83,7 +83,7 @@ def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best',
 # -----------------------------------------------------------------
 # Plot K random profiles from dataset.
 # -----------------------------------------------------------------
-def analysis_pretraining_dataset(data_dir, base_path, prefix='data', k=50):
+def analysis_pretraining_dataset(data_dir, base_path, mode='train', prefix='data', k=10):
 
     # output directory for results
     data_analysis_dir_path = osp.join(base_path, DATA_ANALYSIS)
@@ -91,9 +91,16 @@ def analysis_pretraining_dataset(data_dir, base_path, prefix='data', k=50):
     # create directories
     utils_create_output_dirs([data_analysis_dir_path])
 
-    # load the complete dataset
-    parameters, energies, intensities, density_vector, tau, \
-        flux_vectors = utils_load_pretraining_data(data_dir)
+    if mode == 'train':
+        # load the main dataset when mode is train
+        parameters, energies, intensities, tau_input_vector, tau, \
+            flux_vectors = utils_load_pretraining_data(data_dir)
+    else:
+        # load the development dataset when mode is dev
+        parameters, energies, intensities, tau_input_vector, tau, \
+                    flux_vectors = utils_load_pretraining_data(data_dir,
+                                file_name='data_pretraining_dev_set.npy.npz')
+
 
     # compute mean, min, max in dataset
     print('\nGenerating dataset summary.....')
