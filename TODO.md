@@ -9,10 +9,6 @@ PS: Edit this list on the main repo directly instead of doing it on your local m
 ## Tasks 📝
 
 ### Pretraining
-- [ ] Find the reason for expldoing tau @eor 2022-01-11 **High**
-- [ ] Regenerate the pre-training dataset. @assigned_to yyyy-mm-dd **High**
-Once reason behind the exploding tau is clear, regenerate the data and upload it on drive. Also, update the download script.
-- [ ] Fix the plots for dataset analysis @aayushsingla 2022-01-11 **High**
 - [ ] Add loss plots @assigned_to yyyy-mm-dd **low** </br>
 Plot train loss and validation loss for the final paper using matplotlib. Low priority as currently being done using tensorboard.
 - [ ] Hypertune the model. @assigned_to yyyy-mm-dd **High** </br>
@@ -44,6 +40,10 @@ Generate input N(E) using I(E) and tau to pre-train the model and learn the late
 Add histogram to visualise input value ranges. Here, N(E). This can probably be done using tensorboard itself.
 - [x] Add comparison plots @aayushsingla 2022-01-10 **High** </br>
 Add comparison plots to compare true N(E) and regenerated N(E). This can probably be done using tensorboard itself. However, we will need to have proper plot routines for this for the final paper.
+- [ ] Find the reason for expldoing tau @eor 2022-01-11 **High**
+- [ ] Regenerate the pre-training dataset. @assigned_to yyyy-mm-dd **High**
+- [ ] Fix the plots for dataset analysis @aayushsingla 2022-01-11 **High**
+
 
 ### ODE training
 
