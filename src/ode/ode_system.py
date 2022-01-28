@@ -1,6 +1,9 @@
 import torch
 import numpy as np
 from numpy import pi
+
+import sys; sys.path.append('..')
+
 from common.physics import *
 from common.physics_constants import *
 from common.settings_crt import *

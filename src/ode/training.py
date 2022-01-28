@@ -8,6 +8,8 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 
+import sys; sys.path.append('..')
+
 import common.sed_numba as sed_numba
 from common.settings_ode import ode_parameter_limits as ps_ode
 from common.settings_sed import p8_limits as ps_sed
@@ -19,6 +21,7 @@ from common.settings import *
 from common.data_log import *
 
 from pretraining.settings import tau_input_vector_limits
+
 from models import *
 from ode_system import *
 from random import random
@@ -92,7 +95,7 @@ def generate_flux_vector(parameters):
     ionisation_fraction_He_II = 1 - ionisation_fraction_He_I
 
     # use the sampled ionisation fractions and initial number densities to compute
-    # number densities of nuetral hydrogen, helium and singly ionised helium.
+    # number densities of neutral hydrogen, helium and singly ionised helium.
     num_density_H_I = n_H_0 * ionisation_fraction_H_I
     num_density_He_I = n_He_0 * ionisation_fraction_He_I
     num_density_He_II = n_He_0 * ionisation_fraction_He_II

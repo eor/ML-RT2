@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import sys; sys.path.append('..')
 from common.utils import *
 
 

@@ -2,6 +2,8 @@ import argparse
 import os
 import numpy as np
 
+import sys; sys.path.append('..')
+
 from common.settings_crt import *
 from common.settings_ode import *
 from common.settings_sed import *
