@@ -1,23 +1,25 @@
 ## List of modules in this directory
 
 ### common
-Contains:
- * Functions used across the different modules
+ * functions used across the different modules
  
 ### crt
-Contains:
- * The machinery to run radiative transfer simulations with the fully trained ODE solver
+ * contains the machinery to run radiative transfer simulations with the fully trained ODE solver
+ * visualisation of results
 
 ### ode
-Contains:
- * Everything pertaining to the ODE system, its training, and functions to evaluate the training success
+ * Everything pertaining to the system of ordinary differential equations (ODE), i.e.
+ * training
+ * functions to evaluate and visualise the training success
+ 
 
 ### pretraining
-Contains:
- * Everything related to the pre-training 
+ * everything related to the pre-training of the network that will find a latent representation of the flux vector 
+ * training
+ * functions to evaluate and visualise the training success
 
 ### sandbox
-To be deleted at some point. Currently contains:
- * Testing / experiments scripts and old code
+To be deleted at some point. It currently contains:
+ * testing / experiments scripts and old code
 
 
