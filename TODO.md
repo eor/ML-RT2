@@ -9,13 +9,9 @@ PS: Edit this list on the main repo directly instead of doing it on your local m
 ## Tasks 📝
 
 ### Pretraining
-- [ ] Find the reason for expldoing tau @eor 2022-01-11 **High**
-- [ ] Regenerate the pre-training dataset. @assigned_to yyyy-mm-dd **High**
-Once reason behind the exploding tau is clear, regenerate the data and upload it on drive. Also, update the download script.
-- [ ] Fix the plots for dataset analysis @aayushsingla 2022-01-11 **High**
 - [ ] Add loss plots @assigned_to yyyy-mm-dd **low** </br>
 Plot train loss and validation loss for the final paper using matplotlib. Low priority as currently being done using tensorboard.
-- [ ] Hypertune the model. @assigned_to yyyy-mm-dd **High** </br>
+- [ ] Hypertune the model. @aayushsingla 2022-01-28 **High** </br>
   - [ ] Design an experiment to determine various hyper-parameters (#layers, #latent_vector, dropout, learning rate, batch norm, epochs etc.) in a file and share it here. probably a google doc file.
   - [ ] Assign these experiments amongst each other and conduct these runs.
   - [ ] Save the best model from these experiment and save it in cloud or github repo. Add a download script to download the model.
@@ -23,16 +19,16 @@ Plot train loss and validation loss for the final paper using matplotlib. Low pr
 ### ODE training
 - [ ] update MLP1 model @aayushsingla yyyy-mm-dd **High** </br>
 Update MLP1 model according to the changes discussed in the latest meeting.
-- [ ] Enable early stopping and batch system. @assigned_to yyyy-mm-dd **High** </br>
+- [ ] Enable early stopping and batch system. @aayushsingla 2022-01-28 **High** </br>
 Add early stopping using ctrl+shift+c to end the training properly. Also, add a batch-system in training to update --batch_size number of times before displaying the average train loss for the epoch.
-- [ ] Add model evaluation @assigned_to yyyy-mm-dd **High** </br>
+- [ ] Add model evaluation @aayushsingla 2022-01-28 **High** </br>
 Generate a dataset for testing and validation using generate_data() function before the training starts. Implement an evaluation function that takes in this data and evaluate the model on it. Ensure that same testing and validaton dataset is generated across all runs. This way of implementing evaluation is open for discussion.
 - [ ] Debug the overall loss @assigned_to yyyy-mm-dd **High** </br>
   - [ ] Monitor the indivual terms in indiviual loss functions and write a table for the maginitude of each term. We need to figure out the over exploding and diminishing terms and determine the issue behind this. This can be done easily using tensorboard and is super urgent.
   - [ ] If the above point doesn't work, consider switching off the temperature loss.
 
 ### CRT simulation
-- [ ] complete CRT simulation. add more to this list.
+- [ ] complete CRT simulation. add more to this list.  @eor 2022-01-28 **High** </br>
 
 
 ## Completed Tasks ✅
@@ -44,6 +40,10 @@ Generate input N(E) using I(E) and tau to pre-train the model and learn the late
 Add histogram to visualise input value ranges. Here, N(E). This can probably be done using tensorboard itself.
 - [x] Add comparison plots @aayushsingla 2022-01-10 **High** </br>
 Add comparison plots to compare true N(E) and regenerated N(E). This can probably be done using tensorboard itself. However, we will need to have proper plot routines for this for the final paper.
+- [x] Find the reason for expldoing tau @eor 2022-01-11 **High**
+- [x] Regenerate the pre-training dataset. @aayushsingla 2022-01-26 **High**
+- [x] Fix the plots for dataset analysis @aayushsingla 2022-01-11 **High**
+
 
 ### ODE training
 
