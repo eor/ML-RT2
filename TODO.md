@@ -1,5 +1,6 @@
 # ML-RT2
 Using PINNs to solve cosmological radiative transfer equation.  
+
 Task item format:
  - [ ] Title @assigned_to yyy-mm-dd priority(High/low) </br>
  decription...  
@@ -15,6 +16,9 @@ Plot train loss and validation loss for the final paper using matplotlib. Low pr
   - [ ] Design an experiment to determine various hyper-parameters (#layers, #latent_vector, dropout, learning rate, batch norm, epochs etc.) in a file and share it here. probably a google doc file.
   - [ ] Assign these experiments amongst each other and conduct these runs.
   - [ ] Save the best model from these experiment and save it in cloud or github repo. Add a download script to download the model.
+Add documentation across all source files 
+ - [ ] add meaningful docstrings @eor and @aayushsingla 2022-01-28 **low** </br>
+ - [ ] add meaningful comments @eor and @aayushsingla 2022-01-28 **low** </br>
 
 ### ODE training
 - [ ] update MLP1 model @aayushsingla yyyy-mm-dd **High** </br>
@@ -26,6 +30,9 @@ Generate a dataset for testing and validation using generate_data() function bef
 - [ ] Debug the overall loss @assigned_to yyyy-mm-dd **High** </br>
   - [ ] Monitor the indivual terms in indiviual loss functions and write a table for the maginitude of each term. We need to figure out the over exploding and diminishing terms and determine the issue behind this. This can be done easily using tensorboard and is super urgent.
   - [ ] If the above point doesn't work, consider switching off the temperature loss.
+Add documentation across all source files 
+ - [ ] add meaningful docstrings @eor and @aayushsingla 2022-01-28 **low** </br>
+ - [ ] add meaningful comments @eor and @aayushsingla 2022-01-28 **low** </br>
 
 ### CRT simulation
 - [ ] complete CRT simulation. add more to this list.  @eor 2022-01-28 **High** </br>
