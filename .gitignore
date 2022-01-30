@@ -136,3 +136,4 @@ output/*
 pretraining/output_pretraining/*
 output_pretraining/*
 *.npy.npz
+run_*
