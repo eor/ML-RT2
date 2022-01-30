@@ -25,7 +25,8 @@ class ODEData:
     def __init__(self, batch_size, device=torch.device('cpu')):
         """
         Args:
-        device: (torch.device) the desired device for the required pytorch dataloader.
+        batch_size: size of chunks in which the data needs to be divided.
+        device: (torch.device) the desired device for the required pytorch Dataloader.
         """
         self.device = device
         self.batch_size = batch_size
@@ -34,7 +35,7 @@ class ODEData:
         """
         Args:
         n_samples: number of samples to generate.
-        mode: whether data that is being generated will be used for training, testing
+        mode: whether the data that is being generated will be used for training, testing
               or validation. There is no change in computation of data in either of the cases.
               However, some verbrose is avoided in case mode == 'train'.
 
@@ -42,7 +43,7 @@ class ODEData:
         1. generates n_samples of training data,
         2. convert all the samples into tensors and copy them to required device.
         3. divide the data into batches
-        4. returns the data as an object of pytorch of dataloader class. so that it
+        4. returns the data as an object of pytorch dataloader class. so that it
            can be used for training, testing or validation.
 
         Returns an object of torch.utils.data.DataLoader class which has inputs in
@@ -51,7 +52,7 @@ class ODEData:
         """
 
         if mode != 'train':
-            print('\nGenerating %d samples for %s set......'%(n_samples, mode))
+            print('\nGenerating %d samples for %s set......' % (n_samples, mode))
 
         # sample parameter vectors for sed generators.
         parameter_vectors = self.sample_parameter_vectors(n_samples)
@@ -83,7 +84,7 @@ class ODEData:
         # If we are generating data for testing or validation, print the total
         # time take by the generation.
         if mode != 'train':
-            print('Time taken to generate %d samples for %s set: %f s'%(n_samples, mode, end - start))
+            print('Time taken to generate %d samples for %s set: %f s' % (n_samples, mode, end - start))
 
         # combine all inputs and outputs back into original shape.
         parameter_vectors = np.concatenate(parameter_vectors, axis=0)
@@ -102,13 +103,12 @@ class ODEData:
         target_residuals = np.zeros((n_samples))
 
         data = [flux_vectors, state_vectors, time_vectors, parameter_vectors,
-                                            energies_vectors, target_residuals]
+                energies_vectors, target_residuals]
 
         # convert numpy data into pytorch dataloader
         dataloader = self.convert_numpy_data_to_tensor(data)
 
         return dataloader
-
 
     def convert_numpy_data_to_tensor(self, data):
         """
@@ -124,7 +124,6 @@ class ODEData:
         dataloader = DataLoader(dataset, batch_size=self.batch_size)
 
         return dataloader
-
 
     def sample_tau_vectors(self, parameters, intensities_vectors, energy_vector, n_samples):
         """
@@ -155,7 +154,7 @@ class ODEData:
 
         # sample parameters for computing tau
         r = np.random.randint(tau_input_vector_limits[0][0],
-                            tau_input_vector_limits[0][1], size=(n_samples, 1))
+                              tau_input_vector_limits[0][1], size=(n_samples, 1))
         redshift = parameters[:, 1].reshape((n_samples, -1))
 
         # compute total initial densities before ionisation using redhsift values
@@ -176,7 +175,7 @@ class ODEData:
 
         # concatenate individual parameters to tau_input_vector
         tau_input_vector = np.concatenate((r, redshift, num_density_H_I,
-                                  num_density_He_I, num_density_He_II), axis=1)
+                                           num_density_He_I, num_density_He_II), axis=1)
 
         # generate tau from tau_input_vector
         tau = sigmas_H_I[np.newaxis, :] * num_density_H_I
@@ -226,7 +225,7 @@ class ODEData:
         # obtain tau using the sampled parameters, intensities vector
         # and energy vector. Tau will further be used to compute flux vextors.
         tau_input_vector, tau = self.sample_tau_vectors(parameters,
-                             intensities_vectors, energies_vectors[0], n_samples)
+                                                        intensities_vectors, energies_vectors[0], n_samples)
 
         # obtain r vector from tau input vector
         r = tau_input_vector[:, 0].reshape((n_samples, 1))
@@ -239,7 +238,6 @@ class ODEData:
         flux_vectors = np.log10(flux_vectors + 1.0e-6)
 
         return flux_vectors, energies_vectors
-
 
     def sample_parameter_vectors(self, n_samples):
         """

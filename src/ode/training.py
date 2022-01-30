@@ -38,7 +38,6 @@ else:
     torch.set_default_tensor_type(torch.FloatTensor)
 
 
-
 def force_stop_signal_handler(sig, frame):
     global FORCE_STOP
     if not FORCE_STOP:
@@ -187,7 +186,6 @@ def main(config):
             epoch_loss_T += loss_T.item()
             epoch_loss_x_He_II += loss_x_He_II.item()
             epoch_loss_x_He_III += loss_x_He_III.item()
-
 
         # compute average of all losses over all batches.
         epoch_loss /= len(train_loader)
