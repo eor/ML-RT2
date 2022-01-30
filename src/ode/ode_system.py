@@ -25,7 +25,7 @@ class ODE:
         self.tb = DataLog.getInstance()
 
         # generate over_densities array
-        self.over_densities = torch.ones((conf.train_set_size))
+        self.over_densities = torch.ones((conf.batch_size))
 
     def compute_ode_residual(self, flux_vector, state_vector, time_vector, parameter_vector, u_approximation):
         """
@@ -313,7 +313,7 @@ class ODE:
 
     def recombination_H_II(self, temperature_vector):
         """
-        Takes in the temperature_vector of shape (train_set_size)
+        Takes in the temperature_vector of shape (batch_size)
         and returns the recombination coefficient for H_II (free → n ≥ 2) for each
         temperature in the vector. (α2_HII)
         Ref: equation (57) in section B.2 in [1]
@@ -323,7 +323,7 @@ class ODE:
 
     def recombination_He_II(self, temperature_vector):
         """
-        Takes in the temperature_vector of shape (train_set_size)
+        Takes in the temperature_vector of shape (batch_size)
         and returns the recombination coefficient for He_II (free → n ≥ 1)
         for each temperature in the vector. (α_He_II)
         Ref: equation (58) in section B.2 in [1]
@@ -333,7 +333,7 @@ class ODE:
 
     def recombination_He_III(self, temperature_vector):
         """
-        Takes in the temperature_vector of shape (train_set_size)
+        Takes in the temperature_vector of shape (batch_size)
         and returns the recombination coefficient for He_III (free → n ≥ 1)
         for each temperature in the vector. (α_He_III)
         Ref: equation (62) in section B.2 in [1]
@@ -347,7 +347,7 @@ class ODE:
 
     def dielectric_recombination_He_II(self, temperature_vector):
         """
-        Takes in the temperature_vector of shape (train_set_size)
+        Takes in the temperature_vector of shape (batch_size)
         and returns the dielectric recombination coefficient for He_II (ξ_HeII)
         for each temperature in the vector.
         Ref: equation (61) in section B.2 in [1]
@@ -361,7 +361,7 @@ class ODE:
 
     def collision_ionisation_H_I(self, temperature_vector):
         """
-        Takes in the temperature_vector of shape (train_set_size)
+        Takes in the temperature_vector of shape (batch_size)
         and returns the collision ionisation for H_I (β1_HI) for each
         temperature in the vector.
         Ref: equation (52) in section B.1 in [1]
@@ -375,7 +375,7 @@ class ODE:
 
     def collision_ionisation_He_I(self, temperature_vector):
         """
-        Takes in the temperature_vector of shape (train_set_size)
+        Takes in the temperature_vector of shape (batch_size)
         and returns the collision ionisation for He_I (β_HeI) for each
         temperature in the vector.
         Ref: equation (54) in section B.1 in [1]
@@ -389,7 +389,7 @@ class ODE:
 
     def collision_ionisation_He_II(self, temperature_vector):
         """
-        Takes in the temperature_vector of shape (train_set_size)
+        Takes in the temperature_vector of shape (batch_size)
         and returns the collision ionisation for He_II (β_HeII) for each
         temperature in the vector.
         Ref: equation (55) in section B.1 in [1]

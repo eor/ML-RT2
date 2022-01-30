@@ -18,8 +18,8 @@ from pretraining.settings import tau_input_vector_limits
 
 class ODEData:
     """
-    This class contains a set of functions to sample random data for ode
-    training and returns the data as pytorch dataloader.
+    This class contains a set of functions to sample random data for ode model
+    training and returns the data as an object of pytorch Dataloader class.
     """
 
     def __init__(self, batch_size, device=torch.device('cpu')):
@@ -28,12 +28,28 @@ class ODEData:
         device: (torch.device) the desired device for the required pytorch dataloader.
         """
         self.device = device
-
+        self.batch_size = batch_size
 
     def generate_data(self, n_samples, mode='train'):
         """
-        Explanation here please.
+        Args:
+        n_samples: number of samples to generate.
+        mode: whether data that is being generated will be used for training, testing
+              or validation. There is no change in computation of data in either of the cases.
+              However, some verbrose is avoided in case mode == 'train'.
+
+        This fuction leverage multi-processing to do the following tasks:
+        1. generates n_samples of training data,
+        2. convert all the samples into tensors and copy them to required device.
+        3. divide the data into batches
+        4. returns the data as an object of pytorch of dataloader class. so that it
+           can be used for training, testing or validation.
+
+        Returns an object of torch.utils.data.DataLoader class which has inputs in
+        the following order: [flux_vectors, state_vectors, time_vectors,
+                            parameter_vectors, energies_vectors, target_residuals].
         """
+
         if mode != 'train':
             print('\nGenerating %d samples for %s set......'%(n_samples, mode))
 
@@ -75,7 +91,7 @@ class ODEData:
         energies_vectors = np.concatenate(energies_vectors, axis=0)
 
         # sample time vectors for the main model.
-        # Lower limit for the time vector will be from the start of the universe
+        # Lower limit for the time vector will be from the start of the EoR
         # and upper limit will be the current age of source that was used to model
         # the source in sed generator.
         lower_limit = ps_ode[5][0] * np.ones(shape=(n_samples, 1))
@@ -85,29 +101,27 @@ class ODEData:
         # sample target residual labels
         target_residuals = np.zeros((n_samples))
 
-        data_x = [flux_vectors, state_vectors, time_vectors,
-                                            parameter_vectors, energies_vectors]
-        data_y = [target_residuals]
+        data = [flux_vectors, state_vectors, time_vectors, parameter_vectors,
+                                            energies_vectors, target_residuals]
 
         # convert numpy data into pytorch dataloader
-        dataloader = self.convert_numpy_data_to_tensor(data_x, data_y)
+        dataloader = self.convert_numpy_data_to_tensor(data)
 
         return dataloader
 
 
-    def convert_numpy_data_to_tensor(self, data_x, data_y):
+    def convert_numpy_data_to_tensor(self, data):
         """
         This function converts numpy data into pytorch dataloader.
         Args: numpy array or list of numpy arrays.
         """
-        # convert numpy data to pytorch tenosor
-        data_x = torch.as_tensor(data_x, dtype=torch.float, device=self.device)
-        data_y = torch.as_tensor(data_y, dtype=torch.float, device=self.device)
 
+        # convert numpy data to pytorch tenosor
+        data = [torch.from_numpy(d).float().to(self.device) for d in data]
         # convert tensor data into pytorch dataset.
-        dataset = TensorDataset(data_x, data_y)
+        dataset = TensorDataset(*data)
         # convert tensor dataset to tensor dataloader.
-        dataloader = DataLoader(my_dataset, batch_size=self.batch_size)
+        dataloader = DataLoader(dataset, batch_size=self.batch_size)
 
         return dataloader
 
@@ -205,7 +219,7 @@ class ODEData:
             intensities_vectors.append(intensities)
             energies_vectors.append(energies)
 
-        # convert lists to numpy arrays (train_set_size)
+        # convert lists to numpy arrays (batch_size)
         intensities_vectors = np.asarray(intensities_vectors)
         energies_vectors = np.asarray(energies_vectors)
 

@@ -4,6 +4,7 @@ import signal
 import sys
 import torch
 import numpy as np
+from random import random
 import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
@@ -22,10 +23,9 @@ from common.data_log import *
 
 from pretraining.settings import tau_input_vector_limits
 
-from models import *
-from ode_system import *
-from random import random
-
+from ode.models import *
+from ode.ode_system import *
+from ode.ode_data import *
 
 # check for CUDA
 if torch.cuda.is_available():
@@ -38,134 +38,19 @@ else:
     torch.set_default_tensor_type(torch.FloatTensor)
 
 
-def generate_flux_vector(parameters):
-    """
-    Explanation to be added
-    """
-
-    # obtain training_set_size
-    train_set_size = parameters.shape[0]
-    intensities_vector = []
-    energies_vector = []
-
-    # generate intensities for the training.
-    for i in range(train_set_size):
-        # generate sed from parameters
-        energies, intensities = sed_numba.generate_SED_IMF_PL(halo_mass=parameters[i][0],
-                                                              redshift=parameters[i][1],
-                                                              eLow=SED_ENERGY_MIN,
-                                                              eHigh=SED_ENERGY_MAX,
-                                                              N=2000,  logGrid=True,
-                                                              starMassMin=parameters[i][7],
-                                                              starMassMax=500,
-                                                              imfBins=50,
-                                                              imfIndex=parameters[i][6],
-                                                              fEsc=parameters[i][5],
-                                                              alpha=parameters[i][3],
-                                                              qsoEfficiency=parameters[i][4],
-                                                              targetSourceAge=parameters[i][2])
-
-        intensities_vector.append(intensities)
-        energies_vector.append(energies)
-
-    # convert lists to numpy arrays (train_set_size)
-    intensities_vector = np.asarray(intensities_vector)
-    energies_vector = np.asarray(energies_vector)
-
-    # obtain sigmas for the energy_vector. As we have same energy vector for
-    # every sample in train_set. Hence, can be computed just once. shape: (2000)
-    physics = Physics.getInstance()
-    physics.set_energy_vector(energies_vector[0])
-    sigmas_H_I = physics.get_photo_ionisation_cross_section_hydrogen()
-    sigmas_He_I = physics.get_photo_ionisation_cross_section_helium1()
-    sigmas_He_II = physics.get_photo_ionisation_cross_section_helium2()
-
-    # sample parameters for computing tau
-    r = np.random.randint(tau_input_vector_limits[0][0], tau_input_vector_limits[0][1], size=(train_set_size, 1))
-    redshift = parameters[:, 1].reshape((train_set_size, -1))
-
-    # compute total initial densities before ionisation using redhsift values
-    n_H_0 = CONSTANT_n_H_0 * np.power(1 + redshift, 3)
-    n_He_0 = CONSTANT_n_He_0 * np.power(1 + redshift, 3)
-
-    # sample random ionisation fractions between 0 and 1 for neutral hydrogen,
-    # helium and singly ionised helium.
-    ionisation_fraction_H_I = np.random.random(size=(train_set_size, 1))
-    ionisation_fraction_He_I = np.random.random(size=(train_set_size, 1))
-    ionisation_fraction_He_II = 1 - ionisation_fraction_He_I
-
-    # use the sampled ionisation fractions and initial number densities to compute
-    # number densities of neutral hydrogen, helium and singly ionised helium.
-    num_density_H_I = n_H_0 * ionisation_fraction_H_I
-    num_density_He_I = n_He_0 * ionisation_fraction_He_I
-    num_density_He_II = n_He_0 * ionisation_fraction_He_II
-
-    # concatenate individual parameters to tau_input_vector
-    tau_input_vector = np.concatenate((r, redshift, num_density_H_I, num_density_He_I, num_density_He_II), axis=1)
-
-    # generate tau from tau_input_vector
-    tau = sigmas_H_I[np.newaxis, :] * num_density_H_I
-    tau += sigmas_He_I[np.newaxis, :] * num_density_He_I
-    tau += sigmas_He_II[np.newaxis, :] * num_density_He_II
-    tau *= r * KPC_to_CM
-
-    # obtain flux_vector from intensities_vector by multiplying with tau
-    # add a small number to r to avoid division by zero
-    flux_vector = intensities_vector * np.exp(-1 * tau) / (4 * np.pi * np.power(r + 1e-5, 2))
-    flux_vector = np.log10(flux_vector + 1.0e-6)
-
-    return flux_vector, tau_input_vector, energies_vector
-
-
-def generate_data(n_samples, mode='train'):
-    """
-    Explanation here please.
-    """
-
-    haloMassLog = np.random.uniform(ps_sed[0][0], ps_sed[0][1], size=(n_samples, 1))
-    redshift = np.random.uniform(ps_sed[1][0], ps_sed[1][1], size=(n_samples, 1))
-    sourceAge = np.random.uniform(ps_sed[2][0], ps_sed[2][1], size=(n_samples, 1))
-    qsoAlpha = np.random.uniform(ps_sed[3][0], ps_sed[3][1], size=(n_samples, 1))
-    qsoEfficiency = np.random.uniform(ps_sed[4][0], ps_sed[4][1], size=(n_samples, 1))
-    starsEscFrac = np.random.uniform(ps_sed[5][0], ps_sed[5][1], size=(n_samples, 1))
-    starsIMFSlope = np.random.uniform(ps_sed[6][0], ps_sed[6][1], size=(n_samples, 1))
-    starsIMFMassMin = np.random.uniform(ps_sed[7][0], ps_sed[7][1], size=(n_samples, 1))
-
-    parameter_vector = np.concatenate((haloMassLog, redshift, sourceAge, qsoAlpha,
-                                       qsoEfficiency, starsEscFrac, starsIMFSlope, starsIMFMassMin), axis=1)
-
-    # sample flux_vectors using parameters
-    flux_vectors, tau_input_vector, energies_vector = generate_flux_vector(parameter_vector)
-
-    # sample state vectors
-    x_H_II = np.random.uniform(ps_ode[0][0], ps_ode[0][1], size=(n_samples, 1))
-    x_He_II = np.random.uniform(ps_ode[1][0], ps_ode[1][1], size=(n_samples, 1))
-    x_He_III = np.random.uniform(ps_ode[2][0], ps_ode[2][1], size=(n_samples, 1))
-    T = np.random.uniform(ps_ode[3][0], ps_ode[3][1], size=(n_samples, 1))
-
-    # sample time vectors
-    lower_bound_time = ps_ode[5][0] * np.ones(shape=(n_samples, 1))
-    upper_bound_time = sourceAge.copy()
-    time_vector = np.random.uniform(lower_bound_time, upper_bound_time, size=(n_samples, 1))
-
-    state_vector = np.concatenate((x_H_II, x_He_II, x_He_III, T), axis=1)
-
-    # sample target residual labels
-    target_residual = np.zeros((n_samples))
-
-    return flux_vectors, state_vector, time_vector, target_residual, parameter_vector, energies_vector
-
 
 def force_stop_signal_handler(sig, frame):
     global FORCE_STOP
-    FORCE_STOP = True
-    print("\033[96m\033[1m\nTraining will stop after this epoch. Please wait.\033[0m\n")
+    if not FORCE_STOP:
+        FORCE_STOP = True
+        print("\033[96m\033[1m\nTraining will stop after this epoch. Please wait.\033[0m\n")
 
 
 # -----------------------------------------------------------------
 #  Main
 # -----------------------------------------------------------------
 def main(config):
+
     # -----------------------------------------------------------------
     # create unique output path and run directories, save config
     # -----------------------------------------------------------------
@@ -183,6 +68,13 @@ def main(config):
 
     # data_products_path = os.path.join(config.out_dir, DATA_PRODUCTS_DIR)
     # plot_path = os.path.join(config.out_dir, PLOT_DIR)
+
+    # -----------------------------------------------------------------
+    # generate data to serve as test set and validation set
+    # -----------------------------------------------------------------
+    ode_data = ODEData(config.batch_size, device)
+    val_loader = ode_data.generate_data(config.val_set_size, mode='val')
+    test_loader = ode_data.generate_data(config.test_set_size, mode='test')
 
     # -----------------------------------------------------------------
     # tensorboard (to check results, visit localhost:6006)
@@ -230,76 +122,97 @@ def main(config):
     print("\033[96m\033[1m\nTraining starts now\033[0m")
     for epoch in range(1, config.n_epochs + 1):
 
-        # TODO: look for boundary conditions???
+        # generate train data randomly at the start of every epoch.
+        train_loader = ode_data.generate_data(config.train_set_size, mode='train')
 
-        # [Issue] generating training data after every epoch leads to lots of noise in loss function
-        # possible fixes: generate training data/validation data in a systematic way and
-        # then evaluate the model.
-        # retrieve train_set_size
-        train_set_size = config.train_set_size
-        x_flux_vector, x_state_vector, x_time_vector, target_residual,\
-            parameter_vector, energies_vector = generate_data(train_set_size)
+        # initialise variable to compute average of all
+        # train losses over all batches.
+        epoch_loss = 0
+        epoch_loss_x_H_II = 0
+        epoch_loss_T = 0
+        epoch_loss_x_He_II = 0
+        epoch_loss_x_He_III = 0
 
-        # update the data in this physics module
-        physics.set_energy_vector(energies_vector[0])
-        physics.set_flux_vector(x_flux_vector)
+        for batch, (x_flux_vector, x_state_vector, x_time_vector, parameter_vectors, energy_vectors, target_residuals) in enumerate(train_loader):
 
-        # TODO: figure out: for what inputs do we need to set requires_grad=True
-        x_flux_vector = torch.tensor(x_flux_vector, dtype=torch.float)
-        x_state_vector = torch.tensor(x_state_vector, dtype=torch.float)
-        x_time_vector = torch.tensor(x_time_vector, dtype=torch.float, requires_grad=True)
-        target_residual = torch.tensor(target_residual, dtype=torch.float)
-        parameter_vector = torch.tensor(parameter_vector, dtype=torch.float)
+            # TODO: look for boundary conditions???
 
-        # Loss based on CRT ODEs
-        r_x_H_II, r_x_He_II, r_x_He_III, r_T = ode_equation.compute_ode_residual(x_flux_vector,
-                                                                                 x_state_vector,
-                                                                                 x_time_vector,
-                                                                                 parameter_vector,
-                                                                                 u_approximation)
+            # [Issue] generating training data after every epoch leads to lots of noise in loss function
+            # possible fixes: generate training data/validation data in a systematic way and
+            # then evaluate the model.
+            # retrieve train_set_size
 
-        # [Issue] using log10(abs(prediction)) here introduces two problems:
-        # 1. we lose sign information
-        # 2. log doesn't have a minimum so we cant minimise it.
-        # possible fixes: use sigmoid or tanh here, which helps us get rid of
-        # both above issues
-        out_x_H_II = torch.tanh(r_x_H_II)
-        out_x_He_II = torch.tanh(r_x_He_II)
-        out_x_He_III = torch.tanh(r_x_He_III)
-        out_T = torch.tanh(r_T)
+            # update the data in this physics module
+            physics.set_energy_vector(energy_vectors.cpu().numpy()[0])
+            physics.set_flux_vector(x_flux_vector.cpu().numpy())
 
-        loss_x_H_II = F.mse_loss(input=out_x_H_II, target=target_residual, reduction='mean')
-        loss_x_He_II = F.mse_loss(input=out_x_He_II, target=target_residual, reduction='mean')
-        loss_x_He_III = F.mse_loss(input=out_x_He_III, target=target_residual, reduction='mean')
-        loss_T = F.mse_loss(input=out_T, target=target_residual, reduction='mean')
+            # As we need to differenitate input w.r.t to time, set time_vector requires_grad to True
+            x_time_vector.requires_grad = True
 
-        loss_ode = loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
+            # Loss based on CRT ODEs
+            r_x_H_II, r_x_He_II, r_x_He_III, r_T = ode_equation.compute_ode_residual(x_flux_vector,
+                                                                                     x_state_vector,
+                                                                                     x_time_vector,
+                                                                                     parameter_vectors,
+                                                                                     u_approximation)
 
-        # compute the gradients
-        loss_ode.backward()
+            # [Issue] using log10(abs(prediction)) here introduces two problems:
+            # 1. we lose sign information
+            # 2. log doesn't have a minimum so we cant minimise it.
+            # possible fixes: use sigmoid or tanh here, which helps us get rid of
+            # both above issues
+            out_x_H_II = torch.tanh(r_x_H_II)
+            out_x_He_II = torch.tanh(r_x_He_II)
+            out_x_He_III = torch.tanh(r_x_He_III)
+            out_T = torch.tanh(r_T)
 
-        # update the parameters
-        optimizer.step()
-        # make the gradients zero
-        optimizer.zero_grad()
+            loss_x_H_II = F.mse_loss(input=out_x_H_II, target=target_residuals, reduction='mean')
+            loss_x_He_II = F.mse_loss(input=out_x_He_II, target=target_residuals, reduction='mean')
+            loss_x_He_III = F.mse_loss(input=out_x_He_III, target=target_residuals, reduction='mean')
+            loss_T = F.mse_loss(input=out_T, target=target_residuals, reduction='mean')
 
-        print("[Epoch %d/%d] [Train loss MSE: %e]"
-              % (epoch, config.n_epochs, loss_ode.item()))
+            loss_ode = loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
 
-        train_loss_array = np.append(train_loss_array, loss_ode.item())
+            # compute the gradients
+            loss_ode.backward()
 
-        # log data to the data log
-        data_log.log('out_H_II', out_x_H_II.mean().item())
-        data_log.log('out_He_II', out_x_He_II.mean().item())
-        data_log.log('out_He_III', out_x_He_III.mean().item())
-        data_log.log('out_T', out_T.mean().item())
-        data_log.log('Loss', loss_ode.item())
+            # update the parameters
+            optimizer.step()
+            # make the gradients zero
+            optimizer.zero_grad()
+
+            # compute sum of losses over all batches.
+            epoch_loss += loss_ode.item()
+            epoch_loss_x_H_II += loss_x_H_II.item()
+            epoch_loss_T += loss_T.item()
+            epoch_loss_x_He_II += loss_x_He_II.item()
+            epoch_loss_x_He_III += loss_x_He_III.item()
+
+
+        # compute average of all losses over all batches.
+        epoch_loss /= len(train_loader)
+        epoch_loss_x_H_II /= len(train_loader)
+        epoch_loss_T /= len(train_loader)
+        epoch_loss_x_He_II /= len(train_loader)
+        epoch_loss_x_He_III /= len(train_loader)
+
+        print("[Epoch %d/%d] [Train loss MSE: %e]" % (epoch, config.n_epochs, epoch_loss))
+
+        train_loss_array = np.append(train_loss_array, epoch_loss)
+
+        # log all losses to tensorboard
+        data_log.log('loss_H_II', epoch_loss_x_H_II)
+        data_log.log('loss_He_II', epoch_loss_x_He_II)
+        data_log.log('loss_He_III', epoch_loss_x_He_III)
+        data_log.log('loss_T', epoch_loss_T)
+        data_log.log('Loss', epoch_loss)
 
         # update the tensorboard after every epoch
         data_log.update_data()
 
         # TODO: find a criteria to select the best model --- validation ---????
         # TODO: copy the best model based on validation....
+        # TODO: implement validation here.
 
         # early stopping check
         if FORCE_STOP:
@@ -324,35 +237,40 @@ if __name__ == "__main__":
 
     parser.add_argument('--out_dir', type=str, default='output', metavar='(string)',
                         help='Path to output directory, used for all plots and data products, default: ./output/')
-    parser.add_argument('--pretraining_model_dir', type=str, default='./pretraining/output_pretraining/run_main', metavar='(string)',
-                        help='Path of the run directory for the pre-trained model, default: ./pretraining/output_pretraining/run_main/')
+    parser.add_argument('--pretraining_model_dir', type=str, default='../pretraining/output_pretraining/run_main', metavar='(string)',
+                        help='Path of the run directory for the pre-trained model, default: ../pretraining/output_pretraining/run_main/')
     parser.add_argument('--run', type=str, default='', metavar='(string)',
                         help='Specific run name for the experiment, default: timestamp')
 
-    parser.add_argument("--len_SED_input", type=int, default=2000,
-                        help="length of SED input for the model")
+    # dataset and input data configuration
+    parser.add_argument("--train_set_size", type=int, default=1024,
+                        help="size of the randomly generated training set (default=1024)")
+    parser.add_argument("--test_set_size", type=int, default=4096,
+                        help="size of the randomly generated test set (default=4096)")
+    parser.add_argument("--val_set_size", type=int, default=1024,
+                        help="size of the randomly generated validation set (default=1024)")
+
+    parser.add_argument("--batch_size", type=int, default=32,
+                        help="size of the batches (default=32)")
     parser.add_argument("--len_latent_vector", type=int, default=8,
                         help="length of reduced SED vector")
     parser.add_argument("--len_state_vector", type=int, default=5,
                         help="length of state vector (Xi, T, t) to be concatenated with latent_vector")
-    parser.add_argument("--train_set_size", type=int, default=128,
-                        help="size of the randomly generated training set (default=128)")
+    parser.add_argument("--len_SED_input", type=int, default=2000,
+                        help="length of SED input for the model")
 
     # grid settings
     parser.add_argument("--radius_max", type=float, default=DEFAULT_RADIUS_MAX,
                         help="Maximum radius in kpc. Default = 1500.0")
-
     parser.add_argument("--radius_min", type=float, default=DEFAULT_RADIUS_MIN,
                         help="Minimum radius in kpc. Default = 0.1")
-
     parser.add_argument("--delta_radius", type=float, default=DEFAULT_SPATIAL_RESOLUTION,
                         help="Spatial resolution in kpc. Default = 1")
-
     parser.add_argument("--delta_time", type=float, default=DEFAULT_TEMPORAL_RESOLUTION,
                         help="Temporal resolution in Myr. Default = 0.01")
 
     # network optimisation
-    parser.add_argument("--n_epochs", type=int, default=10000,
+    parser.add_argument("--n_epochs", type=int, default=1000,
                         help="number of epochs of training")
     parser.add_argument("--lr", type=float, default=0.0001,
                         help="adam: learning rate, default=0.0001")
@@ -363,6 +281,7 @@ if __name__ == "__main__":
 
     # model configuration
     parser.add_argument("--model", type=str, default='MLP1', help="Model to use")
+
     parser.add_argument("--batch_norm", dest='batch_norm', action='store_true',
                         help="use batch normalisation in network (default)")
     parser.add_argument('--no-batch_norm', dest='batch_norm', action='store_false',

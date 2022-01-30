@@ -135,16 +135,16 @@ class Physics:
             return self.integral_heating_rate_hydrogen
         else:
             # get the training_data_size
-            train_set_size = self.flux_vector.shape[0]
+            batch_size = self.flux_vector.shape[0]
 
             # compute the value of integrand for each energy E in energy_vector
             integrand = self.sigma_HI[None, :] * self.flux_vector * (self.energy_vector[None, :] - IONIZATION_ENERGY_HYDROGEN)
 
             # placeholder array to store the computed the integrals
-            self.integral_heating_rate_hydrogen = np.zeros(train_set_size)
+            self.integral_heating_rate_hydrogen = np.zeros(batch_size)
 
             # compute the integrals using simpsons integration
-            for i in range(train_set_size):
+            for i in range(batch_size):
                 self.integral_heating_rate_hydrogen[i] = utils_simpson_integration(integrand[i], self.energy_vector)
 
             return self.integral_heating_rate_hydrogen * CONSTANT_LIGHT_SPEED
@@ -168,16 +168,16 @@ class Physics:
             return self.integral_heating_rate_helium1
         else:
             # get the training_data_size
-            train_set_size = self.flux_vector.shape[0]
+            batch_size = self.flux_vector.shape[0]
 
             # compute the value of integrand for each energy E in energy_vector
             integrand = self.sigma_HeI[None, :] * self.flux_vector * (self.energy_vector[None, :] - IONIZATION_ENERGY_HELIUM1)
 
             # placeholder array to store the computed the integrals
-            self.integral_heating_rate_helium1 = np.zeros(train_set_size)
+            self.integral_heating_rate_helium1 = np.zeros(batch_size)
 
             # compute the integrals using simpsons integration
-            for i in range(train_set_size):
+            for i in range(batch_size):
                 self.integral_heating_rate_helium1[i] = utils_simpson_integration(integrand[i], self.energy_vector)
 
             return self.integral_heating_rate_helium1 * CONSTANT_LIGHT_SPEED
@@ -201,16 +201,16 @@ class Physics:
             return self.integral_heating_rate_helium2
         else:
             # get the training_data_size
-            train_set_size = self.flux_vector.shape[0]
+            batch_size = self.flux_vector.shape[0]
 
             # compute the value of integrand for each energy E in energy_vector
             integrand = self.sigma_HeII[None, :] * self.flux_vector * (self.energy_vector[None, :] - IONIZATION_ENERGY_HELIUM2)
 
             # placeholder array to store the computed integrals
-            self.integral_heating_rate_helium2 = np.zeros(train_set_size)
+            self.integral_heating_rate_helium2 = np.zeros(batch_size)
 
             # compute the integrals using simpsons integration
-            for i in range(train_set_size):
+            for i in range(batch_size):
                 self.integral_heating_rate_helium2[i] = utils_simpson_integration(integrand[i], self.energy_vector)
 
             return self.integral_heating_rate_helium2 * CONSTANT_LIGHT_SPEED
@@ -236,16 +236,16 @@ class Physics:
             return self.integral_hydrogen_ionisation_rate
         else:
             # get the training_data_size
-            train_set_size = self.flux_vector.shape[0]
+            batch_size = self.flux_vector.shape[0]
 
             # compute the value of integrand for each energy E in energy_vector
             integrand = self.sigma_HI[None, :] * self.flux_vector / self.energy_vector[None, :]
 
             # placeholder array to store the computed the integrals
-            self.integral_hydrogen_ionisation_rate = np.zeros(train_set_size)
+            self.integral_hydrogen_ionisation_rate = np.zeros(batch_size)
 
             # compute the integrals using simpsons integration
-            for i in range(train_set_size):
+            for i in range(batch_size):
                 self.integral_hydrogen_ionisation_rate[i] = utils_simpson_integration(integrand[i], self.energy_vector)
 
             return self.integral_hydrogen_ionisation_rate
@@ -269,16 +269,16 @@ class Physics:
             return self.integral_helium1_ionisation_rate
         else:
             # get the training_data_size
-            train_set_size = self.flux_vector.shape[0]
+            batch_size = self.flux_vector.shape[0]
 
             # compute the value of integrand for each energy E in energy_vector
             integrand = self.sigma_HeI[None, :] * self.flux_vector / self.energy_vector[None, :]
 
             # placeholder array to store the computed the integrals
-            self.integral_helium1_ionisation_rate = np.zeros(train_set_size)
+            self.integral_helium1_ionisation_rate = np.zeros(batch_size)
 
             # compute the integrals using simpsons integration
-            for i in range(train_set_size):
+            for i in range(batch_size):
                 self.integral_helium1_ionisation_rate[i] = utils_simpson_integration(integrand[i], self.energy_vector)
 
             return self.integral_helium1_ionisation_rate
@@ -302,16 +302,16 @@ class Physics:
             return self.integral_helium2_ionisation_rate
         else:
             # get the training_data_size
-            train_set_size = self.flux_vector.shape[0]
+            batch_size = self.flux_vector.shape[0]
 
             # compute the value of integrand for each energy E in energy_vector
             integrand = self.sigma_HeII[None, :] * self.flux_vector / self.energy_vector[None, :]
 
             # placeholder array to store the computed the integrals
-            self.integral_helium2_ionisation_rate = np.zeros(train_set_size)
+            self.integral_helium2_ionisation_rate = np.zeros(batch_size)
 
             # compute the integrals using simpsons integration
-            for i in range(train_set_size):
+            for i in range(batch_size):
                 self.integral_helium2_ionisation_rate[i] = utils_simpson_integration(integrand[i], self.energy_vector)
 
             return self.integral_helium2_ionisation_rate
@@ -348,7 +348,7 @@ class Physics:
 
     def set_flux_vector(self, flux_vector):
         """
-        Updates the flux_vector of shape (train_set_size, n_energy_bins) for
+        Updates the flux_vector of shape (batch_size, n_energy_bins) for
         this class and resets all the pre-computed variables.
         Units:
         """
