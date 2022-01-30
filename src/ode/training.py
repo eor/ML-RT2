@@ -46,6 +46,108 @@ def force_stop_signal_handler(sig, frame):
 
 
 # -----------------------------------------------------------------
+#  evaluate model with test or validation data set
+# -----------------------------------------------------------------
+def ode_training_evaluation(current_epoch, data_loader, model, path, config, physics,
+        ode_equation, optimizer, print_results=False, save_results=False, best_model=False):
+    """
+    This function runs the given dataset through the model, returns the overall loss,
+    and saves the results as well as ground truth to numpy file, if save_results=True.
+
+    Note: save_results still needs to be implemented
+
+    Args:
+        current_epoch: current epoch
+        data_loader: data loader used for the inference, most likely the test set or val set.
+        path: path to output directory
+        model: current model state
+        config: config object with user supplied parameters
+        physics: instance of Physics class to handle all the cpu computations for losses.
+        ode_equation: instance of ODE system class with equations to compute residuals and losses.
+        optimizer: model's optimizer
+        save_results: whether to save actual and generated profiles locally (default: False)
+        best_model: flag for testing on best model
+        print_results: print results to screen
+    """
+
+    # [TODO]: implement code to save results
+
+    if save_results:
+        print("\033[94m\033[1mTesting the model at epoch %d \033[0m" % current_epoch)
+
+    if cuda:
+        model.cuda()
+
+    # set model to evaluation mode
+    model.eval()
+
+    # initialise variable to compute average of all
+    # train losses over all batches.
+    loss = 0
+    loss_x_H_II = 0
+    loss_T = 0
+    loss_x_He_II = 0
+    loss_x_He_III = 0
+
+    for i, (x_flux_vectors, x_state_vectors, x_time_vectors, parameter_vectors,\
+                        energy_vectors, target_residuals) in enumerate(data_loader):
+
+        # update the data in this physics module
+        physics.set_energy_vector(energy_vectors.cpu().numpy()[0])
+        physics.set_flux_vector(x_flux_vectors.cpu().numpy())
+
+        # As we need to differenitate input w.r.t to time, set time_vector requires_grad to True
+        x_time_vectors.requires_grad = True
+
+        # compute residuals from ode system
+        r_x_H_II, r_x_He_II, r_x_He_III, r_T = ode_equation.compute_ode_residual(x_flux_vectors,
+                                                                                 x_state_vectors,
+                                                                                 x_time_vectors,
+                                                                                 parameter_vectors,
+                                                                                 model)
+
+        # compute tanh of residuals to map them to a fixed range
+        out_x_H_II = torch.tanh(r_x_H_II)
+        out_x_He_II = torch.tanh(r_x_He_II)
+        out_x_He_III = torch.tanh(r_x_He_III)
+        out_T = torch.tanh(r_T)
+
+        # compute loss, trying to make tanh(residuals) equal to zero.
+        # closer the values are to zero, better is our model learning.
+        loss_x_H_II = F.mse_loss(input=out_x_H_II, target=target_residuals, reduction='mean')
+        loss_x_He_II = F.mse_loss(input=out_x_He_II, target=target_residuals, reduction='mean')
+        loss_x_He_III = F.mse_loss(input=out_x_He_III, target=target_residuals, reduction='mean')
+        loss_T = F.mse_loss(input=out_T, target=target_residuals, reduction='mean')
+
+        # sum losses of all the four equations
+        loss_ode = loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
+
+        # store sum of losses to compute average over all batches.
+        loss += loss_ode.item()
+        loss_x_H_II += loss_x_H_II.item()
+        loss_T += loss_T.item()
+        loss_x_He_II += loss_x_He_II.item()
+        loss_x_He_III += loss_x_He_III.item()
+
+        # free all the computed gradients and
+        # don't backpropagate the losses.
+        optimizer.zero_grad()
+        model.zero_grad()
+
+
+    # compute average val/test losses.
+    loss /= len(data_loader)
+    loss_x_H_II /= len(data_loader)
+    loss_T /= len(data_loader)
+    loss_x_He_II /= len(data_loader)
+    loss_x_He_III /= len(data_loader)
+
+    if print_results:
+        print("Results: AVERAGE loss: %e" % (loss))
+
+    return loss
+
+# -----------------------------------------------------------------
 #  Main
 # -----------------------------------------------------------------
 def main(config):
@@ -61,11 +163,10 @@ def main(config):
     config.out_dir = os.path.join(config.out_dir, run_id)
 
     utils_create_output_dirs([config.out_dir])
-    # utils_create_run_directories(config.out_dir, DATA_PRODUCTS_DIR, PLOT_DIR)
     utils_save_config_to_log(config)
     utils_save_config_to_file(config)
 
-    # data_products_path = os.path.join(config.out_dir, DATA_PRODUCTS_DIR)
+    data_products_path = os.path.join(config.out_dir, DATA_PRODUCTS_DIR)
     # plot_path = os.path.join(config.out_dir, PLOT_DIR)
 
     # -----------------------------------------------------------------
@@ -103,13 +204,6 @@ def main(config):
     )
 
     # -----------------------------------------------------------------
-    # book keeping arrays
-    # -----------------------------------------------------------------
-    train_loss_array = np.empty(0)
-    val_loss_mse_array = np.empty(0)
-    val_loss_dtw_array = np.empty(0)
-
-    # -----------------------------------------------------------------
     # FORCE_STOP
     # -----------------------------------------------------------------
     global FORCE_STOP
@@ -118,11 +212,23 @@ def main(config):
         signal.signal(signal.SIGINT, force_stop_signal_handler)
         print('\n Press Ctrl + C to stop the training anytime and exit while saving the results.\n')
 
+    # -----------------------------------------------------------------
+    # book keeping arrays
+    # -----------------------------------------------------------------
+    train_loss_array = np.empty(0)
+    val_loss_array = np.empty(0)
+
+    # -----------------------------------------------------------------
+    #  Main training loop
+    # -----------------------------------------------------------------
     print("\033[96m\033[1m\nTraining starts now\033[0m")
     for epoch in range(1, config.n_epochs + 1):
 
         # generate train data randomly at the start of every epoch.
         train_loader = ode_data.generate_data(config.train_set_size, mode='train')
+
+        # set model to train mode
+        u_approximation.train()
 
         # initialise variable to compute average of all
         # train losses over all batches.
@@ -132,7 +238,8 @@ def main(config):
         epoch_loss_x_He_II = 0
         epoch_loss_x_He_III = 0
 
-        for batch, (x_flux_vector, x_state_vector, x_time_vector, parameter_vectors, energy_vectors, target_residuals) in enumerate(train_loader):
+        for batch, (x_flux_vectors, x_state_vectors, x_time_vectors, parameter_vectors, \
+                    energy_vectors, target_residuals) in enumerate(train_loader):
 
             # TODO: look for boundary conditions???
 
@@ -143,15 +250,15 @@ def main(config):
 
             # update the data in this physics module
             physics.set_energy_vector(energy_vectors.cpu().numpy()[0])
-            physics.set_flux_vector(x_flux_vector.cpu().numpy())
+            physics.set_flux_vector(x_flux_vectors.cpu().numpy())
 
             # As we need to differenitate input w.r.t to time, set time_vector requires_grad to True
-            x_time_vector.requires_grad = True
+            x_time_vectors.requires_grad = True
 
             # Loss based on CRT ODEs
-            r_x_H_II, r_x_He_II, r_x_He_III, r_T = ode_equation.compute_ode_residual(x_flux_vector,
-                                                                                     x_state_vector,
-                                                                                     x_time_vector,
+            r_x_H_II, r_x_He_II, r_x_He_III, r_T = ode_equation.compute_ode_residual(x_flux_vectors,
+                                                                                     x_state_vectors,
+                                                                                     x_time_vectors,
                                                                                      parameter_vectors,
                                                                                      u_approximation)
 
@@ -170,11 +277,11 @@ def main(config):
             loss_x_He_III = F.mse_loss(input=out_x_He_III, target=target_residuals, reduction='mean')
             loss_T = F.mse_loss(input=out_T, target=target_residuals, reduction='mean')
 
+            # sum all the losses
             loss_ode = loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
 
             # compute the gradients
             loss_ode.backward()
-
             # update the parameters
             optimizer.step()
             # make the gradients zero
@@ -194,16 +301,32 @@ def main(config):
         epoch_loss_x_He_II /= len(train_loader)
         epoch_loss_x_He_III /= len(train_loader)
 
-        print("[Epoch %d/%d] [Train loss MSE: %e]" % (epoch, config.n_epochs, epoch_loss))
+        val_loss = ode_training_evaluation(
+            current_epoch=epoch,
+            data_loader=val_loader,
+            model=u_approximation,
+            path=data_products_path,
+            config=config,
+            physics=physics,
+            ode_equation=ode_equation,
+            optimizer=optimizer,
+            print_results=False,
+            save_results=False,
+            best_model=False
+        )
+
+        print("[Epoch %d/%d] [Train loss: %e] [Val loss: %e]" % (epoch, config.n_epochs, epoch_loss, val_loss))
 
         train_loss_array = np.append(train_loss_array, epoch_loss)
+        val_loss_array = np.append(val_loss_array, val_loss)
 
         # log all losses to tensorboard
         data_log.log('loss_H_II', epoch_loss_x_H_II)
         data_log.log('loss_He_II', epoch_loss_x_He_II)
         data_log.log('loss_He_III', epoch_loss_x_He_III)
         data_log.log('loss_T', epoch_loss_T)
-        data_log.log('Loss', epoch_loss)
+
+        data_log.log_losses(epoch_loss, val_loss)
 
         # update the tensorboard after every epoch
         data_log.update_data()
@@ -211,6 +334,7 @@ def main(config):
         # TODO: find a criteria to select the best model --- validation ---????
         # TODO: copy the best model based on validation....
         # TODO: implement validation here.
+        # TODO: fix tensorboard to work with new batch settings.
 
         # early stopping check
         if FORCE_STOP:
@@ -218,6 +342,10 @@ def main(config):
             stopped_early = True
             epochs_trained = epoch
             break
+
+        if epoch % config.testing_interval == 0:
+            ode_training_evaluation(epoch, test_loader, u_approximation, data_products_path, config,
+                                    physics, ode_equation, optimizer, print_results=True, save_results=True)
 
     print("\033[96m\033[1m\nTraining complete\033[0m\n")
 
@@ -248,8 +376,12 @@ if __name__ == "__main__":
     parser.add_argument("--val_set_size", type=int, default=1024,
                         help="size of the randomly generated validation set (default=1024)")
 
+    parser.add_argument("--n_epochs", type=int, default=1000,
+                        help="number of epochs of training")
     parser.add_argument("--batch_size", type=int, default=32,
                         help="size of the batches (default=32)")
+    parser.add_argument("--testing_interval", type=int,
+                        default=20, help="epoch interval between testing runs")
     parser.add_argument("--len_latent_vector", type=int, default=8,
                         help="length of reduced SED vector")
     parser.add_argument("--len_state_vector", type=int, default=5,
@@ -268,8 +400,6 @@ if __name__ == "__main__":
                         help="Temporal resolution in Myr. Default = 0.01")
 
     # network optimisation
-    parser.add_argument("--n_epochs", type=int, default=1000,
-                        help="number of epochs of training")
     parser.add_argument("--lr", type=float, default=0.0001,
                         help="adam: learning rate, default=0.0001")
     parser.add_argument("--b1", type=float, default=0.9,
