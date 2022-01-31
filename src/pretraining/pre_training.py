@@ -25,8 +25,6 @@ from common.data_log import *
 from pretraining.analysis import *
 from pretraining.models import *
 
-
-
 # check for CUDA
 if torch.cuda.is_available():
     cuda = True
@@ -160,11 +158,11 @@ def pre_training_main(config):
     if config.mode == 'train':
         # load the main dataset when mode is train
         parameters, _, _, _, _, flux_vectors = utils_load_pretraining_data(config.data_dir,
-                                                        file_name='data_pretraining.npy.npz')
+                                                                           file_name='data_pretraining.npy.npz')
     else:
         # load the development dataset when mode is dev
         parameters, _, _, _, _, flux_vectors = utils_load_pretraining_data(config.data_dir,
-                                                file_name='data_pretraining_dev_set.npy.npz')
+                                                                           file_name='data_pretraining_dev_set.npy.npz')
 
     setattr(config, 'len_SED_input', flux_vectors.shape[1])
     setattr(config, 'n_samples', flux_vectors.shape[0])
@@ -196,10 +194,12 @@ def pre_training_main(config):
 
     # split the dataset
     dataset = torch.utils.data.TensorDataset(parameters, flux_vectors)
+
     train_dataset, validation_dataset, test_dataset = \
         torch.utils.data.random_split(dataset,
                                       (train_length, validation_length, test_length),
-                                      generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
+                                      generator=torch.Generator(device).manual_seed(PRETRAINING_SEED)
+                                      )
 
     # -----------------------------------------------------------------
     # data loaders from dataset
@@ -218,7 +218,7 @@ def pre_training_main(config):
     # initialise model
     # -----------------------------------------------------------------
     model = AE1(config)
-    print('\n\tUsing model AE1 on device: %s\n' % (device))
+    print('\n\tUsing model AE1 on device: %s\n' % device)
 
     if cuda:
         model.cuda()
@@ -381,9 +381,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='ML-RT2 - pre-training module for SED\'s')
 
     parser.add_argument('--out_dir', type=str, default='output_pretraining', metavar='(string)',
-                        help='Path to output directory, used for all plots and data products, default: ./output_pretraining/')
-    parser.add_argument('--data_dir', type=str, default='../../data/sed_samples', metavar='(string)',
-                        help='Path of the data directory from which data is to be read for training the model, default: ../../data/sed_samples')
+                        help='Path to pre-training output directory (plots and data), default: ./output_pretraining/')
+
+    parser.add_argument('--data_dir', type=str, default='../../data/pretraining', metavar='(string)',
+                        help='Path to teh pre-training data directory, default: ../../data/pretraining')
     parser.add_argument('--run', type=str, default='', metavar='(string)',
                         help='Specific run name for the experiment, default: timestamp')
 
