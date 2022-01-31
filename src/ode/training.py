@@ -382,10 +382,10 @@ if __name__ == "__main__":
                         help="size of the batches (default=32)")
     parser.add_argument("--testing_interval", type=int,
                         default=20, help="epoch interval between testing runs")
-    parser.add_argument("--len_latent_vector", type=int, default=8,
-                        help="length of reduced SED vector")
     parser.add_argument("--len_state_vector", type=int, default=5,
                         help="length of state vector (Xi, T, t) to be concatenated with latent_vector")
+    parser.add_argument("--len_state_latent_vector", type=int, default=8,
+                        help="length of reduced state vector")
     parser.add_argument("--len_SED_input", type=int, default=2000,
                         help="length of SED input for the model")
 

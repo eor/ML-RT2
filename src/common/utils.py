@@ -166,7 +166,7 @@ def utils_load_pretraining_model(run_dir_path, best_model=False, file_name=None)
     # switch the model to eval mode
     model.eval()
 
-    return model
+    return model, config
 
 
 # -----------------------------------------------------------------
