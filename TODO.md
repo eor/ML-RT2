@@ -21,18 +21,16 @@ Add documentation across all source files
  - [ ] add meaningful comments @eor and @aayushsingla 2022-01-28 **low** </br>
 
 ### ODE training
-- [ ] update MLP1 model @aayushsingla yyyy-mm-dd **High** </br>
-Update MLP1 model according to the changes discussed in the latest meeting.
-- [ ] Enable early stopping and batch system. @aayushsingla 2022-01-28 **High** </br>
-Add early stopping using ctrl+shift+c to end the training properly. Also, add a batch-system in training to update --batch_size number of times before displaying the average train loss for the epoch.
-- [ ] Add model evaluation @aayushsingla 2022-01-28 **High** </br>
-Generate a dataset for testing and validation using generate_data() function before the training starts. Implement an evaluation function that takes in this data and evaluate the model on it. Ensure that same testing and validaton dataset is generated across all runs. This way of implementing evaluation is open for discussion.
-- [ ] Debug the overall loss @assigned_to yyyy-mm-dd **High** </br>
+
+- [ ] Debug the overall loss @eor and @aayushsingla 2022-01-31 **High** </br>
   - [ ] Monitor the indivual terms in indiviual loss functions and write a table for the maginitude of each term. We need to figure out the over exploding and diminishing terms and determine the issue behind this. This can be done easily using tensorboard and is super urgent.
   - [ ] If the above point doesn't work, consider switching off the temperature loss.
 Add documentation across all source files 
- - [ ] add meaningful docstrings @eor and @aayushsingla 2022-01-28 **low** </br>
- - [ ] add meaningful comments @eor and @aayushsingla 2022-01-28 **low** </br>
+- [ ] Fix the tensorboard implementation @aayushsingla 2022-01-28 **high** </br>
+- [ ] Implement code to save test results and model after validation/testing @assigned_to yyy-mm-dd **low** </br>
+- [ ] Find a criteria to select the best model @assigned_to yyyy-mm-dd **high** </br>
+- [ ] add meaningful docstrings @eor and @aayushsingla 2022-01-28 **low** </br>
+- [ ] add meaningful comments @eor and @aayushsingla 2022-01-28 **low** </br>
 
 ### CRT simulation
 - [ ] complete CRT simulation. add more to this list.  @eor 2022-01-28 **High** </br>
@@ -53,6 +51,12 @@ Add comparison plots to compare true N(E) and regenerated N(E). This can probabl
 
 
 ### ODE training
+- [x] update MLP1 model @aayushsingla yyyy-mm-dd **High** </br>
+Update MLP1 model according to the changes discussed in the latest meeting.
+- [x] Enable early stopping and batch system. @aayushsingla 2022-01-28 **High** </br>
+Add early stopping using ctrl+shift+c to end the training properly. Also, add a batch-system in training to update --batch_size number of times before displaying the average train loss for the epoch.
+- [x] Add model evaluation @aayushsingla 2022-01-28 **High** </br>
+Generate a dataset for testing and validation using generate_data() function before the training starts. Implement an evaluation function that takes in this data and evaluate the model on it. Ensure that same testing and validaton dataset is generated across all runs. This way of implementing evaluation is open for discussion.
 
 ### CRT simulation
 
