@@ -83,11 +83,11 @@ def ode_training_evaluation(current_epoch, data_loader, model, path, config, phy
 
     # initialise variable to compute average of all
     # train losses over all batches.
-    loss = 0
-    loss_x_H_II = 0
-    loss_T = 0
-    loss_x_He_II = 0
-    loss_x_He_III = 0
+    avg_loss = 0
+    avg_loss_x_H_II = 0
+    avg_loss_T = 0
+    avg_loss_x_He_II = 0
+    avg_loss_x_He_III = 0
 
     for i, (x_flux_vectors, x_state_vectors, x_time_vectors, parameter_vectors,\
                         energy_vectors, target_residuals) in enumerate(data_loader):
@@ -123,11 +123,11 @@ def ode_training_evaluation(current_epoch, data_loader, model, path, config, phy
         loss_ode = loss_x_H_II + loss_x_He_II + loss_x_He_III + loss_T
 
         # store sum of losses to compute average over all batches.
-        loss += loss_ode.item()
-        loss_x_H_II += loss_x_H_II.item()
-        loss_T += loss_T.item()
-        loss_x_He_II += loss_x_He_II.item()
-        loss_x_He_III += loss_x_He_III.item()
+        avg_loss += loss_ode.item()
+        avg_loss_x_H_II += loss_x_H_II.item()
+        avg_loss_T += loss_T.item()
+        avg_loss_x_He_II += loss_x_He_II.item()
+        avg_loss_x_He_III += loss_x_He_III.item()
 
         # free all the computed gradients and
         # don't backpropagate the losses.
@@ -136,16 +136,16 @@ def ode_training_evaluation(current_epoch, data_loader, model, path, config, phy
 
 
     # compute average val/test losses.
-    loss /= len(data_loader)
-    loss_x_H_II /= len(data_loader)
-    loss_T /= len(data_loader)
-    loss_x_He_II /= len(data_loader)
-    loss_x_He_III /= len(data_loader)
+    avg_loss /= len(data_loader)
+    avg_loss_x_H_II /= len(data_loader)
+    avg_loss_T /= len(data_loader)
+    avg_loss_x_He_II /= len(data_loader)
+    avg_loss_x_He_III /= len(data_loader)
 
     if print_results:
-        print("Results: AVERAGE loss: %e" % (loss))
+        print("Results: AVERAGE loss: %e" % (avg_loss))
 
-    return loss
+    return avg_loss
 
 # -----------------------------------------------------------------
 #  Main
