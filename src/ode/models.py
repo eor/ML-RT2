@@ -24,10 +24,15 @@ class MLP1(nn.Module):
                 torch.nn.init.uniform_(m.weight, a=0.0, b=1.0)
                 m.bias.data.fill_(0.01)
 
-        self.NN_flux = utils_load_pretraining_model(conf.pretraining_model_dir, best_model=True)
+        self.NN_flux, conf_pre_train = utils_load_pretraining_model(conf.pretraining_model_dir, best_model=True)
+
+        self.NN_state = nn.Sequential(
+            *block(conf.len_state_vector, 16, normalise=False, dropout=False),
+            nn.Linear(16, conf.len_state_latent_vector)
+        )
 
         self.NN = nn.Sequential(
-            *block(conf.len_state_vector + conf.len_latent_vector, 64, normalise=False, dropout=False),
+            *block(conf.len_state_latent_vector + conf_pre_train.len_latent_vector, 64, normalise=False, dropout=False),
             *block(64, 128),
             *block(128, 256),
             *block(256, 128),
@@ -55,11 +60,17 @@ class MLP1(nn.Module):
         2) (batch_size, len_state_vector):
         """
         with torch.no_grad():
-            latent_vector = self.NN_flux.encode(x_flux_vector)
+            flux_latent_vector = self.NN_flux.encode(x_flux_vector)
 
         # This should be false for pre-trained model to be frozen.
-        # print(latent_vector.requires_grad)
-        concat_input = torch.cat((x_state_vector, time_vector, latent_vector), axis=1)
+        # print(flux_latent_vector.requires_grad)
+
+        # combine ionsiation fractions with time to form complete state vector.
+        concat_state_vector = torch.cat((x_state_vector, time_vector), axis=1)
+        state_latent_vector = self.NN_state(concat_state_vector)
+
+        # combine the latent vectors of
+        concat_input = torch.cat((state_latent_vector, flux_latent_vector), axis=1)
         output = self.NN(concat_input)
 
         # [Issue] high order of values almost lead to constant values near the extremes of sigmoid
