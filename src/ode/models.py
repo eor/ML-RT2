@@ -65,7 +65,7 @@ class MLP1(nn.Module):
         # This should be false for pre-trained model to be frozen.
         # print(flux_latent_vector.requires_grad)
 
-        # combine ionsiation fractions with time to form complete state vector.
+        # combine ionisation fractions with time to form complete state vector.
         concat_state_vector = torch.cat((x_state_vector, time_vector), axis=1)
         state_latent_vector = self.NN_state(concat_state_vector)
 

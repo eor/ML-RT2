@@ -37,9 +37,9 @@ class ODEData:
         n_samples: number of samples to generate.
         mode: whether the data that is being generated will be used for training, testing
               or validation. There is no change in computation of data in either of the cases.
-              However, some verbrose is avoided in case mode == 'train'.
+              However, some verbose is avoided in case mode == 'train'.
 
-        This fuction leverage multi-processing to do the following tasks:
+        This function leverage multi-processing to do the following tasks:
         1. generates n_samples of training data,
         2. convert all the samples into tensors and copy them to required device.
         3. divide the data into batches
@@ -116,7 +116,7 @@ class ODEData:
         Args: numpy array or list of numpy arrays.
         """
 
-        # convert numpy data to pytorch tenosor
+        # convert numpy data to pytorch tensor
         data = [torch.from_numpy(d).float().to(self.device) for d in data]
         # convert tensor data into pytorch dataset.
         dataset = TensorDataset(*data)
@@ -129,10 +129,10 @@ class ODEData:
         """
         Args:
         parameters: parameters which were used to generate intensities
-                    using sed generator. These parameters define a uninque source in
+                    using sed generator. These parameters define a unique source in
                     radiative transfer system.
         intensities_vectors:
-        energy_vector: energies at which intenisities were computed.
+        energy_vector: energies at which intensities were computed.
         n_samples: number of samples to be sampled.
 
         Returns randomly sampled parameters that were used to compute tau vectors
@@ -157,7 +157,7 @@ class ODEData:
                               tau_input_vector_limits[0][1], size=(n_samples, 1))
         redshift = parameters[:, 1].reshape((n_samples, -1))
 
-        # compute total initial densities before ionisation using redhsift values
+        # compute total initial densities before ionisation using redshift values
         n_H_0 = CONSTANT_n_H_0 * np.power(1 + redshift, 3)
         n_He_0 = CONSTANT_n_He_0 * np.power(1 + redshift, 3)
 
@@ -223,7 +223,7 @@ class ODEData:
         energies_vectors = np.asarray(energies_vectors)
 
         # obtain tau using the sampled parameters, intensities vector
-        # and energy vector. Tau will further be used to compute flux vextors.
+        # and energy vector. Tau will further be used to compute flux vectors.
         tau_input_vector, tau = self.sample_tau_vectors(parameters,
                                                         intensities_vectors, energies_vectors[0], n_samples)
 
@@ -257,7 +257,7 @@ class ODEData:
         starsIMFSlope = np.random.uniform(ps_sed[6][0], ps_sed[6][1], size=(n_samples, 1))
         starsIMFMassMin = np.random.uniform(ps_sed[7][0], ps_sed[7][1], size=(n_samples, 1))
 
-        # concaenate the parameters to a single vector.
+        # concatenate the parameters to a single vector.
         parameter_vectors = np.concatenate((haloMassLog, redshift, sourceAge, qsoAlpha,
                                            qsoEfficiency, starsEscFrac, starsIMFSlope, starsIMFMassMin), axis=1)
         return parameter_vectors

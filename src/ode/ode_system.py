@@ -96,12 +96,12 @@ class ODE:
 
         return loss_x_H_II, loss_x_He_II, loss_x_He_III, loss_T
 
-    # try running the model without specific loss terms
+    # TODO: try running the model without specific loss terms
 
     def init_number_density_vectors(self, x_H_I, x_H_II, x_He_I, x_He_II, x_He_III):
         """
         This method initialises the number density variables
-        Inputs: all ionisation fractions of H and He
+        Inputs: all neutral and ionisation fractions of H and He
         Units: cm^-3
         """
         density_factor = torch.multiply(self.over_densities, self.redshift_pow_3)
@@ -140,8 +140,6 @@ class ODE:
         ionisation_term2 = torch.Tensor(Physics.getInstance().get_ionisation_rate_integral_hydrogen())
 
         # out unit: (1/s)
-        # import pdb; pdb.set_trace()
-
         ionisation_rate_H_I = ionisation_term1 + ionisation_term2
 
         # out unit: (1/s)
