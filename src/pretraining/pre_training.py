@@ -408,12 +408,15 @@ if __name__ == "__main__":
 
     # model configuration
     parser.add_argument("--model", type=str, default='AE1', help="Model to use")
+
+    # batch norm
     parser.add_argument("--batch_norm", dest='batch_norm', action='store_true',
                         help="use batch normalisation in network (default)")
     parser.add_argument('--no-batch_norm', dest='batch_norm', action='store_false',
                         help="use batch normalisation in network")
     parser.set_defaults(batch_norm=False)
 
+    # drop out
     parser.add_argument("--dropout", dest='dropout', action='store_true',
                         help="use dropout regularisation in network (default)")
     parser.add_argument("--no-dropout", dest='dropout', action='store_false',
@@ -431,9 +434,9 @@ if __name__ == "__main__":
     parser.set_defaults(analysis=True)
 
     parser.add_argument("--dataset_analysis", dest='dataset_analysis', action='store_true',
-                        help="compute mean, min, max on dataset and generate relevant plots")
+                        help="Compute mean, min, max on dataset and generate relevant plots")
     parser.add_argument("--no_dataset_analysis", dest='dataset_analysis', action='store_false',
-                        help="do not generate data summary")
+                        help="Do not generate data summary")
     parser.set_defaults(dataset_analysis=False)
 
     my_config = parser.parse_args()
