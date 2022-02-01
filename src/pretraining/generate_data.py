@@ -242,7 +242,7 @@ if __name__ == "__main__":
 
     np.random.seed(DATA_GENERATION_SEED)
 
-    sample_directory = '../../data/sed_samples'
+    sample_directory = '../../data/pretraining/'
 
     start = timer()
     # main(path=sample_directory, key='set_1', n_samples=10000)
