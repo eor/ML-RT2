@@ -12,7 +12,7 @@ from timeit import default_timer as timer
 import sys; sys.path.append('..')
 
 import common.sed_numba as sed_nb
-from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX, SED_ENERGY_DELTA
+from common.settings_sed import SED_ENERGY_MIN, SED_ENERGY_MAX
 from common.settings_sed import p8_limits as parameter_ranges
 from common.physics import *
 from common.settings import DATA_GENERATION_SEED
@@ -135,7 +135,8 @@ def generate_data(parameters, tau_per_sed=10):
                                                        redshift=parameters[1],
                                                        eLow=SED_ENERGY_MIN,
                                                        eHigh=SED_ENERGY_MAX,
-                                                       N=2000,  logGrid=True,
+                                                       N=2000,
+                                                       logGrid=True,
                                                        starMassMin=parameters[7],
                                                        starMassMax=500,
                                                        imfBins=50,
@@ -150,7 +151,7 @@ def generate_data(parameters, tau_per_sed=10):
     # redshift used to obtain I(E) from source.
     redshift = parameters[1] * np.ones((tau_per_sed, 1))
 
-    # compute total initial densities before ionisation using redhsift values
+    # compute total initial densities before ionisation using redshift values
     n_H_0 = CONSTANT_n_H_0 * np.power(1 + redshift, 3)
     n_He_0 = CONSTANT_n_He_0 * np.power(1 + redshift, 3)
 
@@ -161,7 +162,7 @@ def generate_data(parameters, tau_per_sed=10):
     ionisation_fraction_He_II = 1 - ionisation_fraction_He_I
 
     # use the sampled ionisation fractions and initial number densities to compute
-    # number densities of nuetral hydrogen, helium and singly ionised helium.
+    # number densities of neutral hydrogen, helium and singly ionised helium.
     num_density_H_I = n_H_0 * ionisation_fraction_H_I
     num_density_He_I = n_He_0 * ionisation_fraction_He_I
     num_density_He_II = n_He_0 * ionisation_fraction_He_II
@@ -208,10 +209,12 @@ def main(path, key, n_samples):
 
     # using multiprocessing and the sampled parameters, generate data
     with multiprocessing.Pool() as pool:
-        # TODO: This needs to be re-written or better documented! FK
-        # shape of arrays?
-        # can this be rewritten to conform to PEP 8?
-        parameters, energies, intensities, tau_input_vector, tau, flux_vector = zip(*tqdm.tqdm(pool.imap(generate_data, sample_set), total=sample_set.shape[0]))
+        (parameters,
+         energies,
+         intensities,
+         tau_input_vector,
+         tau,
+         flux_vector) = zip(*tqdm.tqdm(pool.imap(generate_data, sample_set), total=sample_set.shape[0]))
 
     # concatenate numpy arrays
     parameters = np.concatenate(parameters, axis=0)
@@ -222,7 +225,14 @@ def main(path, key, n_samples):
     flux_vector = np.concatenate(flux_vector, axis=0)
 
     # write the data
-    write_data(sample_file, parameters, energies, intensities, tau_input_vector, tau, flux_vector, directory=sample_dir)
+    write_data(target_file=sample_file,
+               parameters=parameters,
+               energies=energies,
+               intensities=intensities,
+               tau_input_vector=tau_input_vector,
+               tau=tau,
+               flux_vector=flux_vector,
+               directory=sample_dir)
 
 
 # -----------------------------------------------------------------

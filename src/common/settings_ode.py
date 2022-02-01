@@ -5,16 +5,14 @@
 # We need ranges (min, max, lin or log scaling) for
 
 
-# x_H_II   (0.0, 1.0) in linear scale
+# x_H_II    (0.0, 1.0) in linear scale
 # x_He_II   (0.0, 1.0) in linear scale
-# x_He_III   (0.0, 1.0) in linear scale
-# Temperature   (-0.3, 13.1) in log in the data set, should maybe be clipped for the lower bound to 0
+# x_He_III  (0.0, 1.0) in linear scale
+# Temperature (-0.3, 13.1) in log in the data set, should maybe be clipped for the lower bound to 0
 # tau           TBD
-# time          (0.01 -  20.0) based on the previous data set
+# time      (0.01 -  20.0) based on the previous data set
 ode_parameter_limits = list()
-# ode_parameter_limits.append([-6.0, 0.0])
-# ode_parameter_limits.append([-6.0, 0.0])
-# ode_parameter_limits.append([-6.0, 0.0])
+
 ode_parameter_limits.append([0.0, 1.0])  # linear scale
 ode_parameter_limits.append([0.0, 1.0])  # linear scale
 ode_parameter_limits.append([0.0, 1.0])  # linear scale
