@@ -77,7 +77,7 @@ def recast_sample_value(x, a, b):
 # set up a directory for our data set
 # -----------------------------------------------------------------
 def setup_sample_dir(path, key, nSamples):
-    directory = '%s/sed_samples_%s_N%d' % (path, key, nSamples)
+    directory = '%s/pretraining_samples_%s_N%d' % (path, key, nSamples)
 
     if os.path.exists(directory):
 
