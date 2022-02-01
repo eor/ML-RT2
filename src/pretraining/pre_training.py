@@ -157,12 +157,16 @@ def pre_training_main(config):
     # -----------------------------------------------------------------
     if config.mode == 'train':
         # load the main dataset when mode is train
-        parameters, _, _, _, _, flux_vectors = utils_load_pretraining_data(config.data_dir,
-                                                                           file_name='data_pretraining.npy.npz')
+        (parameters,
+         energies,
+         _, _, _,
+         flux_vectors) = utils_load_pretraining_data(config.data_dir, file_name='data_pretraining.npy.npz')
     else:
         # load the development dataset when mode is dev
-        parameters, _, _, _, _, flux_vectors = utils_load_pretraining_data(config.data_dir,
-                                                                           file_name='data_pretraining_dev_set.npy.npz')
+        (parameters,
+         energies,
+         _, _, _,
+         flux_vectors) = utils_load_pretraining_data(config.data_dir, file_name='data_pretraining_dev_set.npy.npz')
 
     setattr(config, 'len_SED_input', flux_vectors.shape[1])
     setattr(config, 'n_samples', flux_vectors.shape[0])
@@ -195,11 +199,11 @@ def pre_training_main(config):
     # split the dataset
     dataset = torch.utils.data.TensorDataset(parameters, flux_vectors)
 
-    train_dataset, validation_dataset, test_dataset = \
-        torch.utils.data.random_split(dataset,
-                                      (train_length, validation_length, test_length),
-                                      generator=torch.Generator(device).manual_seed(PRETRAINING_SEED)
-                                      )
+    (train_dataset,
+     validation_dataset,
+     test_dataset) = torch.utils.data.random_split(dataset,
+                                                   (train_length, validation_length, test_length),
+                                                   generator=torch.Generator(device).manual_seed(PRETRAINING_SEED))
 
     # -----------------------------------------------------------------
     # data loaders from dataset
@@ -281,18 +285,18 @@ def pre_training_main(config):
         train_loss = epoch_loss / len(train_loader)
         avg_train_loss_array = np.append(avg_train_loss_array, train_loss)
 
-        val_loss = pre_training_evaluation(
-            current_epoch=epoch,
-            data_loader=val_loader,
-            model=model,
-            path=data_products_path,
-            config=config,
-            print_results=False,
-            save_results=False,
-            best_model=False
-        )
+        val_loss = pre_training_evaluation(current_epoch=epoch,
+                                           data_loader=val_loader,
+                                           model=model,
+                                           path=data_products_path,
+                                           config=config,
+                                           print_results=False,
+                                           save_results=False,
+                                           best_model=False
+                                           )
 
         avg_val_loss_array = np.append(avg_val_loss_array, val_loss)
+
         if val_loss < best_loss:
             best_loss = val_loss
             best_model = copy.deepcopy(model)
@@ -306,7 +310,8 @@ def pre_training_main(config):
         data_log.update_data()
 
         print("[Epoch %d/%d] [Train loss: %e] [Validation loss: %e][Best_epoch: %d]"
-              % (epoch, config.n_epochs, train_loss, val_loss, best_epoch))
+              % (epoch, config.n_epochs, train_loss, val_loss, best_epoch)
+              )
 
         # early stopping check
         if FORCE_STOP:
@@ -322,16 +327,15 @@ def pre_training_main(config):
     # -----------------------------------------------------------------
     # Evaluate the best model by using the test set
     # -----------------------------------------------------------------
-    test_loss = pre_training_evaluation(
-        current_epoch=best_epoch,
-        data_loader=test_loader,
-        model=best_model,
-        path=data_products_path,
-        config=config,
-        print_results=True,
-        save_results=True,
-        best_model=True
-    )
+    test_loss = pre_training_evaluation(current_epoch=best_epoch,
+                                        data_loader=test_loader,
+                                        model=best_model,
+                                        path=data_products_path,
+                                        config=config,
+                                        print_results=True,
+                                        save_results=True,
+                                        best_model=True
+                                        )
 
     # -----------------------------------------------------------------
     # Save the loss functions
@@ -344,6 +348,7 @@ def pre_training_main(config):
     # -----------------------------------------------------------------
     utils_save_pretraining_model(best_model.state_dict(),
                                  data_products_path, best_epoch, best_model=True)
+
     utils_save_pretraining_model(model.state_dict(),
                                  data_products_path, config.n_epochs, best_model=False)
 
@@ -369,6 +374,8 @@ def pre_training_main(config):
     # [TODO] do analysis here......
     # 1. plot loss functions.
     # 2. try some ways to represent and compare the true and regen flux vectors.
+
+    # TODO: we need one energy vector for the analysis
 
     if config.analysis:
         print("\n\033[96m\033[1m\nRunning analysis...\033[0m\n")

@@ -20,7 +20,7 @@ from common.settings_sed import p8_names_latex
 # Plot flux vectors (True and regenerated)
 # -----------------------------------------------------------------
 def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, output_dir,
-                                prefix, mse, file_type='pdf', parameters=None, add_errors=True):
+                                prefix, mse, file_type='png', parameters=None, add_errors=True):
 
     # -----------------------------------------------------------------
     # font settings
@@ -51,11 +51,13 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, outp
     # -----------------------------------------------------------------
     # first plot (true and regenerated flux_vectors)
     # -----------------------------------------------------------------
+    # TODO: Add energies as x axis
+
     ax0.plot(flux_vector_true, c='red', label='Truth')
     ax0.plot(flux_vector_gen, c='blue', label='Regenerated')
 
     if add_errors:
-        ax0.plot([], [], alpha=.0, label='MSE: %e' % (mse))
+        ax0.plot([], [], alpha=.0, label='MSE: %e' % mse)
 
     ax0.legend(loc=0, frameon=False, prop={'size': font_size_legends})
     # set y-label
