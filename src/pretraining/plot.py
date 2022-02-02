@@ -160,16 +160,20 @@ def plot_profiles_dataset(profiles, energy_vector, parameters, output_dir, prefi
         # plot profile[i]
         # -----------------------------------------------------------------
         ax.plot(energy_vector, profiles[i], c='blue')
-        # swtich on grid visibility and tick params
+
+        # switch on grid visibility and tick params
         ax.grid(which='major', color='#999999', linestyle='-', linewidth='0.4', alpha=0.4)
         ax.tick_params(axis='y', which='both', right=True, top=True, labelsize=font_size_ticks)
         ax.set_xticks(energy_vector, minor=False)
+
         # set label to axis
         ax.set_ylabel(get_label_Y(i), fontsize=font_size_x_y)
         ax.set_xlabel(r'$ E(eV) $', fontsize=font_size_x_y)
+
         # set axis to log-scale
         ax.set_yscale('log')
         ax.set_xscale('log')
+
         # update the figure
         fig.add_subplot(ax)
 

@@ -49,15 +49,14 @@ def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best',
         index = k_large_list[i]
         print('{:3d} \t MSE = {:.4e} \t parameters: {}'.format(i, mse_array[index], parameters[index]))
 
-        plot_flux_vector_comparison(
-            flux_vector_true=flux_vectors_true[index],
-            flux_vector_gen=flux_vectors_gen[index],
-            parameters=parameters[index],
-            n_epoch=epoch,
-            output_dir=plot_dir_path,
-            prefix=prefix,
-            mse=mse_array[index]
-        )
+        plot_flux_vector_comparison(flux_vector_true=flux_vectors_true[index],
+                                    flux_vector_gen=flux_vectors_gen[index],
+                                    parameters=parameters[index],
+                                    n_epoch=epoch,
+                                    output_dir=plot_dir_path,
+                                    prefix=prefix,
+                                    mse=mse_array[index]
+                                    )
 
     # 5.  plot profiles for smallest MSE
     print('Producing profile plot(s) for profiles with %d lowest MSE' % k)
@@ -69,15 +68,14 @@ def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best',
         tmp_profile_true = flux_vectors_true[index]
         tmp_profile_gen = flux_vectors_gen[index]
 
-        plot_flux_vector_comparison(
-            flux_vector_true=flux_vectors_true[index],
-            flux_vector_gen=flux_vectors_gen[index],
-            parameters=parameters[index],
-            n_epoch=epoch,
-            output_dir=plot_dir_path,
-            prefix=prefix,
-            mse=mse_array[index]
-        )
+        plot_flux_vector_comparison(flux_vector_true=flux_vectors_true[index],
+                                    flux_vector_gen=flux_vectors_gen[index],
+                                    parameters=parameters[index],
+                                    n_epoch=epoch,
+                                    output_dir=plot_dir_path,
+                                    prefix=prefix,
+                                    mse=mse_array[index]
+                                    )
 
 
 # -----------------------------------------------------------------
@@ -93,14 +91,20 @@ def analysis_pretraining_dataset(data_dir, base_path, mode='train', prefix='data
 
     if mode == 'train':
         # load the main dataset when mode is train
-        parameters, energies, intensities, tau_input_vector, tau, \
-            flux_vectors = utils_load_pretraining_data(data_dir)
+        (parameters,
+         energies,
+         intensities,
+         tau_input_vector,
+         tau,
+         flux_vectors) = utils_load_pretraining_data(data_dir)
     else:
         # load the development dataset when mode is dev
-        parameters, energies, intensities, tau_input_vector, tau, \
-                    flux_vectors = utils_load_pretraining_data(data_dir,
-                                file_name='data_pretraining_dev_set.npy.npz')
-
+        (parameters,
+         energies,
+         intensities,
+         tau_input_vector,
+         tau,
+         flux_vectors) = utils_load_pretraining_data(data_dir, file_name='data_pretraining_dev_set.npy.npz')
 
     # compute mean, min, max in dataset
     print('\nGenerating dataset summary.....')
@@ -119,7 +123,7 @@ def analysis_pretraining_dataset(data_dir, base_path, mode='train', prefix='data
     print('Successfully saved histogram for dataset to:',
           osp.join(data_analysis_dir_path, 'data_set_distribution.png'))
 
-    # obtain ionisation cross-section using enery vector.
+    # obtain ionisation cross-section using energy vector.
     p = Physics.getInstance()
     p.set_energy_vector(energies[0])
     cross_section = p.get_photo_ionisation_cross_section_hydrogen()
@@ -139,17 +143,15 @@ def analysis_pretraining_dataset(data_dir, base_path, mode='train', prefix='data
     # stack the data to plot
     plot_profile_data = np.stack((flux_vectors, intensities, tau, cross_section), axis=1)
 
-
     print('Producing analysis plot(s) for %d random profiles' % k)
     for i in range(k):
-        plot_profiles_dataset(
-            plot_profile_data[i],
-            energies[0],
-            parameters[i],
-            data_analysis_dir_path,
-            prefix,
-            random_indices[i]
-        )
+        plot_profiles_dataset(plot_profile_data[i],
+                              energies[0],
+                              parameters[i],
+                              data_analysis_dir_path,
+                              prefix,
+                              random_indices[i]
+                             )
 
 
 # -----------------------------------------------------------------
@@ -160,7 +162,7 @@ if __name__ == '__main__':
     print('Hello there! Let\'s analyse some results\n')
 
     path = './output_pretraining/'
-    data_dir = '../../data/sed_samples/'
+    data_dir = '../../data/pretraining/'
     # config = utils_load_config(path)
     analysis_pretraining_dataset(data_dir, path, prefix='data', k=10)
 #     analysis_auto_plot_flux_vectors(config, k=50, base_path=path, prefix='best')
