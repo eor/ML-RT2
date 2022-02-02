@@ -11,9 +11,22 @@ from pretraining.plot import *
 
 
 # -----------------------------------------------------------------
-# Automatically plot true and regenerated flux_vectors
+#  auto plot flux vector comparison
 # -----------------------------------------------------------------
 def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best', epoch=None):
+    """
+    Automatically plot true and regenerated flux_vectors vs photon energies.
+
+    Args:
+        config:  config object of the training run
+        k: int, number of best and worst samples to plot (based on MSE comparison)
+        base_path: string, output path of training run
+        prefix: 'test' or 'best'
+        epoch: int
+
+    Returns:
+
+    """
 
     if base_path is not None:
         data_dir_path = osp.join(base_path, DATA_PRODUCTS_DIR)
@@ -79,9 +92,19 @@ def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best',
 
 
 # -----------------------------------------------------------------
-# Plot K random profiles from dataset.
+# Plot k random profiles from dataset.
 # -----------------------------------------------------------------
 def analysis_pretraining_dataset(data_dir, base_path, mode='train', prefix='data', k=10):
+    """
+    Plot a number of examples from the pre-training data set, i.e. N(E), I(E), tau versus photon energy.
+
+    Args:
+        data_dir:
+        base_path:
+        mode:
+        prefix:
+        k:
+    """
 
     # output directory for results
     data_analysis_dir_path = osp.join(base_path, DATA_ANALYSIS)
@@ -117,11 +140,11 @@ def analysis_pretraining_dataset(data_dir, base_path, mode='train', prefix='data
     print('Maximum and minimum value of tau in dataset: ', minimum, maximum)
 
     # plot histogram for data_set_distribution
-    fig, ax = plt.subplots(figsize =(10, 10))
+    fig, ax = plt.subplots(figsize=(10, 10))
     ax.hist(flux_vectors.flatten(), bins=10, log=True, density=True)
     plt.savefig(osp.join(data_analysis_dir_path, 'data_set_distribution.png'))
-    print('Successfully saved histogram for dataset to:',
-          osp.join(data_analysis_dir_path, 'data_set_distribution.png'))
+
+    print('Successfully saved histogram for dataset to:', osp.join(data_analysis_dir_path, 'data_set_distribution.png'))
 
     # obtain ionisation cross-section using energy vector.
     p = Physics.getInstance()
