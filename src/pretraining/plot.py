@@ -31,7 +31,7 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, energy_vector
     font_size_ticks = 26
     font_size_legends = 22
     font_size_x_y = 30
-    print(energy_vector)
+
     # -----------------------------------------------------------------
     # figure setup
     # -----------------------------------------------------------------
@@ -51,8 +51,6 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, energy_vector
     # -----------------------------------------------------------------
     # first plot (true and regenerated flux_vectors)
     # -----------------------------------------------------------------
-    # TODO: Add energies as x axis
-
     ax0.plot(energy_vector, flux_vector_true, c='red', label='Truth')
     ax0.plot(energy_vector, flux_vector_gen, c='blue', label='Regenerated')
 
