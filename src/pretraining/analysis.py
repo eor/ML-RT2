@@ -5,6 +5,7 @@ import sys; sys.path.append('..')
 
 from common.utils import *
 from common.settings import *
+from common.settings_sed import *
 from common.physics import *
 
 from pretraining.plot import *
@@ -56,7 +57,10 @@ def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best',
     k_large_list = heapq.nlargest(k, range(len(mse_array)), mse_array.take)
     k_small_list = heapq.nsmallest(k, range(len(mse_array)), mse_array.take)
 
-    # 4.  plot profiles for largest MSE
+    # 4. sample an energy_vector to plot on x-axis.
+    energy_vector = np.logspace(np.log10(SED_ENERGY_MIN), np.log10(SED_ENERGY_MAX), num=len(flux_vectors_true[0]))
+
+    # 5.  plot profiles for largest MSE
     print('Producing profile plot(s) for profiles with %d highest MSE' % k)
     for i in range(len(k_large_list)):
         index = k_large_list[i]
@@ -65,13 +69,14 @@ def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best',
         plot_flux_vector_comparison(flux_vector_true=flux_vectors_true[index],
                                     flux_vector_gen=flux_vectors_gen[index],
                                     parameters=parameters[index],
+                                    energy_vector=energy_vector,
                                     n_epoch=epoch,
                                     output_dir=plot_dir_path,
                                     prefix=prefix,
                                     mse=mse_array[index]
                                     )
 
-    # 5.  plot profiles for smallest MSE
+    # 6.  plot profiles for smallest MSE
     print('Producing profile plot(s) for profiles with %d lowest MSE' % k)
     for i in range(len(k_small_list)):
         index = k_small_list[i]
@@ -84,6 +89,7 @@ def analysis_auto_plot_flux_vectors(config, k=10, base_path=None, prefix='best',
         plot_flux_vector_comparison(flux_vector_true=flux_vectors_true[index],
                                     flux_vector_gen=flux_vectors_gen[index],
                                     parameters=parameters[index],
+                                    energy_vector=energy_vector,
                                     n_epoch=epoch,
                                     output_dir=plot_dir_path,
                                     prefix=prefix,
