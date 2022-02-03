@@ -4,13 +4,13 @@
 
 BASEURL='https://drive.google.com/uc?id='
 
-FILE1='1D690uoF9VKzcjnWW0wDev4qceFjGawKN'
+FILE1='1-D9kzuNKZthjJRPaljBaqdf35576ByVQ'
 FILE1NAME='data_pretraining.npy.npz'
-CHECKSUM1='b98e58647028eb33385c05b732191ba9'
+CHECKSUM1='6bdde3aef6acce838fd69b7b5d7b37ad'
 
-FILE2='1Yb3qfwIS5KxfYgyzAhB_4uECG5Nl4Knf'
+FILE2='1Aihbvu7tH51q4UTpDUshWsdHeifBmTPU'
 FILE2NAME='data_pretraining_dev_set.npy.npz'
-CHECKSUM2='dc44a8c76e3d1cca7b6c4d05215ed467'
+CHECKSUM2='6bdde3aef6acce838fd69b7b5d7b37ad'
 
 dl() {
 
