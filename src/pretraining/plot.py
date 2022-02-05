@@ -19,7 +19,7 @@ from common.settings_sed import p8_names_latex
 # -----------------------------------------------------------------
 # Plot flux vectors (True and regenerated)
 # -----------------------------------------------------------------
-def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, output_dir,
+def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, energy_vector, n_epoch, output_dir,
                                 prefix, mse, file_type='png', parameters=None, add_errors=True):
 
     # -----------------------------------------------------------------
@@ -51,10 +51,8 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, outp
     # -----------------------------------------------------------------
     # first plot (true and regenerated flux_vectors)
     # -----------------------------------------------------------------
-    # TODO: Add energies as x axis
-
-    ax0.plot(flux_vector_true, c='red', label='Truth')
-    ax0.plot(flux_vector_gen, c='blue', label='Regenerated')
+    ax0.plot(energy_vector, flux_vector_true, c='red', label='Truth')
+    ax0.plot(energy_vector, flux_vector_gen, c='blue', label='Regenerated')
 
     if add_errors:
         ax0.plot([], [], alpha=.0, label='MSE: %e' % mse)
@@ -70,12 +68,18 @@ def plot_flux_vector_comparison(flux_vector_true, flux_vector_gen, n_epoch, outp
     # second plot (diff / relative error)
     # -----------------------------------------------------------------
     absolute_error = flux_vector_true - flux_vector_gen
-    ax1.plot(absolute_error, c='black', label='Absolute error', linewidth=0.6)
+    ax1.plot(energy_vector, absolute_error, c='black', label='Absolute error', linewidth=0.6)
     ax1.grid(which='major', color='#999999', linestyle='-', linewidth='0.4', alpha=0.4)
     ax1.set_ylabel(r'Abs error', fontsize=font_size_x_y)
     ax1.set_xlabel(r'Energy $(eV)$', fontsize=font_size_x_y)
-    ax1.set_xticks(np.arange(0, len(flux_vector_true), step=50), minor=True)
+    ax1.set_xticks(energy_vector, minor=False)
     ax1.tick_params(axis='both', which='both', right=True, top=True, labelsize=font_size_ticks)
+
+    # set axis to log-scale
+    ax0.set_yscale('log')
+    ax0.set_xscale('log')
+    ax1.set_yscale('log')
+    ax1.set_xscale('log')
 
     # -----------------------------------------------------------------
     # add parameters as title
