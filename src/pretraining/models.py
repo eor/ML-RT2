@@ -38,7 +38,7 @@ class AE1(nn.Module):
            N(E) = exp(-tau(E))  * I(E)
 
         For a given flux vector
-        (1) the enocde function outputs a latent representation of (1).
+        (1) the encode function outputs a latent representation of (1).
         (2) and the decode function takes this latent representation and try to
         reconstruct (1) from it.
 
