@@ -1,0 +1,279 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage[authoryear,round]{natbib}   % astro-style author-year citations
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\setlist{itemsep=3pt,topsep=3pt}
+\usepackage{graphicx}
+\usepackage{float}                       % [H] = put the figure exactly here (no floating)
+% helper: an architecture schematic from ../diagrams, pinned in place, with a caption
+\newcommand{\archfig}[2]{%
+  \begin{figure}[H]\centering
+    \includegraphics[width=\linewidth]{../diagrams/#1.pdf}%
+    \caption{#2}\label{fig:#1}%
+  \end{figure}}
+
+\title{ML-RT2: advanced ML methods for emulating cosmological radiative transfer\\[4pt]
+\large A methods brief for the team}
+\author{}
+\date{\today}
+
+\newcommand{\prof}{\mathbf{u}}
+\newcommand{\params}{\boldsymbol{\theta}}
+
+\begin{document}
+\maketitle
+
+\noindent\emph{Purpose: a shareable, non-code overview of the methods we are trialing for the
+third paper. Each method gets a plain-language description, the key equation with its symbols
+spelled out, and why it is interesting for us. All eight models are implemented as prototypes in a
+shared training/evaluation framework (dataset~053), ready for the GPU cluster.}
+
+\medskip
+\noindent\textbf{How to read the diagrams.} The colours are consistent throughout:
+\emph{pink} = data / vectors (inputs, outputs, intermediate representations);
+\emph{blue} = learned networks / operators;
+\emph{orange} = special operations or physics;
+\emph{green} = loss (training) terms.
+
+\section{Context and goal}
+\begin{itemize}
+  \item Prior work (papers 1--2) showed that feed-forward and generative networks (MLP, CVAE, CGAN,
+        LSTM) can emulate STARDUST radiative-transfer profiles \citep{Krause2018}; emulating
+        expensive cosmological simulations with neural networks is now common practice
+        \citep{Kern2017}.
+  \item Paper 3 targets \textbf{methods not yet widely translated into astrophysical radiative
+        transfer}, kept \textbf{comparable} to papers 1--2 (same data, split and metrics) and studied
+        for \textbf{how they optimise} (training behaviour, data efficiency, cost).
+  \item We want emulators that are \emph{capable} --- accurate, and ideally carrying an uncertainty
+        estimate and/or respecting the physics --- but \emph{cheap to evaluate} once trained.
+\end{itemize}
+
+\section{Problem setup}
+\begin{itemize}
+  \item STARDUST is a deterministic function that turns $P=8$ physical parameters
+        $\params$ (log halo mass, redshift, source age, QSO spectral slope and efficiency, stellar
+        escape fraction, IMF slope and minimum mass) into four radial profiles
+        $\prof(r)=\big(x_{\rm HII},\,x_{\rm HeII},\,x_{\rm HeIII},\,T\big)$ --- the ionised fractions
+        of hydrogen and helium and the gas temperature, each sampled at $L=1500$ radii $r$.
+  \item The emulator learns an approximation $\hat{\prof}=f_\phi(\params)$ (with $\phi$ the network
+        weights) from dataset~053 ($N=41{,}081$ examples, split 80/10/10 into train/val/test).
+  \item Pre-processing matches papers 1--2: parameters rescaled to $[0,1]$; ionised fractions passed
+        through $\log_{10}(x+10^{-6})$; temperature through $\log_{10}T$; then each channel is
+        standardised (zero mean, unit variance).
+  \item Key difficulty: the profiles are smooth except for a \textbf{sharp ionisation front} (where
+        the gas flips from ionised to neutral). Most networks have a low-frequency bias and tend to
+        \emph{smooth over} exactly this front, so representing it well is a recurring theme below.
+\end{itemize}
+
+\archfig{pipeline}{The shared emulation pipeline. Every architecture maps the 8 physical parameters
+to the four radial profiles; all are trained on the same STARDUST dataset (053) and compared with the
+same metrics, so any difference reflects the \emph{method}, not the setup.}
+
+\section{Methods}
+Three of the models below (FNO, DeepONet, PINO) are \emph{neural operators}. An operator is a map from
+a function to a function; here the thing we want to predict \emph{is} a function --- the profile as a
+function of radius, $\prof(r)$ --- so this framing is natural \citep{Kovachki2023}. Since our input is
+only 8 numbers, not a function, we first ``\textbf{lift the parameter vector to a field}'': we build a
+table with one row per radius point and, in every row, write the same 8 parameters plus that point's
+radius $r$. The input is then a function over radius that an operator can transform --- intuitively,
+we \emph{paint} the parameters across the radial grid and let the network reshape that painted field
+into the output profiles. Each architecture gets its own page below.
+
+\clearpage
+\subsection{Fourier Neural Operator (FNO)}
+\textbf{How it works.} The FNO edits the field in ``wavelength space'' \citep{Li2021FNO}: each layer
+transforms the field, keeps and reweights only its smooth large-scale waves, transforms back, and adds
+a local correction,
+\begin{equation}
+  v_{\ell+1} = \sigma\!\Big( W_\ell\, v_\ell \;+\; \mathcal{F}^{-1}\big(R_\ell\,\mathcal{F} v_\ell\big)\Big).
+\end{equation}
+\begin{itemize}
+  \item $v_\ell$ is the field (a stack of feature channels over radius) at layer $\ell$;
+        $\mathcal{F}$ / $\mathcal{F}^{-1}$ are the Fourier transform and its inverse, which decompose
+        the field into waves of different wavelengths and back again; $R_\ell$ is a set of learned
+        weights applied only to the lowest $K$ wave-modes (the large, smooth scales); $W_\ell$ is a
+        simple per-radius linear mix; and $\sigma$ is a nonlinearity.
+  \item \textbf{Why for us:} working with wavelengths captures the big smooth shape of the profile
+        very efficiently, while the local term helps with the sharp front. It is resolution-free
+        (train at 1500 points, evaluate at any grid) and extremely cheap at inference --- a strong
+        ``capable and fast'' baseline barely used in astrophysical RT.
+\end{itemize}
+\archfig{fno}{\textbf{Fourier Neural Operator.} The 8 parameters are lifted to a field over radius,
+then passed through a few Fourier blocks. Each block (expanded below) has a spectral path that keeps
+the smooth large-scale structure ($\mathcal{F}\!\to\!\times R_\ell\!\to\!\mathcal{F}^{-1}$) plus a
+local per-radius term ($W$); a final projection gives the four profiles.}
+
+\clearpage
+\subsection{DeepONet}
+\textbf{How it works.} DeepONet builds the profile from learned building-block curves
+\citep{Lu2021DeepONet}:
+\begin{equation}
+  \hat u_c(r) \;=\; \sum_{k=1}^{K} b_{c,k}(\params)\, t_k(r) + \beta_c .
+\end{equation}
+\begin{itemize}
+  \item The \emph{trunk} network turns a radius $r$ into $K$ basis shapes $t_k(r)$ (a shared library of
+        building-block curves); the \emph{branch} network turns the parameters into coefficients
+        $b_{c,k}(\params)$ that say how much of each building block to use for output channel $c$;
+        $\beta_c$ is an offset. The profile is their weighted sum.
+  \item \textbf{Why for us:} because the output is written as a function of $r$, we can query the
+        profile at \emph{any} radius, and evaluation is only a few small matrix multiplies (very
+        fast). We feed the trunk Fourier features of $r$ \citep{Tancik2020} so it can represent the
+        sharp front.
+\end{itemize}
+\archfig{deeponet}{\textbf{DeepONet.} The branch network turns the parameters into coefficients and
+the trunk network turns a radius into basis shapes; their weighted sum is the profile value at that
+radius, so the profile can be queried at any radius.}
+
+\clearpage
+\subsection{Physics-informed neural operator (PINO)}
+\textbf{How it works.} Train an operator on the data \emph{and} nudge it to obey the radiative-transfer
+physics \citep{Raissi2019PINN,Li2024PINO}. The loss has two parts,
+\begin{equation}
+  \mathcal{L} = \underbrace{\big\|\hat\prof-\prof\big\|^2}_{\text{data: match STARDUST}}
+  \;+\; \lambda\,\underbrace{\big\|\,\mathcal{R}[\hat\prof]\,\big\|^2}_{\text{physics: obey RT law}} ,
+\end{equation}
+where $\mathcal{R}[\hat\prof]$ measures how much the prediction \emph{violates} a physical law and
+$\lambda$ sets how strongly we enforce it. The law we use is ionisation equilibrium: the rate at which
+photons ionise atoms balances the rate at which electrons recombine,
+\begin{equation}
+  \underbrace{\Gamma_0(\params)\,\frac{e^{-\tau(r)}}{r^2}\,(1-x_{\rm HII})}_{\text{photo-ionisation}}
+  \;=\;
+  \underbrace{\alpha_{\rm HII}(T)\,x_{\rm HII}^2}_{\text{recombination}} ,
+  \qquad \tau(r)=\kappa(\params)\!\int_0^r (1-x_{\rm HII})\,dr' .
+\end{equation}
+\begin{itemize}
+  \item $x_{\rm HII}$ is the ionised-hydrogen fraction and $1-x_{\rm HII}$ the neutral fraction;
+        $\tau(r)$ is the optical depth (how much ionising light has been absorbed on the way out to
+        $r$); $\alpha_{\rm HII}(T)$ is the temperature-dependent recombination coefficient (from
+        \citealt{Krause2018}, following Fukugita \& Kawasaki); and $\Gamma_0,\kappa$ are two small
+        per-sample numbers predicted from $\params$ that absorb the unknown source brightness and gas
+        density --- so it is the \emph{shape} of the law, not its scale, that regularises. We add mild
+        ``sanity'' terms too (fractions in $[0,1]$, helium conservation, the front not turning back on).
+  \item \textbf{Why for us:} anchoring the physics to data is far more robust than a pure physics-only
+        network (our earlier pure-PINN attempt never converged, as expected for this stiff,
+        front-forming system). Here the operator already fits the data and the physics only refines
+        it, most helpfully at the front where data is thin. Setting $\lambda=0$ recovers the plain
+        operator, a built-in ablation; helium/heating terms are clean extensions.
+\end{itemize}
+\archfig{pino}{\textbf{PINO.} The operator predicts the profiles (right). Training uses two terms of
+one loss: a \emph{data} term comparing the prediction to the STARDUST target, and a \emph{physics}
+term measuring how far the prediction is from the ionisation-equilibrium law. Their sum updates the
+operator; with $\lambda=0$ only the data term remains (a plain operator).}
+
+\clearpage
+\subsection{Conditional flow matching (generative, with uncertainty)}
+\textbf{How it works.} Learn a ``current'' that carries random noise into valid profiles. A velocity
+field $v_\psi(\mathbf{x},t\mid\params)$ says, for a partly-formed profile $\mathbf{x}$ at pseudo-time
+$t\in[0,1]$ (given the parameters), which direction to nudge it. We define a straight path from noise
+$\mathbf{x}_0\!\sim\!\mathcal{N}(0,I)$ to a real profile $\mathbf{x}_1$, namely
+$\mathbf{x}_t=(1-t)\mathbf{x}_0+t\,\mathbf{x}_1$, and train the field to point along it
+\citep{Lipman2023FM,Liu2023RF}:
+\begin{equation}
+  \mathcal{L}=\mathbb{E}_{t,\mathbf{x}_0,\mathbf{x}_1}
+  \big\|\,v_\psi(\mathbf{x}_t,t\mid\params)-(\mathbf{x}_1-\mathbf{x}_0)\,\big\|^2 .
+\end{equation}
+\begin{itemize}
+  \item The target direction is simply ``from noise towards data'', $\mathbf{x}_1-\mathbf{x}_0$. To
+        generate a profile we start from noise and follow the current in a few small steps.
+  \item \textbf{Why for us:} drawing several different noise starts gives several plausible profiles
+        --- an \emph{ensemble}, hence an error bar. It is the generative successor to the paper-2
+        CVAE/CGAN but adversary-free (more stable), and few-step sampling keeps inference cheap.
+        (Diffusion models, \citealt{Ho2020DDPM}, are the closely related but more expensive cousin.)
+\end{itemize}
+\archfig{flow}{\textbf{Conditional flow matching.} A network (the velocity field), conditioned on the
+parameters and pseudo-time, is applied repeatedly to carry Gaussian noise to a profile. Different
+random starts give an ensemble, hence calibrated uncertainty.}
+
+\clearpage
+\subsection{Profile transformer (secondary)}
+\textbf{How it works.} We chop the profile into radial \emph{patches} and introduce a learnable
+``query'' token $q_i$ for each patch, plus one token carrying the parameters. A transformer lets all
+tokens exchange information through self-attention \citep{Vaswani2017,Cao2021}, after which each query
+decodes its own patch; the patches are stitched into the full profiles.
+\begin{itemize}
+  \item \textbf{Why for us:} attention naturally couples long-range structure --- e.g.\ the position
+        of the front depends on the total absorption interior to it --- and lets the four species
+        inform one another. A fresh architecture for this problem.
+\end{itemize}
+\archfig{transformer}{\textbf{Profile transformer.} A parameter token and one learnable query per
+radial patch attend to one another; each query then outputs its patch of the profile, and the patches
+are assembled into the full curves.}
+
+\clearpage
+\subsection{Neural-ODE decoder in radius}
+\textbf{How it works.} Build the profile by ``marching outward'' \citep{Chen2018NODE}. A latent state
+$\mathbf{h}$ is initialised from the parameters and updated step by step in radius by a learned rate
+$f_\phi$, with a readout $g_\phi$ giving the profile at each radius:
+\begin{equation}
+  \frac{d\mathbf{h}}{dr}=f_\phi(\mathbf{h},r,\params),\qquad \prof(r)=g_\phi\big(\mathbf{h}(r)\big).
+\end{equation}
+\begin{itemize}
+  \item \textbf{Why for us:} this mirrors how the real ionisation structure builds up with distance
+        from the source --- a physically-structured, ``marching'' emulator.
+\end{itemize}
+\archfig{node}{\textbf{Neural-ODE decoder.} A latent state initialised from the parameters is
+integrated outward in radius by a learned update; a readout at each step gives the profile.}
+
+\clearpage
+\subsection{Joint-embedding predictive architecture (JEPA)}
+\textbf{How it works.} Learn to predict an \emph{abstract summary} of the profile before decoding it
+\citep{Assran2023IJEPA}. An encoder $E_{\params}$ turns the parameters into an embedding, a predictor
+$P$ maps that to a predicted profile-embedding $\hat z$, and a decoder turns $\hat z$ into a profile;
+a second encoder $E_{\prof}$ provides the target embedding of the true profile. Training combines a
+latent-prediction loss and a reconstruction loss:
+\begin{equation}
+  \mathcal{L}=\big\|\,\mathrm{dec}(\hat z)-\prof\,\big\|^2
+  + \beta\,\big\|\,\hat z - \mathrm{sg}[\,E_{\prof}(\prof)\,]\,\big\|^2,\qquad
+  \hat z = P\big(E_{\params}(\params)\big).
+\end{equation}
+\begin{itemize}
+  \item $\mathrm{sg}[\cdot]$ is a ``stop-gradient'' (we treat the target embedding as fixed, so the
+        representation cannot collapse to something trivial) and $\beta$ balances the two terms.
+  \item \textbf{Why for us:} essentially unused in astronomy, and it yields a shared latent space
+        useful for interpolation and data efficiency.
+\end{itemize}
+\archfig{jepa}{\textbf{JEPA.} The parameter path (top) predicts an embedding $\hat z$; the profile
+path (bottom) provides the target embedding $z_{\mathbf u}$. Training matches the two embeddings
+(latent loss) and reconstructs the profile from $\hat z$ (recon loss).}
+
+\clearpage
+\subsection{Conditional Neural Process (CNP)}
+\textbf{How it works.} A cheap route to a per-radius error bar \citep{Garnelo2018CNP}. The parameters
+are turned into a representation, and a decoder reads (representation, radius) and outputs a Gaussian
+--- a mean $\mu(r)$ and a spread $\sigma(r)$ --- for the profile at that radius, trained by Gaussian
+likelihood:
+\begin{equation}
+  \mathcal{L}=\tfrac12\Big\langle \big((\prof-\mu(r))/\sigma(r)\big)^2 + 2\log\sigma(r)\Big\rangle .
+\end{equation}
+\begin{itemize}
+  \item This rewards accurate means \emph{and} honest spreads, so $\sigma(r)$ grows where the model is
+        genuinely uncertain (typically at the front).
+  \item \textbf{Why for us:} a lightweight, distinct route to uncertainty (complementary to flow
+        matching) that gives an error bar at every radius for almost no extra cost.
+\end{itemize}
+\archfig{cnp}{\textbf{Conditional Neural Process.} A parameter representation and the radius are
+decoded into a per-radius Gaussian (mean and spread), trained by Gaussian likelihood for calibrated
+uncertainty.}
+
+\clearpage
+\section{Evaluation and the optimisation study}
+\begin{itemize}
+  \item \textbf{Metrics:} log-space MSE and per-channel error (directly comparable to papers 1--2), a
+        physical relative-$L_2$ error, an \textbf{ionisation-front-position error} (a sharp-feature
+        metric that plain MSE can hide), and --- for the generative/probabilistic models ---
+        uncertainty calibration (coverage, CRPS).
+  \item \textbf{Fair protocol:} identical data split, compute budget and random seeds across all
+        architectures, reporting mean\,$\pm$\,std over 3 seeds, so comparisons are like-for-like.
+  \item \textbf{Tuning strategy:} asynchronous successive halving \citep{Li2020ASHA} via Optuna
+        \citep{Akiba2019Optuna} --- many cheap exploratory trials on the fast consumer GPUs,
+        full-budget refinement of the best configurations on the larger cards. Alongside this we run
+        controlled one-parameter sweeps (learning rate, FNO modes, Fourier-feature bandwidth, physics
+        weight $\lambda$) that \emph{are} the ``how do the models optimise'' figures.
+\end{itemize}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+\end{document}

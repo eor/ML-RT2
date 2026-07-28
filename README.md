@@ -80,7 +80,9 @@ ML-RT2/                     (this project = paper 3; the earlier PINN work is in
 cd src && python sanity_check.py          # shape + overfit-a-batch for each model
 ```
 
-**Get the data** (into `ML-RT2/data/053_data_set`): see `data/053_data_set/get_data.sh`.
+**Get the data** (into `ML-RT2/data/053_data_set`): run `data/053_data_set/get_data.sh`, which
+fetches the dataset from Google Drive via `gdown` (included in the conda env). See the comments at
+the top of the script for the one-time host setup (the Drive file id).
 
 **Train (cluster):**
 ```bash

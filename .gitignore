@@ -1,4 +1,4 @@
-# Python
+# ---- Python ----
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -9,18 +9,18 @@ venv/
 env/
 .ipynb_checkpoints/
 
-# ML run outputs
+# ---- ML run outputs ----
 output/                 # trainer run dirs (checkpoints, history.json, plots)
 *.pt                    # model checkpoints
 *.png                   # generated figures (profiles, training dynamics)
 sweeps/                 # optuna study dirs
 *.db                    # optuna sqlite studies
 
-# Data arrays (fetched via data/*/get_data.sh; too large to track)
+# ---- Data arrays (fetched via data/*/get_data.sh; too large to track) ----
 *.npy
 *.npz
 
-# LaTeX build artifacts (the .tex and .pdf are kept)
+# ---- LaTeX build artifacts (the .tex and .pdf are kept) ----
 *.aux
 *.bbl
 *.blg
@@ -30,11 +30,11 @@ sweeps/                 # optuna study dirs
 *.log
 *.synctex.gz
 
-# Apptainer
+# ---- Apptainer ----
 *.sif
 *.sandbox/
 
-# OS / editor
+# ---- OS / editor ----
 .DS_Store
 .idea/
 .vscode/

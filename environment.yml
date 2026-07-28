@@ -1,0 +1,28 @@
+# Conda environment for advanced STARDUST emulators (targeting GPU clusters).
+#
+# All models are self-contained (pure torch); this env has everything needed to
+# train, sweep, and analyse every one of them. The CUDA 12.1 build spans the cluster
+# hardware (Ampere 3090 / Ada L40S / A100 / Hopper H200) with bf16 support everywhere.
+#
+#   conda env create -f environment.yml
+#   conda activate mlrt2
+#
+# A more portable option on the heterogeneous cluster is the Apptainer image
+# (apptainer/emulators.def), which pins the whole CUDA userspace.
+name: mlrt2
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pytorch=2.2.*
+  - pytorch-cuda=12.1        # GPU build; on a CPU-only box drop this line and add `cpuonly`
+  - numpy                    # data pipeline + metrics
+  - matplotlib               # plots / analysis
+  - optuna                   # hyperparameter search + pruning (sweep.py)
+  - gdown                    # fetch the dataset from Google Drive (data/*/get_data.sh)
+  - pip
+# Optional production swaps (NOT required -- the models are hand-rolled in torch):
+#   pip install neuraloperator   # tensorised spectral layers for FNO
+#   pip install torchdiffeq      # adaptive ODE solver for the Neural-ODE decoder
