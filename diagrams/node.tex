@@ -1,0 +1,25 @@
+% Neural-ODE decoder in radius.  Build: latexmk -pdf node.tex
+\documentclass[border=8pt]{standalone}
+\usepackage{amsmath}
+\input{mlstyle}
+\begin{document}
+\begin{tikzpicture}
+  % update rule as a single caption above the chain (not on every arrow)
+  \node[font=\itshape] (rule) at (4.3,1.2)
+        {march outward:\ \ $\mathbf{h}\leftarrow \mathbf{h}+dr\,f_\phi(\mathbf{h},r,\boldsymbol{\theta})$,\quad
+         $\mathbf{u}(r)=\mathrm{readout}(\mathbf{h})$};
+
+  \node[data] (th) at (0,0)                 {$\boldsymbol{\theta}$};
+  \node[data, minimum width=9mm, right=9mm of th]  (h0) {$\mathbf{h}_0$};
+  \node[data, minimum width=9mm, right=12mm of h0] (h1) {$\mathbf{h}_1$};
+  \node[data, minimum width=9mm, right=12mm of h1] (h2) {$\mathbf{h}_2$};
+  \node[right=7mm of h2]                     (hd) {$\cdots$};
+  \node[data, minimum width=9mm, right=7mm of hd]  (hn) {$\mathbf{h}_N$};
+  \foreach \a/\b in {th/h0, h0/h1, h1/h2, h2/hd, hd/hn} \draw[arr] (\a) -- (\b);
+
+  % readouts to the profile
+  \node[data, minimum width=22mm] (out) at (4.6,-1.9) {profile $\mathbf{u}(r)$};
+  \foreach \n in {h0,h1,h2,hn} \draw[darr] (\n) -- (out);
+  \node[note, right=6mm of hn] {a physically-\\structured\\``marching'' decoder};
+\end{tikzpicture}
+\end{document}

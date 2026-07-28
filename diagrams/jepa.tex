@@ -1,0 +1,31 @@
+% JEPA -- joint-embedding predictive architecture.  Build: latexmk -pdf jepa.tex
+\documentclass[border=8pt]{standalone}
+\usepackage{amsmath}
+\input{mlstyle}
+\begin{document}
+\begin{tikzpicture}
+  % parameter path (top)
+  \node[data] (th)  at (0,0)    {$\boldsymbol{\theta}$};
+  \node[net]  (eth) at (1.7,0)  {$E_{\boldsymbol{\theta}}$};
+  \node[data] (zth) at (3.3,0)  {$z_{\boldsymbol{\theta}}$};
+  \node[net,  minimum width=16mm] (P) at (5.4,0) {predictor $P$};
+  \node[data] (zh)  at (7.6,0)  {$\hat z$};
+  \draw[arr] (th)--(eth); \draw[arr] (eth)--(zth); \draw[arr] (zth)--(P); \draw[arr] (P)--(zh);
+
+  % profile path (bottom, provides the target embedding)
+  \node[data, minimum width=15mm] (u)  at (0,-2.2)   {$\mathbf{u}$ (profile)};
+  \node[net]  (eu) at (2.2,-2.2)  {$E_{\mathbf{u}}$};
+  \node[data, minimum width=16mm] (zu) at (4.3,-2.2) {$z_{\mathbf{u}}$ {\scriptsize (stop-grad)}};
+  \draw[arr] (u)--(eu); \draw[arr] (eu)--(zu);
+
+  % decoder (lower) and the two loss boxes (far right, vertically aligned)
+  \node[net]  (dec) at (7.6,-2.2)  {decoder};
+  \node[loss, minimum width=24mm] (ll) at (11.2,-0.3) {latent loss\\{\scriptsize $\|\hat z - z_{\mathbf{u}}\|^2$}};
+  \node[loss, minimum width=24mm] (rl) at (11.2,-2.2) {recon loss\\{\scriptsize $\|\mathrm{dec}(\hat z)-\mathbf{u}\|^2$}};
+
+  \draw[arr] (zh) -- (ll);
+  \draw[arr] (zh) -- (dec);
+  \draw[arr] (dec) -- (rl);
+  \draw[arr] (zu) -- (ll);
+\end{tikzpicture}
+\end{document}

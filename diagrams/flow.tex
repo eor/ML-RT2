@@ -1,0 +1,22 @@
+% Conditional flow matching.  Build: latexmk -pdf flow.tex
+\documentclass[border=8pt]{standalone}
+\usepackage{amsmath}
+\input{mlstyle}
+\begin{document}
+\begin{tikzpicture}
+  \node[data] (x0)                       at (0,0)    {$\mathbf{x}_0$\\{\scriptsize noise $\mathcal{N}(0,I)$}};
+  \node[net,  minimum width=22mm] (v)    at (3.0,0)  {velocity field\\$v_\psi(\mathbf{x},t\mid\boldsymbol{\theta})$};
+  \node[net,  minimum width=20mm] (int)  at (6.4,0)  {integrate ODE\\{\scriptsize $\dot{\mathbf{x}}=v_\psi,\ t:0\to1$}};
+  \node[data, minimum width=14mm] (x1)   at (9.6,0)  {$\mathbf{x}_1$\\{\scriptsize profile}};
+  \draw[arr] (x0)--(v); \draw[arr] (v)--(int); \draw[arr] (int)--(x1);
+
+  \node[data] (th) at (3.0,-1.5) {$\boldsymbol{\theta}$, $t$};
+  \draw[arr] (th) -- (v);
+  \draw[arr] (int.north) to[out=120,in=60] node[above, note] {few Euler steps} (v.north);
+
+  \node[note, text width=22mm] at (11.4,0) {many seeds\\$\Rightarrow$ ensemble};
+  \node[note, text width=95mm] at (4.7,-2.7)
+    {training: fit $v_\psi$ to the straight-line velocity $\mathbf{x}_1-\mathbf{x}_0$ along
+     $\mathbf{x}_t=(1-t)\mathbf{x}_0+t\mathbf{x}_1$};
+\end{tikzpicture}
+\end{document}
