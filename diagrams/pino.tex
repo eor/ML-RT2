@@ -1,0 +1,29 @@
+% PINO -- physics-informed neural operator.  Build: latexmk -pdf pino.tex
+\documentclass[border=8pt]{standalone}
+\usepackage{amsmath}
+\input{mlstyle}
+\begin{document}
+\begin{tikzpicture}
+  % main flow: parameters -> operator -> predicted profiles (the OUTPUT)
+  \node[data] (th)                        at (0,0)     {$\boldsymbol{\theta}$};
+  \node[net,  minimum width=22mm] (op)    at (2.9,0)   {operator\\{\scriptsize (FNO backbone)}};
+  \node[data, minimum width=20mm] (pred)  at (6.2,0)   {predicted\\profiles $\hat{\mathbf{u}}(r)$};
+  \draw[arr] (th) -- (op);
+  \draw[arr] (op) -- (pred);
+
+  % two training terms, both computed from the predicted profiles
+  \node[data, minimum width=20mm] (targ)  at (9.9,1.9) {STARDUST\\profiles (target)};
+  \node[loss, minimum width=20mm] (dmse)  at (9.9,0.6) {data mismatch\\{\scriptsize $\|\hat{\mathbf u}-\mathbf u\|^2$}};
+  \node[op,   minimum width=22mm] (res)   at (9.9,-1.0){physics residual\\{\scriptsize $\Gamma_0 e^{-\tau}/r^2(1{-}x){-}\alpha x^2$}};
+  \node[loss, minimum width=18mm] (tot)   at (13.2,-0.2){total loss\\{\scriptsize data $+\,\lambda\cdot$physics}};
+
+  \draw[arr] (targ) -- (dmse);
+  \draw[arr] (pred) -- (dmse);
+  \draw[arr] (pred) -- (res);
+  \draw[arr] (dmse) -- (tot);
+  \draw[arr] (res)  -- (tot);
+  % training feedback: total loss updates the operator (routed well below everything)
+  \draw[darr] (tot.south) to[out=-90,in=-90,looseness=0.7]
+        node[below, note] {update operator (training)} (op.south);
+\end{tikzpicture}
+\end{document}

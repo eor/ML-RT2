@@ -1,0 +1,20 @@
+out_dir	/home/esk/code/gitHub/ML-RT2/src/output/run_2021_11_25__16_51_34
+len_SED_input	2000
+len_latent_vector	8
+len_state_vector	5
+train_set_size	128
+radius_max	1500.0
+radius_min	0.0
+delta_radius	1
+delta_time	0.01
+n_epochs	10000
+lr	0.0001
+b1	0.9
+b2	0.999
+model	MLP1
+batch_norm	False
+dropout	False
+dropout_value	0.25
+profile_type	C
+
+current time stamp	2021_11_25__16_51_34

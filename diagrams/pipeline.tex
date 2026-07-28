@@ -1,0 +1,23 @@
+% Shared emulation pipeline (Figure 1).  Build: latexmk -pdf pipeline.tex
+\documentclass[border=8pt]{standalone}
+\usepackage{amsmath}
+\input{mlstyle}
+\begin{document}
+\begin{tikzpicture}[node distance=12mm]
+  % main left-to-right flow, boxes given a common width so they align
+  \node[data, minimum width=30mm] (in)  {parameters\\$\boldsymbol{\theta}$ (8 numbers)};
+  \node[net,  minimum width=34mm, right=of in]  (emu) {neural emulator\\$f_\phi(\boldsymbol{\theta})$};
+  \node[data, minimum width=30mm, right=of emu] (out) {radial profiles\\$x_{\rm HII},x_{\rm HeII},x_{\rm HeIII},T$};
+  \draw[arr] (in)  -- (emu);
+  \draw[arr] (emu) -- (out);
+
+  % training data source, feeding the emulator from above
+  \node[data, minimum width=34mm, above=14mm of emu] (sd) {STARDUST simulations\\{\scriptsize 41{,}081 training examples}};
+  \draw[darr] (sd) -- node[right, note] {\ \ train} (emu);
+
+  % single clean annotation underneath
+  \node[note, below=9mm of emu, text width=72mm]
+    {one emulator is trained per architecture; the loss compares its output to the\\
+     STARDUST profiles (plus a physics term for PINO)};
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,38 @@
+% Fourier Neural Operator (FNO).  Build: latexmk -pdf fno.tex
+\documentclass[border=8pt]{standalone}
+\usepackage{amsmath}
+\input{mlstyle}
+\begin{document}
+\begin{tikzpicture}[node distance=7mm]
+  % top-level flow
+  \node[data]                (in)   {$\boldsymbol{\theta}$};
+  \node[net,  right=of in]   (lift) {lift\\{\scriptsize $\theta{+}r\to$ channels}};
+  \node[net,  right=of lift] (f1)   {Fourier\\block};
+  \node[net,  right=6mm of f1] (f2)  {Fourier\\block};
+  \node[right=4mm of f2]     (dots) {$\cdots$};
+  \node[net,  right=4mm of dots] (proj) {project};
+  \node[data, right=of proj] (out)  {profiles\\{\scriptsize $4\times1500$}};
+  \foreach \a/\b in {in/lift, lift/f1, f1/f2, f2/dots, dots/proj, proj/out}
+      \draw[arr] (\a) -- (\b);
+
+  % expanded Fourier block
+  \node[below=13mm of f2, font=\itshape]
+        (cap) {one Fourier block:\ \ $v_{\ell+1}=\sigma\!\big(W v_\ell + \mathcal{F}^{-1}(R_\ell\,\mathcal{F} v_\ell)\big)$};
+  \node[data, below=6mm of cap.south west, anchor=north west] (v) {$v_\ell$};
+  \node[op,   right=9mm of v]    (fft)  {$\mathcal{F}$};
+  \node[op,   right=6mm of fft]  (R)    {$\times R_\ell$\\{\scriptsize keep low $K$ modes}};
+  \node[op,   right=6mm of R]    (ifft) {$\mathcal{F}^{-1}$};
+  \node[net,  below=8mm of R]    (W)    {$W$\ {\scriptsize (1$\times$1)}};
+  \node[sum,  right=8mm of ifft] (plus) {$+$};
+  \node[net,  right=6mm of plus] (act)  {$\sigma$};
+  \node[data, right=7mm of act]  (vo)   {$v_{\ell+1}$};
+  \draw[arr] (v) -- (fft);   \draw[arr] (fft) -- (R);   \draw[arr] (R) -- (ifft);
+  \draw[arr] (ifft) -- (plus);
+  \draw[arr] (v.south) |- (W);  \draw[arr] (W) -| (plus);
+  \draw[arr] (plus) -- (act);  \draw[arr] (act) -- (vo);
+  \begin{scope}[on background layer]
+    \node[draw=black!35, dashed, rounded corners, fill=black!2,
+          fit=(v)(fft)(R)(ifft)(W)(plus)(act)(vo)] {};
+  \end{scope}
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,39 @@
+Bootstrap: docker
+From: pytorch/pytorch:2.2.2-cuda12.1-cudnn8-runtime
+
+# ---------------------------------------------------------------------------
+# Apptainer image for the paper-3 emulators.
+#
+# The PyTorch/CUDA 12.1 base runs across different GPUs (Ampere 3090, L40s,
+# A100, H200) with bf16 support. The image ships only the
+# environment; the code and data are bind-mounted at run time so we never
+# rebuild for a code change.
+#
+# Build (needs internet + fakeroot/root, e.g. on a build node):
+#   apptainer build emulators.sif emulators.def
+#
+# Run (bind the repo and the dataset, then call train.py):
+#   apptainer exec --nv \
+#       -B /path/to/ML-RT2:/work \
+#       -B /path/to/data:/data \
+#       emulators.sif python /work/src/train.py --model fno --run_name fno_053 \
+#           --data_dir /data/053_data_set --epochs 300
+# ---------------------------------------------------------------------------
+
+%post
+    pip install --no-cache-dir einops matplotlib tensorboard tqdm
+    # method-specific extras (uncomment as tracks come online):
+    # pip install --no-cache-dir neuraloperator torchdiffeq torchcfm
+
+%environment
+    export PYTHONUNBUFFERED=1
+    export OMP_NUM_THREADS=8
+
+%runscript
+    exec python "$@"
+
+%help
+    STARDUST advanced emulators (FNO, DeepONet, ... ).
+    Bind the repo to /work and the dataset to /data, then run e.g.:
+        apptainer exec --nv -B <repo>/ML-RT2:/work -B <data>:/data emulators.sif \
+            python /work/src/train.py --model fno --data_dir /data/053_data_set

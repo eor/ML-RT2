@@ -1,0 +1,23 @@
+% Conditional Neural Process.  Build: latexmk -pdf cnp.tex
+\documentclass[border=8pt]{standalone}
+\usepackage{amsmath}
+\input{mlstyle}
+\begin{document}
+\begin{tikzpicture}
+  \node[data]                      (th)  {$\boldsymbol{\theta}$};
+  \node[net,  right=8mm of th]     (enc) {encoder};
+  \node[data, right=7mm of enc]    (rep) {representation};
+  \node[data, below=12mm of th]    (r)   {$r$\\{\scriptsize radius}};
+  \node[op,   right=8mm of r]      (ff)  {Fourier\\{\scriptsize features}};
+  \node[sum,  right=14mm of rep, yshift=-6mm] (cat) {$\Vert$};
+  \node[net,  right=7mm of cat]    (dec) {decoder};
+  \node[data, right=8mm of dec]    (out) {$\mu(r),\ \sigma(r)$\\{\scriptsize per-radius Gaussian}};
+
+  \draw[arr] (th)--(enc); \draw[arr] (enc)--(rep);
+  \draw[arr] (r)--(ff);
+  \draw[arr] (rep)--(cat); \draw[arr] (ff)--(cat);
+  \draw[arr] (cat)--(dec); \draw[arr] (dec)--(out);
+  \node[below=4mm of out, note]
+        {trained by Gaussian NLL $\Rightarrow$ error bars where it is uncertain (the front)};
+\end{tikzpicture}
+\end{document}

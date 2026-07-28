@@ -1,0 +1,26 @@
+% Shared TikZ palette + node styles for the ML-RT2 architecture diagrams.
+% Colours match the ML-RT comparison-paper figures so the three papers look consistent:
+%   pink   = data / vectors (inputs, outputs, latent representations)
+%   blue   = learned networks / operators (MLPs, encoders, decoders, ...)
+%   orange = special operations / physics (spectral transforms, RT residual, ...)
+%   green  = loss / training terms
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+
+\definecolor{dataFill}{HTML}{F2E6FF}\definecolor{dataDraw}{HTML}{6600CC}
+\definecolor{netFill}{HTML}{B5E8E8}\definecolor{netDraw}{HTML}{086565}
+\definecolor{opFill}{HTML}{FFE0C2}\definecolor{opDraw}{HTML}{AB4F03}
+\definecolor{lossFill}{HTML}{C8F4C1}\definecolor{lossDraw}{HTML}{0C5600}
+
+\tikzset{
+  font=\small,
+  box/.style  ={draw, rounded corners, align=center, inner sep=4pt, minimum height=9mm, line width=0.3mm},
+  data/.style ={box, fill=dataFill, draw=dataDraw},
+  net/.style  ={box, fill=netFill,  draw=netDraw},
+  op/.style   ={box, fill=opFill,   draw=opDraw},
+  loss/.style ={box, fill=lossFill, draw=lossDraw},
+  sum/.style  ={draw=netDraw, circle, inner sep=1.3pt, fill=white, line width=0.3mm},
+  arr/.style  ={-{Stealth[length=2.4mm]}, thick},
+  darr/.style ={-{Stealth[length=2.4mm]}, thick, dashed},
+  note/.style ={align=center, font=\scriptsize, text=black!65},
+}

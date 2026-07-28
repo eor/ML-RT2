@@ -1,0 +1,28 @@
+% DeepONet.  Build: latexmk -pdf deeponet.tex
+\documentclass[border=8pt]{standalone}
+\usepackage{amsmath}
+\input{mlstyle}
+\begin{document}
+\begin{tikzpicture}
+  % branch (parameters)
+  \node[data]                      (th)     {$\boldsymbol{\theta}$\\{\scriptsize 8 params}};
+  \node[net,  right=8mm of th]     (branch) {branch\\{\scriptsize MLP}};
+  \node[data, right=7mm of branch] (bk)     {$b_{c,k}(\boldsymbol{\theta})$\\{\scriptsize coefficients}};
+  % trunk (coordinate)
+  \node[data, below=12mm of th]    (r)      {$r$\\{\scriptsize radius}};
+  \node[op,   right=8mm of r]      (ff)     {Fourier\\{\scriptsize features}};
+  \node[net,  right=7mm of ff]     (trunk)  {trunk\\{\scriptsize MLP}};
+  \node[data, right=7mm of trunk]  (tk)     {$t_k(r)$\\{\scriptsize basis}};
+  % combine
+  \node[sum,  right=16mm of bk, yshift=-6mm] (dot) {$\times$};
+  \node[data, right=8mm of dot]    (out)    {$\hat u_c(r)$\\{\scriptsize profile value}};
+
+  \draw[arr] (th)--(branch); \draw[arr] (branch)--(bk);
+  \draw[arr] (r)--(ff); \draw[arr] (ff)--(trunk); \draw[arr] (trunk)--(tk);
+  \draw[arr] (bk)  -- (dot);
+  \draw[arr] (tk)  -- (dot);
+  \draw[arr] (dot) -- (out);
+  \node[below=4mm of out, note]
+        {$\hat u_c(r)=\sum_k b_{c,k}(\boldsymbol{\theta})\,t_k(r)+\beta_c$};
+\end{tikzpicture}
+\end{document}
