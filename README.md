@@ -4,8 +4,8 @@ Prototypes for the third ML-RT paper: **methods barely used in astrophysical rad
 transfer yet**, evaluated for comparability against papers 1–2 (MLP / CVAE / CGAN / LSTM +
 custom) and studied for **how they optimise**.
 
-This subtree is self-contained and does **not** modify anything in `ML-RT/` or the rest of
-`ML-RT2/`.
+`ML-RT2/` is this paper-3 project; the earlier (unfinished) PINN exploration is kept for reference
+under `archive/`. The `ML-RT/` project (papers 1–2) is left untouched.
 
 ## The task
 
@@ -30,8 +30,8 @@ side, not attention-over-input. Three frontiers, plus stretch ideas:
 | **A. Neural operators** | **FNO-1D**, **DeepONet** | outputs are smooth 1D fields with a sharp front; spectral / basis operators are resolution-free and cheap at inference | **prototypes done** |
 | **B. Physics-informed operator** | **PINO** | operator + a differentiable grey ionisation-equilibrium residual (ported recombination fits); data-anchored, avoids the old PINN failure; most novel | **prototype done** |
 | **C. Generative / probabilistic** | **conditional flow matching** (diffusion later) | successor to CVAE/CGAN; calibrated ensembles + error bars; few-step sampling keeps inference cheap | **prototype done** |
-| **D. Attention decoder** | **profile/signal transformer** | long-range coupling (front position ↔ integrated absorption), inter-species attention | planned |
-| **E. Stretch** | JEPA-style joint embedding, Neural-ODE-in-r, Neural Processes | very novel for astro; data efficiency / physical structure / lightweight uncertainty | ideas |
+| **D. Attention decoder** | **profile/signal transformer** | long-range coupling (front position ↔ integrated absorption), inter-species attention | **prototype done** |
+| **E. Stretch** | **Neural-ODE-in-r**, **JEPA**, **CNP** | very novel for astro; physical structure / shared latent / lightweight uncertainty | **prototypes done** |
 
 All models share the data module, metrics, trainer, and history format, so the cross-architecture
 **optimisation study** (loss curves, per-channel val error, gradient norms, epoch wall-time,
@@ -114,7 +114,9 @@ python analyze.py --run_dir output/fno_053
   userspace so one `.sif` runs on every node.
 
 ## Status
-FNO, DeepONet, conditional flow-matching, and **PINO** prototypes are wired, overfit-a-batch
-verified, and run end-to-end on real 053 data. The Optuna sweep harness (search + sensitivity)
-and the analysis/plotting are in place. Next: transformer-operator (D) and the stretch ideas (E),
-and extending the PINO residual (helium equilibrium, optional heating term).
+All **eight** architectures (FNO, DeepONet, PINO, flow matching, transformer, Neural-ODE, JEPA, CNP)
+are implemented, sanity-verified (shape + overfit-a-batch), and run end-to-end on real 053 data. The
+Optuna sweep harness (search + sensitivity), analysis/plotting, the methods brief (`docs/methods.pdf`
++ per-architecture diagrams), and the cluster env/Apptainer image are all in place. **Next:** launch
+the cluster runs. Deferred by choice: the `table_ion.c` HeII physics fix (awaiting paper/author
+review) and extending the PINO residual (helium equilibrium / heating term).
